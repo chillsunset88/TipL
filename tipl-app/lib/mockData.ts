@@ -1,0 +1,263 @@
+/**
+ * TipL — Mock Data
+ * Realistic demo data for development. Remove when Firebase is connected.
+ */
+
+import { Trip, Order, ChatMessage, ChatRoom, JastipRequest, User } from './types';
+import { OrderStatus } from './constants';
+
+export const MOCK_USERS: User[] = [
+  {
+    id: 'u1',
+    email: 'emi.tanaka@email.com',
+    displayName: 'Emi Tanaka',
+    avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200',
+    phone: '+81801234567',
+    rating: 4.8,
+    reviewCount: 23,
+    verified: true,
+    createdAt: Date.now() - 86400000 * 90,
+  },
+  {
+    id: 'u2',
+    email: 'adriana.v@email.com',
+    displayName: 'Adriana V.',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+    phone: '+6281234567890',
+    rating: 4.9,
+    reviewCount: 47,
+    verified: true,
+    createdAt: Date.now() - 86400000 * 180,
+  },
+  {
+    id: 'u3',
+    email: 'marcus.t@email.com',
+    displayName: 'Marcus T.',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
+    phone: '+447700900123',
+    rating: 4.7,
+    reviewCount: 15,
+    verified: true,
+    createdAt: Date.now() - 86400000 * 60,
+  },
+];
+
+export const MOCK_TRIPS: Trip[] = [
+  {
+    id: 't1',
+    travelerId: 'u2',
+    travelerName: 'Adriana V.',
+    travelerAvatar: MOCK_USERS[1].avatarUrl,
+    travelerRating: 4.9,
+    travelerVerified: true,
+    origin: 'Tokyo',
+    destination: 'Jakarta',
+    departDate: '2026-05-15',
+    returnDate: '2026-05-28',
+    itinerary: [
+      { city: 'San Francisco', country: 'USA', arrivalDate: '2026-05-12' },
+      { city: 'Tokyo', country: 'Japan', arrivalDate: '2026-05-15', departureDate: '2026-05-24' },
+      { city: 'Jakarta', country: 'Indonesia', arrivalDate: '2026-05-28' },
+    ],
+    categories: ['luxury', 'skincare', 'electronics'],
+    description: 'Business trip with 5kg spare luggage capacity. Can pick up items from Shibuya, Shinjuku, and Akihabara areas.',
+    maxWeight: 5,
+    status: 'upcoming',
+    createdAt: Date.now() - 86400000 * 3,
+    imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800',
+  },
+  {
+    id: 't2',
+    travelerId: 'u3',
+    travelerName: 'Marcus T.',
+    travelerAvatar: MOCK_USERS[2].avatarUrl,
+    travelerRating: 4.7,
+    travelerVerified: true,
+    origin: 'London',
+    destination: 'Dubai',
+    departDate: '2026-06-01',
+    returnDate: '2026-06-10',
+    itinerary: [
+      { city: 'London', country: 'UK', arrivalDate: '2026-05-28' },
+      { city: 'Dubai', country: 'UAE', arrivalDate: '2026-06-01' },
+    ],
+    categories: ['luxury', 'fashion'],
+    maxWeight: 3,
+    status: 'upcoming',
+    createdAt: Date.now() - 86400000 * 1,
+    imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800',
+  },
+  {
+    id: 't3',
+    travelerId: 'u1',
+    travelerName: 'Emi Tanaka',
+    travelerAvatar: MOCK_USERS[0].avatarUrl,
+    travelerRating: 4.8,
+    travelerVerified: true,
+    origin: 'Seoul',
+    destination: 'Singapore',
+    departDate: '2026-06-05',
+    returnDate: '2026-06-15',
+    itinerary: [
+      { city: 'Seoul', country: 'South Korea', arrivalDate: '2026-06-05', departureDate: '2026-06-10' },
+      { city: 'Singapore', country: 'Singapore', arrivalDate: '2026-06-12' },
+    ],
+    categories: ['skincare', 'food', 'electronics'],
+    maxWeight: 4,
+    status: 'upcoming',
+    createdAt: Date.now() - 86400000 * 2,
+    imageUrl: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?w=800',
+  },
+];
+
+export const MOCK_ORDER: Order = {
+  id: 'o1',
+  orderNumber: 'JPT-0024',
+  requestId: 'r1',
+  tripId: 't1',
+  travelerId: 'u1',
+  travelerName: 'Emi Tanaka',
+  buyerId: 'u2',
+  buyerName: 'Adriana V.',
+  itemName: 'Artisan Leather Ankle Boots',
+  itemDescription: 'Size: EU 38 • Color: Cognac',
+  itemImageUrl: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=400',
+  quantity: 1,
+  status: OrderStatus.PAYMENT_CONFIRMED,
+  timeline: [
+    { status: OrderStatus.PENDING, label: 'Order Requested', timestamp: Date.now() - 86400000 * 5, description: 'Dec 01, 6:00 PM' },
+    { status: OrderStatus.OFFER_ACCEPTED, label: 'Offer Accepted', timestamp: Date.now() - 86400000 * 4, description: 'Dec 02, 10:00 AM' },
+    { status: OrderStatus.PAYMENT_CONFIRMED, label: 'Payment Confirmed', timestamp: Date.now() - 86400000 * 3, description: 'Dec 03, 3:30 PM' },
+    { status: OrderStatus.ITEM_PURCHASED, label: 'Item Purchased', timestamp: null },
+    { status: OrderStatus.IN_TRANSIT, label: 'In Transit', timestamp: null },
+    { status: OrderStatus.DELIVERED, label: 'Delivered', timestamp: null },
+    { status: OrderStatus.COMPLETED, label: 'Completed', timestamp: null },
+  ],
+  paymentSummary: {
+    itemPrice: 359.00,
+    travelerFee: 45.30,
+    platformFee: 15.40,
+    totalAmount: 419.71,
+    currency: 'USD',
+  },
+  proofOfPurchaseUrls: [],
+  createdAt: Date.now() - 86400000 * 5,
+  updatedAt: Date.now() - 86400000 * 3,
+};
+
+export const MOCK_CHAT_MESSAGES: ChatMessage[] = [
+  {
+    id: 'm1',
+    senderId: 'u2',
+    senderName: 'Adriana V.',
+    senderAvatar: MOCK_USERS[1].avatarUrl,
+    text: "Hi there! I'm interested in picking up a few items from Tokyo. I'm heading to Akihabara to pick up a few things.",
+    timestamp: Date.now() - 3600000 * 3,
+    read: true,
+  },
+  {
+    id: 'm2',
+    senderId: 'u1',
+    senderName: 'Emi Tanaka',
+    senderAvatar: MOCK_USERS[0].avatarUrl,
+    productCard: {
+      name: 'Sony WH-1000XM5',
+      imageUrl: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400',
+      price: '¥44,000',
+      description: 'Wireless Noise Cancelling Headphones',
+    },
+    timestamp: Date.now() - 3600000 * 2,
+    read: true,
+  },
+  {
+    id: 'm3',
+    senderId: 'u1',
+    senderName: 'Emi Tanaka',
+    senderAvatar: MOCK_USERS[0].avatarUrl,
+    text: "I found these Sony headphones! I noticed so many people have been requesting this. Are you interested?",
+    timestamp: Date.now() - 3600000 * 2 + 60000,
+    read: true,
+  },
+  {
+    id: 'm4',
+    senderId: 'u2',
+    senderName: 'Adriana V.',
+    senderAvatar: MOCK_USERS[1].avatarUrl,
+    text: "Could you tell me more? Can I see a closer look at the packaging?",
+    timestamp: Date.now() - 3600000,
+    read: false,
+  },
+];
+
+export const MOCK_CHAT_ROOM: ChatRoom = {
+  id: 'cr1',
+  participants: ['u1', 'u2'],
+  participantNames: { u1: 'Emi Tanaka', u2: 'Adriana V.' },
+  participantAvatars: { u1: MOCK_USERS[0].avatarUrl, u2: MOCK_USERS[1].avatarUrl },
+  lastMessage: "Could you tell me more? Can I see a closer look at the packaging?",
+  lastMessageTimestamp: Date.now() - 3600000,
+  unreadCount: { u1: 1, u2: 0 },
+  orderId: 'o1',
+  createdAt: Date.now() - 86400000,
+};
+
+export const MOCK_CHAT_MESSAGES_2: ChatMessage[] = [
+  {
+    id: 'm5',
+    senderId: 'u3',
+    senderName: 'Marcus T.',
+    senderAvatar: MOCK_USERS[2].avatarUrl,
+    text: 'I can pick up the bag from Harrods this weekend!',
+    timestamp: Date.now() - 3600000 * 5,
+    read: false,
+  },
+  {
+    id: 'm6',
+    senderId: 'u2',
+    senderName: 'Adriana V.',
+    senderAvatar: MOCK_USERS[1].avatarUrl,
+    text: 'That would be amazing! Can you check if they have the beige color?',
+    timestamp: Date.now() - 3600000 * 4,
+    read: true,
+  },
+  {
+    id: 'm7',
+    senderId: 'u3',
+    senderName: 'Marcus T.',
+    senderAvatar: MOCK_USERS[2].avatarUrl,
+    text: "Sure, I'll check and send you a photo when I'm there.",
+    timestamp: Date.now() - 3600000 * 3,
+    read: true,
+  },
+];
+
+export const TRENDING_DESTINATIONS = [
+  {
+    id: 'd1',
+    name: 'Tokyo',
+    country: 'Japan',
+    imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600',
+    tripCount: 12,
+  },
+  {
+    id: 'd2',
+    name: 'Paris',
+    country: 'France',
+    imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600',
+    tripCount: 8,
+  },
+  {
+    id: 'd3',
+    name: 'Seoul',
+    country: 'South Korea',
+    imageUrl: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?w=600',
+    tripCount: 15,
+  },
+  {
+    id: 'd4',
+    name: 'London',
+    country: 'United Kingdom',
+    imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600',
+    tripCount: 6,
+  },
+];
