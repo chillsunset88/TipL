@@ -4,59 +4,67 @@
  * Matches the Stitch "Home - Unified Marketplace" design.
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Avatar } from "@/src/components/ui/Avatar";
+import { Button } from "@/src/components/ui/Button";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  RefreshControl,
+  BorderRadius,
+  Colors,
+  Shadows,
+  Spacing,
+  Typography,
+} from "@/src/lib/constants";
+import { MOCK_TRIPS, TRENDING_DESTINATIONS } from "@/src/lib/mockData";
+import { Trip } from "@/src/lib/types";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
   Dimensions,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
-import { Avatar } from '@/src/components/ui/Avatar';
-import { Button } from '@/src/components/ui/Button';
-import { Badge } from '@/src/components/ui/Badge';
-import { MOCK_TRIPS, TRENDING_DESTINATIONS, MOCK_USERS } from '@/src/lib/mockData';
-import { Trip } from '@/src/lib/types';
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.42;
 
 const CAROUSEL_DATA = [
   {
-    id: 'b1',
-    title: 'Tokyo Exclusive',
-    subtitle: 'Limited edition goods from Shibuya & Akihabara',
-    imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800',
-    color: ['#1a1a2e', '#16213e'] as const,
+    id: "b1",
+    title: "Tokyo Exclusive",
+    subtitle: "Limited edition goods from Shibuya & Akihabara",
+    imageUrl:
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800",
+    color: ["#1a1a2e", "#16213e"] as const,
   },
   {
-    id: 'b2',
-    title: 'Seoul Beauty',
-    subtitle: 'K-Beauty & skincare favorites delivered to you',
-    imageUrl: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?w=800',
-    color: ['#0f3460', '#533483'] as const,
+    id: "b2",
+    title: "Seoul Beauty",
+    subtitle: "K-Beauty & skincare favorites delivered to you",
+    imageUrl:
+      "https://images.unsplash.com/photo-1538485399081-7191377e8241?w=800",
+    color: ["#0f3460", "#533483"] as const,
   },
   {
-    id: 'b3',
-    title: 'Paris Luxe',
-    subtitle: 'Designer pieces from Le Marais & Champs-Élysées',
-    imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800',
-    color: ['#3a0ca3', '#7209b7'] as const,
+    id: "b3",
+    title: "Paris Luxe",
+    subtitle: "Designer pieces from Le Marais & Champs-Élysées",
+    imageUrl:
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800",
+    color: ["#3a0ca3", "#7209b7"] as const,
   },
 ];
 
 export default function HomeScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -67,7 +75,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
@@ -114,7 +122,11 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Trending Destinations</Text>
             <TouchableOpacity style={styles.filterRow}>
-              <Ionicons name="options-outline" size={18} color={Colors.darkGray} />
+              <Ionicons
+                name="options-outline"
+                size={18}
+                color={Colors.darkGray}
+              />
             </TouchableOpacity>
           </View>
 
@@ -133,7 +145,7 @@ export default function HomeScreen() {
                   transition={300}
                 />
                 <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.6)']}
+                  colors={["transparent", "rgba(0,0,0,0.6)"]}
                   style={styles.destinationOverlay}
                 >
                   <Text style={styles.destinationName}>{item.name}</Text>
@@ -150,7 +162,11 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>Upcoming Journeys</Text>
             <TouchableOpacity style={styles.filterPill}>
               <Text style={styles.filterText}>Filter</Text>
-              <Ionicons name="funnel-outline" size={14} color={Colors.darkGray} />
+              <Ionicons
+                name="funnel-outline"
+                size={14}
+                color={Colors.darkGray}
+              />
             </TouchableOpacity>
           </View>
 
@@ -169,20 +185,28 @@ export default function HomeScreen() {
 function CarouselBanner() {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const carouselSlideWidth = SCREEN_WIDTH - Spacing.xl * 2;
+  const carouselSlideSpacing = Spacing.sm;
+  const snapInterval = carouselSlideWidth + carouselSlideSpacing;
 
   useEffect(() => {
     const timer = setInterval(() => {
       const nextIndex = (activeIndex + 1) % CAROUSEL_DATA.length;
-      scrollRef.current?.scrollTo({ x: nextIndex * (SCREEN_WIDTH - Spacing.xl * 2), animated: true });
+      scrollRef.current?.scrollTo({
+        x: nextIndex * snapInterval,
+        animated: true,
+      });
       setActiveIndex(nextIndex);
     }, 4000);
     return () => clearInterval(timer);
-  }, [activeIndex]);
+  }, [activeIndex, snapInterval]);
 
   const handleScroll = useCallback((event: any) => {
-    const idx = Math.round(event.nativeEvent.contentOffset.x / (SCREEN_WIDTH - Spacing.xl * 2));
+    const idx = Math.round(
+      event.nativeEvent.contentOffset.x / snapInterval,
+    );
     setActiveIndex(idx);
-  }, []);
+  }, [snapInterval]);
 
   return (
     <View style={styles.carouselContainer}>
@@ -193,10 +217,17 @@ function CarouselBanner() {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
         decelerationRate="fast"
-        snapToInterval={SCREEN_WIDTH - Spacing.xl * 2}
+        snapToInterval={snapInterval}
+        contentContainerStyle={{ paddingRight: carouselSlideSpacing }}
       >
-        {CAROUSEL_DATA.map((item) => (
-          <View key={item.id} style={styles.carouselSlide}>
+        {CAROUSEL_DATA.map((item, idx) => (
+          <View
+            key={item.id}
+            style={[
+              styles.carouselSlide,
+              idx !== CAROUSEL_DATA.length - 1 && { marginRight: carouselSlideSpacing },
+            ]}
+          >
             <Image
               source={{ uri: item.imageUrl }}
               style={styles.carouselImage}
@@ -204,7 +235,7 @@ function CarouselBanner() {
               transition={300}
             />
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.7)']}
+              colors={["transparent", "rgba(0,0,0,0.7)"]}
               style={styles.carouselOverlay}
             >
               <Text style={styles.carouselTitle}>{item.title}</Text>
@@ -249,7 +280,9 @@ function TravelerCard({ trip }: { trip: Trip }) {
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={13} color={Colors.primary} />
             <Text style={styles.ratingText}>{trip.travelerRating}</Text>
-            <Text style={styles.reviewCount}>({trip.travelerVerified ? 'Verified' : ''})</Text>
+            <Text style={styles.reviewCount}>
+              ({trip.travelerVerified ? "Verified" : ""})
+            </Text>
           </View>
         </View>
       </View>
@@ -265,7 +298,7 @@ function TravelerCard({ trip }: { trip: Trip }) {
           <Ionicons name="airplane" size={16} color={Colors.primary} />
           <View style={styles.routeLine} />
         </View>
-        <View style={[styles.routeCity, { alignItems: 'flex-end' }]}>
+        <View style={[styles.routeCity, { alignItems: "flex-end" }]}>
           <Text style={styles.routeLabel}>DESTINATION</Text>
           <Text style={styles.routeCityName}>{trip.destination}</Text>
         </View>
@@ -273,7 +306,7 @@ function TravelerCard({ trip }: { trip: Trip }) {
 
       <View style={styles.cardFooter}>
         <Text style={styles.dateText}>
-          <Ionicons name="calendar-outline" size={13} color={Colors.darkGray} />{' '}
+          <Ionicons name="calendar-outline" size={13} color={Colors.darkGray} />{" "}
           {trip.departDate}
         </Text>
         <Button
@@ -297,9 +330,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.base,
   },
@@ -313,20 +346,21 @@ const styles = StyleSheet.create({
   // Carousel
   carouselContainer: {
     marginBottom: Spacing.xl,
+    
   },
   carouselSlide: {
     width: SCREEN_WIDTH - Spacing.xl * 2,
     height: 180,
     borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   carouselImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   carouselOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     padding: Spacing.base,
   },
   carouselTitle: {
@@ -337,12 +371,12 @@ const styles = StyleSheet.create({
   carouselSubtitle: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
-    color: 'rgba(255,255,255,0.85)',
+    color: "rgba(255,255,255,0.85)",
     marginTop: 2,
   },
   carouselDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: Spacing.md,
     gap: 6,
   },
@@ -359,15 +393,15 @@ const styles = StyleSheet.create({
 
   // Search
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing['2xl'],
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing["2xl"],
     gap: Spacing.sm,
   },
   searchBar: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.cream,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
@@ -387,7 +421,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
     height: 48,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   exploreText: {
     fontFamily: Typography.semiBold.fontFamily,
@@ -398,12 +432,12 @@ const styles = StyleSheet.create({
 
   // Sections
   section: {
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing["2xl"],
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.base,
   },
   sectionTitle: {
@@ -415,8 +449,8 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   filterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
@@ -435,17 +469,17 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_WIDTH * 1.3,
     borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginRight: Spacing.md,
     ...Shadows.md,
   },
   destinationImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   destinationOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     padding: Spacing.base,
   },
   destinationName: {
@@ -456,7 +490,7 @@ const styles = StyleSheet.create({
   destinationCountry: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
   },
 
   // Traveler Card
@@ -470,8 +504,8 @@ const styles = StyleSheet.create({
     ...Shadows.sm,
   },
   travelerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: Spacing.base,
   },
   travelerInfo: {
@@ -484,8 +518,8 @@ const styles = StyleSheet.create({
     color: Colors.nearBlack,
   },
   ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 2,
     gap: 3,
   },
@@ -502,8 +536,8 @@ const styles = StyleSheet.create({
 
   // Route
   routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: Spacing.base,
     paddingHorizontal: Spacing.sm,
   },
@@ -523,8 +557,8 @@ const styles = StyleSheet.create({
     color: Colors.nearBlack,
   },
   routeArrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginHorizontal: Spacing.sm,
   },
   routeLine: {
@@ -535,9 +569,9 @@ const styles = StyleSheet.create({
 
   // Footer
   cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
     paddingTop: Spacing.md,
