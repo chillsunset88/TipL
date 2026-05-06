@@ -35,6 +35,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.42;
+const TRENDING_CARD_WIDTH = SCREEN_WIDTH * 0.75;
+const TRENDING_CARD_GAP = Spacing.md;
 
 const CAROUSEL_DATA = [
   {
@@ -132,12 +134,19 @@ export default function HomeScreen() {
 
           <FlatList
             horizontal
+            style={{ marginHorizontal: -Spacing.xl }}
             data={TRENDING_DESTINATIONS}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: Spacing.xl }}
+            contentContainerStyle={{ paddingHorizontal: Spacing.xl }}
+            snapToInterval={TRENDING_CARD_WIDTH + TRENDING_CARD_GAP}
+            snapToAlignment="start"
+            decelerationRate="fast"
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.destinationCard}>
+              <TouchableOpacity
+                style={styles.destinationCard}
+                activeOpacity={0.85}
+              >
                 <Image
                   source={{ uri: item.imageUrl }}
                   style={styles.destinationImage}
@@ -145,7 +154,7 @@ export default function HomeScreen() {
                   transition={300}
                 />
                 <LinearGradient
-                  colors={["transparent", "rgba(0,0,0,0.6)"]}
+                  colors={["transparent", "rgba(0,0,0,0.8)"]}
                   style={styles.destinationOverlay}
                 >
                   <Text style={styles.destinationName}>{item.name}</Text>
@@ -201,12 +210,13 @@ function CarouselBanner() {
     return () => clearInterval(timer);
   }, [activeIndex, snapInterval]);
 
-  const handleScroll = useCallback((event: any) => {
-    const idx = Math.round(
-      event.nativeEvent.contentOffset.x / snapInterval,
-    );
-    setActiveIndex(idx);
-  }, [snapInterval]);
+  const handleScroll = useCallback(
+    (event: any) => {
+      const idx = Math.round(event.nativeEvent.contentOffset.x / snapInterval);
+      setActiveIndex(idx);
+    },
+    [snapInterval],
+  );
 
   return (
     <View style={styles.carouselContainer}>
@@ -225,7 +235,9 @@ function CarouselBanner() {
             key={item.id}
             style={[
               styles.carouselSlide,
-              idx !== CAROUSEL_DATA.length - 1 && { marginRight: carouselSlideSpacing },
+              idx !== CAROUSEL_DATA.length - 1 && {
+                marginRight: carouselSlideSpacing,
+              },
             ]}
           >
             <Image
@@ -346,7 +358,6 @@ const styles = StyleSheet.create({
   // Carousel
   carouselContainer: {
     marginBottom: Spacing.xl,
-    
   },
   carouselSlide: {
     width: SCREEN_WIDTH - Spacing.xl * 2,
@@ -466,11 +477,11 @@ const styles = StyleSheet.create({
 
   // Destination Cards
   destinationCard: {
-    width: CARD_WIDTH,
-    height: CARD_WIDTH * 1.3,
-    borderRadius: BorderRadius.lg,
+    width: TRENDING_CARD_WIDTH,
+    height: TRENDING_CARD_WIDTH * 1.25,
+    borderRadius: BorderRadius.xl,
     overflow: "hidden",
-    marginRight: Spacing.md,
+    marginRight: TRENDING_CARD_GAP,
     ...Shadows.md,
   },
   destinationImage: {
@@ -483,9 +494,10 @@ const styles = StyleSheet.create({
     padding: Spacing.base,
   },
   destinationName: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.lg,
+    fontFamily: Typography.serifBold.fontFamily,
+    fontSize: Typography.sizes["2xl"],
     color: Colors.white,
+    marginBottom: 4,
   },
   destinationCountry: {
     fontFamily: Typography.regular.fontFamily,
