@@ -19,6 +19,24 @@ export interface User {
   bio?: string;
 }
 
+// ─── Jastip Product ─────────────────────────────────────────────────
+export interface JastipProduct {
+  id: string;
+  name: string;
+  description: string;
+  priceIDR: number;
+  imageUrl: string;
+  category: string;
+  destination: string;
+  travelerId: string;
+  travelerName: string;
+  travelerAvatar: string | null;
+  travelerRating: number;
+  travelerVerified: boolean;
+  weight?: number; // kg
+  stock: number;
+}
+
 // ─── Trip ───────────────────────────────────────────────────────────
 export interface TripStop {
   city: string;

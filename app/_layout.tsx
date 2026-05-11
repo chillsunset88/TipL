@@ -25,6 +25,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { Colors } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -68,6 +69,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      useSettingsStore.getState().loadSettings();
     }
   }, [loaded]);
 
@@ -84,6 +86,14 @@ function RootLayoutNav() {
       <StatusBar style="dark" />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="search"
+          options={{ headerShown: false, presentation: 'card', animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="product/[id]"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
         <Stack.Screen
           name="auth/login"
           options={{ headerShown: false, presentation: 'fullScreenModal' }}

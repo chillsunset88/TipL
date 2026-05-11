@@ -1,6 +1,7 @@
 /**
  * TipL — Settings Screen
  * Account settings: Edit Profile, Notifications, Payment Methods, Verification, Help, Terms, Sign Out.
+ * Language toggle: English / Bahasa Indonesia.
  */
 
 import React from 'react';
@@ -18,21 +19,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
+import { useSettingsStore } from '@/src/store/settingsStore';
+import { Locale } from '@/src/lib/i18n';
 
 export default function SettingsScreen() {
   const [pushNotifications, setPushNotifications] = React.useState(true);
   const [orderUpdates, setOrderUpdates] = React.useState(true);
   const [chatNotifications, setChatNotifications] = React.useState(true);
+  const { locale, setLocale, t } = useSettingsStore();
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t.signOut, t.signOutConfirm, [
+      { text: t.cancel, style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: t.signOut,
         style: 'destructive',
         onPress: () => router.replace('/(auth)/login'),
       },
     ]);
+  };
+
+  const toggleLanguage = () => {
+    const next: Locale = locale === 'en' ? 'id' : 'en';
+    setLocale(next);
   };
 
   return (
@@ -42,71 +51,90 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>{t.settings}</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Account Section */}
-        <Text style={styles.sectionLabel}>ACCOUNT</Text>
+        <Text style={styles.sectionLabel}>{t.account}</Text>
         <View style={styles.menuCard}>
           <MenuItem
             icon="person-outline"
-            label="Edit Profile"
+            label={t.editProfile}
             onPress={() => router.push('/profile/edit')}
           />
           <MenuItem
             icon="card-outline"
-            label="Payment Methods"
+            label={t.paymentMethods}
             onPress={() => router.push('/profile/payments')}
           />
           <MenuItem
             icon="shield-checkmark-outline"
-            label="Verification"
-            subtitle="Verified"
+            label={t.verification}
+            subtitle={t.verified}
             onPress={() => {}}
           />
         </View>
 
+        {/* Language Section */}
+        <Text style={styles.sectionLabel}>{t.language}</Text>
+        <View style={styles.menuCard}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={toggleLanguage}
+          >
+            <Ionicons name="language-outline" size={22} color={Colors.charcoal} />
+            <Text style={styles.menuLabel}>{t.languageLabel}</Text>
+            <View style={styles.languagePill}>
+              <Text style={styles.languagePillText}>
+                {locale === 'en' ? '🇺🇸 English' : '🇮🇩 Indonesia'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
+          </TouchableOpacity>
+        </View>
+
         {/* Notifications Section */}
-        <Text style={styles.sectionLabel}>NOTIFICATIONS</Text>
+        <Text style={styles.sectionLabel}>{t.notifications}</Text>
         <View style={styles.menuCard}>
           <ToggleItem
             icon="notifications-outline"
-            label="Push Notifications"
+            label={t.pushNotifications}
             value={pushNotifications}
             onToggle={setPushNotifications}
           />
           <ToggleItem
             icon="receipt-outline"
-            label="Order Updates"
+            label={t.orderUpdates}
             value={orderUpdates}
             onToggle={setOrderUpdates}
           />
           <ToggleItem
             icon="chatbubble-outline"
-            label="Chat Messages"
+            label={t.chatMessages}
             value={chatNotifications}
             onToggle={setChatNotifications}
           />
         </View>
 
         {/* Support Section */}
-        <Text style={styles.sectionLabel}>SUPPORT</Text>
+        <Text style={styles.sectionLabel}>{t.support}</Text>
         <View style={styles.menuCard}>
           <MenuItem
             icon="help-circle-outline"
-            label="Help & Support"
+            label={t.helpSupport}
             onPress={() => {}}
           />
           <MenuItem
             icon="document-text-outline"
-            label="Terms & Privacy"
+            label={t.termsPrivacy}
             onPress={() => {}}
           />
           <MenuItem
             icon="information-circle-outline"
-            label="About TipL"
+            label={t.aboutApp}
             subtitle="v1.0.0"
             onPress={() => {}}
           />
@@ -114,7 +142,7 @@ export default function SettingsScreen() {
 
         {/* Sign Out */}
         <Button
-          title="Sign Out"
+          title={t.signOut}
           onPress={handleLogout}
           variant="danger"
           fullWidth
@@ -231,5 +259,16 @@ const styles = StyleSheet.create({
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.darkGray,
+  },
+  languagePill: {
+    backgroundColor: '#EBF2FF',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  languagePillText: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: '#003F7F',
   },
 });

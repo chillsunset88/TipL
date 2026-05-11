@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { ChatRoom as ChatRoomType } from '@/lib/types';
+import { ChatRoom as ChatRoomType } from '@/src/lib/types';
 
 interface ChatState {
   chatRooms: ChatRoomType[];

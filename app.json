@@ -33,7 +33,8 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-image-picker"
+      "expo-image-picker",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

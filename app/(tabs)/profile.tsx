@@ -82,7 +82,7 @@ export default function ProfileScreen() {
             <ActionCard
               icon="receipt-outline"
               label="My Orders"
-              onPress={() => router.push('/order/o1')}
+              onPress={() => router.push('/profile/orders')}
               color={Colors.primary}
             />
             <ActionCard
