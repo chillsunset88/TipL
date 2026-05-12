@@ -1,44 +1,7 @@
 // src/services/firebase.js
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  PhoneAuthProvider,
-  linkWithCredential,
-  onAuthStateChanged,
-} from 'firebase/auth';
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-
-// ─────────────────────────────────────────────
-// CONFIG
-// Ganti dengan nilai dari Firebase Console
-// Project Settings → General → Your apps → SDK setup
-// ─────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-};
-
-// Hindari inisialisasi ulang saat hot reload (Expo)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, PhoneAuthProvider, linkWithCredential, onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, storage } from '@/src/lib/firebase';
 
 // ─────────────────────────────────────────────
 // AUTH — EMAIL & PASSWORD
@@ -58,18 +21,27 @@ export async function registerWithEmail(email, password, name, phone) {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
   const uid = credential.user.uid;
 
-  // Buat dokumen user di Firestore
-  await setDoc(doc(db, 'users', uid), {
-    name,
-    email,
-    phone,           // Disimpan di profil, belum terverifikasi
+  // Buat dokumen user di Firestore dengan struktur yang sesuai User interface
+  const userData = {
+    id: uid,
+    displayName: name,
+    email: email,
+    phone: phone,
+    avatarUrl: null,
+    rating: 0,
+    reviewCount: 0,
+    verified: false,
+    createdAt: Date.now(),
+    // Additional fields for backward compatibility
+    name: name, // Keep for backward compatibility
     is_triper: false,
     phone_verified: false,
-    rating: 0,
     total_trips: 0,
     expo_push_token: null,
     created_at: serverTimestamp(),
-  });
+  };
+
+  await setDoc(doc(db, 'users', uid), userData);
 
   return credential;
 }

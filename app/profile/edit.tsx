@@ -3,7 +3,7 @@
  * Change avatar, display name, and email.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,16 +20,30 @@ import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
-import { MOCK_USERS } from '@/src/lib/mockData';
+import { auth } from '@/src/lib/firebase';
+import { updateProfile } from 'firebase/auth';
+import { useAuthStore } from '@/src/store/authStore';
+import { updateUserProfile } from '@/src/services/firebase';
 
 export default function EditProfileScreen() {
-  const user = MOCK_USERS[1];
-  const [displayName, setDisplayName] = useState(user.displayName);
-  const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState(user.phone || '+62');
-  const [bio, setBio] = useState(user.bio || '');
-  const [avatarUri, setAvatarUri] = useState<string | null>(user.avatarUrl);
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('+62');
+  const [bio, setBio] = useState('');
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName);
+      setEmail(user.email);
+      setPhone(user.phone || '+62');
+      setBio(user.bio ?? '');
+      setAvatarUri(user.avatarUrl);
+    }
+  }, [user]);
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -44,19 +58,40 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      Alert.alert('Error', 'No authenticated user found.');
+      return;
+    }
+
     if (!displayName.trim()) {
       Alert.alert('Error', 'Name cannot be empty.');
       return;
     }
+
     setLoading(true);
     try {
-      // TODO: Update Firestore user doc
-      await new Promise((r) => setTimeout(r, 1000));
+      const updates = {
+        displayName: displayName.trim(),
+        avatarUrl: avatarUri ?? null,
+        phone: phone.trim(),
+        bio: bio.trim(),
+      };
+
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: updates.displayName,
+          ...(updates.avatarUrl ? { photoURL: updates.avatarUrl } : {}),
+        });
+      }
+
+      await updateUserProfile(user.id, updates);
+      setUser({ ...user, ...updates });
+
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
-    } catch {
-      Alert.alert('Error', 'Failed to update profile.');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to update profile.');
     } finally {
       setLoading(false);
     }
@@ -87,7 +122,7 @@ export default function EditProfileScreen() {
 
         {/* Form */}
         <Input label="Full Name" value={displayName} onChangeText={setDisplayName} icon="person-outline" />
-        <Input label="Email" value={email} onChangeText={setEmail} icon="mail-outline" keyboardType="email-address" autoCapitalize="none" />
+        <Input label="Email" value={email} editable={false} icon="mail-outline" keyboardType="email-address" autoCapitalize="none" />
         <Input label="Phone Number" value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />
         <Input label="Bio" value={bio} onChangeText={setBio} placeholder="Tell others about yourself..." multiline numberOfLines={3} />
 

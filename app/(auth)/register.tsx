@@ -21,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
-import { registerWithEmail } from '@/src/lib/hooks/useAuth';
+import { registerWithEmail } from '@/src/services/firebase';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -48,7 +48,8 @@ export default function RegisterScreen() {
     if (!validate()) return;
     setLoading(true);
     try {
-      await registerWithEmail(email.trim(), password, name.trim());
+      // Pass phone as empty string initially (can be updated in profile)
+      await registerWithEmail(email.trim(), password, name.trim(), '');
       router.replace('/(tabs)');
     } catch (err: any) {
       Alert.alert('Registration Failed', err?.message || 'Please try again.');

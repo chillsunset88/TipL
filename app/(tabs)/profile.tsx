@@ -19,21 +19,43 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Button } from '@/src/components/ui/Button';
-import { MOCK_USERS, MOCK_ORDER } from '@/src/lib/mockData';
-
-const currentUser = MOCK_USERS[1]; // Adriana V.
+import { useAuthStore } from '@/src/store/authStore';
+import { logout } from '@/src/services/firebase';
+import { MOCK_ORDER } from '@/src/lib/mockData';
 
 export default function ProfileScreen() {
-  const handleLogout = () => {
+  const currentUser = useAuthStore((state) => state.user);
+  const clearUser = useAuthStore((state) => state.logout);
+
+  const handleLogout = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: () => router.replace('/(auth)/login'),
+        onPress: async () => {
+          try {
+            await logout();
+            clearUser();
+            router.replace('/(auth)/login');
+          } catch (err) {
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+          }
+        },
       },
     ]);
   };
+
+  if (!currentUser) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>No profile loaded</Text>
+          <Text style={styles.emptyText}>Please sign in to see your profile.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -336,5 +358,23 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium.fontFamily,
     fontSize: 10,
     color: Colors.primary,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyTitle: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.lg,
+    color: Colors.nearBlack,
+    marginBottom: Spacing.sm,
+  },
+  emptyText: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.darkGray,
+    textAlign: 'center',
   },
 });

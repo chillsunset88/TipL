@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { User } from '@/lib/types';
+import { User } from '@/src/lib/types';
 
 interface AuthState {
   user: User | null;

@@ -24,6 +24,9 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 
+import { useAuthListener } from '@/src/lib/hooks/useAuth';
+import { useAuthStore } from '@/src/store/authStore';
+
 import { Colors } from '@/src/lib/constants';
 
 export { ErrorBoundary } from 'expo-router';
@@ -61,6 +64,8 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
+  useAuthListener();
+
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -79,56 +84,68 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  if (isLoading) {
+    return null; // Show splash screen while checking auth
+  }
+
   return (
     <ThemeProvider value={TipLTheme}>
       <StatusBar style="dark" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="auth/login"
-          options={{ headerShown: false, presentation: 'fullScreenModal' }}
-        />
-        <Stack.Screen
-          name="auth/register"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="trip/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="order/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="chat/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="payment/midtrans"
-          options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }}
-        />
-        <Stack.Screen
-          name="profile/settings"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/edit"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/trips"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/payments"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/wishlist"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-      </Stack>
+      {isAuthenticated ? (
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="trip/[id]"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="order/[id]"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="chat/[id]"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="payment/midtrans"
+            options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="profile/settings"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="profile/edit"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="profile/trips"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="profile/payments"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="profile/wishlist"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+        </Stack>
+      ) : (
+        <Stack>
+          <Stack.Screen
+            name="(auth)/login"
+            options={{ headerShown: false, animationEnabled: false }}
+          />
+          <Stack.Screen
+            name="(auth)/register"
+            options={{ headerShown: false, presentation: 'card' }}
+          />
+        </Stack>
+      )}
     </ThemeProvider>
   );
 }

@@ -18,13 +18,45 @@ export function useAuthListener() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Fetch extended user profile from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
-        } else {
-          // First-time user — create profile
-          const newUser: User = {
+        try {
+          // Fetch extended user profile from Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            // Ensure the data matches our User interface
+            const user: User = {
+              id: firebaseUser.uid,
+              email: userData.email || firebaseUser.email || '',
+              displayName: userData.displayName || userData.name || firebaseUser.displayName || 'User',
+              avatarUrl: userData.avatarUrl || firebaseUser.photoURL || null,
+              phone: userData.phone || '',
+              rating: userData.rating || 0,
+              reviewCount: userData.reviewCount || 0,
+              verified: userData.verified || false,
+              createdAt: userData.createdAt || userData.created_at?.toMillis?.() || Date.now(),
+              bio: userData.bio,
+            };
+            setUser(user);
+          } else {
+            // First-time user — create profile
+            const newUser: User = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email ?? '',
+              displayName: firebaseUser.displayName ?? 'User',
+              avatarUrl: firebaseUser.photoURL,
+              phone: '',
+              rating: 0,
+              reviewCount: 0,
+              verified: false,
+              createdAt: Date.now(),
+            };
+            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+            setUser(newUser);
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+          // Fallback to basic Firebase user data
+          const fallbackUser: User = {
             id: firebaseUser.uid,
             email: firebaseUser.email ?? '',
             displayName: firebaseUser.displayName ?? 'User',
@@ -35,12 +67,12 @@ export function useAuthListener() {
             verified: false,
             createdAt: Date.now(),
           };
-          await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-          setUser(newUser);
+          setUser(fallbackUser);
         }
       } else {
         setUser(null);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();

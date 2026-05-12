@@ -147,6 +147,6 @@ export type RootStackParamList = {
   'order/[id]': { id: string };
   'chat/[id]': { id: string };
   'payment/midtrans': { token: string; orderId: string };
-  'auth/login': undefined;
-  'auth/register': undefined;
+  '(auth)/login': undefined;
+  '(auth)/register': undefined;
 };
