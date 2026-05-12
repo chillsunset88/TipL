@@ -1,3 +1,5 @@
+//TipL/app/(auth)/login.tsx
+
 /**
  * TipL — Login Screen (Merged Version)
  * Premium UI from teammate + Firebase Logic from v1
@@ -24,8 +26,7 @@ import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
 
-// Logic Firebase kamu (pindah ke folder services sesuai struktur baru)
-import { loginWithEmail } from '@/src/services/firebase';
+import { loginWithEmail } from '@/src/services/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -148,22 +149,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Social Buttons */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-google" size={22} color={Colors.nearBlack} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-apple" size={22} color={Colors.nearBlack} />
-            </TouchableOpacity>
-          </View>
 
           {/* Register Link */}
           <View style={styles.registerRow}>
@@ -244,39 +229,11 @@ const styles = StyleSheet.create({
     right: 16,
     top: 40, // Disesuaikan dengan posisi label Input custom
   },
-  forgotButton: { alignSelf: 'flex-end', marginTop: -Spacing.sm },
+  forgotButton: { alignSelf: 'center' },
   forgotText: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.primary,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: Spacing.xl,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.midGray },
-  dividerText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.gray,
-    marginHorizontal: Spacing.base,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.base,
-    marginBottom: Spacing['2xl'],
-  },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.midGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.offWhite,
   },
   registerRow: { flexDirection: 'row', justifyContent: 'center' },
   registerText: {
