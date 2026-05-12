@@ -1,22 +1,19 @@
-/**
- * TipL — Root Layout
- * Global providers: fonts (Playfair Display + Inter), auth listener, navigation.
- */
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { onAuthChange } from '@/src/services/supabase';
+import type { User } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   PlayfairDisplay_400Regular,
   PlayfairDisplay_700Bold,
 } from '@expo-google-fonts/playfair-display';
-
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -28,10 +25,7 @@ import { Colors } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 
 export { ErrorBoundary } from 'expo-router';
-
-export const unstable_settings = {
-  initialRouteName: '(tabs)',
-};
+export const unstable_settings = { initialRouteName: '(tabs)' };
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,22 +44,16 @@ const TipLTheme = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    // Serif — Playfair Display
     PlayfairDisplay: PlayfairDisplay_400Regular,
     'PlayfairDisplay-Bold': PlayfairDisplay_700Bold,
-    // Sans — Inter
     'Inter-Regular': Inter_400Regular,
     'Inter-Medium': Inter_500Medium,
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
-    // FontAwesome for vector icons fallback
     ...FontAwesome.font,
   });
 
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
+  useEffect(() => { if (error) throw error; }, [error]);
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -73,71 +61,59 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  
 
+  if (!loaded) return null;
   return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const segments = useSegments();
+
+  // Auth listener pakai onAuthChange dari supabase.js
+  useEffect(() => {
+  const unsub = onAuthChange((u: User | null) => {  // ← tambah type di sini
+    setUser(u);
+    setInitializing(false)
+    
+  });
+  return () => unsub();
+}, []);
+
+  // Auth guard
+  useEffect(() => {
+    if (initializing) return;
+    const inAuthGroup = segments[0] === '(auth)';
+    if (!user && !inAuthGroup) {
+      router.replace('/(auth)/login' as any);
+    } else if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, initializing, segments]);
+
+  if (initializing) return null;
+
   return (
     <ThemeProvider value={TipLTheme}>
       <StatusBar style="dark" />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="search"
-          options={{ headerShown: false, presentation: 'card', animation: 'fade' }}
-        />
-        <Stack.Screen
-          name="product/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="auth/login"
-          options={{ headerShown: false, presentation: 'fullScreenModal' }}
-        />
-        <Stack.Screen
-          name="auth/register"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="trip/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="order/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="chat/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="payment/midtrans"
-          options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }}
-        />
-        <Stack.Screen
-          name="profile/settings"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/edit"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/trips"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/payments"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/wishlist"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
+        <Stack.Screen name="search" options={{ headerShown: false, presentation: 'card', animation: 'fade' }} />
+        <Stack.Screen name="product/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="(auth)/login" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="(auth)/register" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="trip/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="order/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="chat/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="payment/midtrans" options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }} />
+        <Stack.Screen name="profile/settings" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="profile/edit" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="profile/trips" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="profile/payments" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="profile/wishlist" options={{ headerShown: false, presentation: 'card' }} />
       </Stack>
     </ThemeProvider>
   );

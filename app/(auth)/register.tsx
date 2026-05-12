@@ -21,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
-import { registerWithEmail } from '@/src/lib/hooks/useAuth';
+import { registerWithEmail } from '@/src/services/supabase';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');

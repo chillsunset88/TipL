@@ -20,20 +20,49 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/co
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Button } from '@/src/components/ui/Button';
 import { MOCK_USERS, MOCK_ORDER } from '@/src/lib/mockData';
+import { logout } from '@/src/services/supabase';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/src/services/supabase';
+import type { User } from '@supabase/supabase-js';
 
 const currentUser = MOCK_USERS[1]; // Adriana V.
 
 export default function ProfileScreen() {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      setProfile(data);
+    });
+  }, []);
+
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: () => router.replace('/(auth)/login'),
+  Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Sign Out',
+      style: 'destructive',
+      onPress: async () => {
+        try {
+          await logout();
+        } catch (err) {
+          Alert.alert('Error', 'Gagal sign out, coba lagi.');
+        }
       },
-    ]);
-  };
+    },
+  ]);
+};
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -54,22 +83,23 @@ export default function ProfileScreen() {
             size="xl"
             verified={currentUser.verified}
           />
-          <Text style={styles.userName}>{currentUser.displayName}</Text>
-          <Text style={styles.userEmail}>{currentUser.email}</Text>
+          <Text style={styles.userName}>{profile?.full_name ?? user?.email ?? 'Loading...'}</Text>
+          <Text style={styles.userEmail}>{user?.email ?? ''}</Text>
+
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>47</Text>
+              <Text style={styles.statValue}>{profile?.total_completed_order ?? 0}</Text>
               <Text style={styles.statLabel}>Orders</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{currentUser.rating}</Text>
+              <Text style={styles.statValue}>{profile?.rating ?? 0}</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statValue}>-</Text>
               <Text style={styles.statLabel}>Trips</Text>
             </View>
           </View>
