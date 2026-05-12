@@ -15,10 +15,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions, FlatList, Platform, RefreshControl, ScrollView, StatusBar, StyleSheet,
-  Text, TouchableOpacity, View, Alert, TouchableWithoutFeedback
+  Text, TouchableOpacity, View, Alert, type GestureResponderEvent
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Carousel from "react-native-reanimated-carousel";
@@ -57,6 +57,24 @@ export default function HomeScreen() {
     await new Promise((r) => setTimeout(r, 1000));
     setRefreshing(false);
   };
+
+  // ── Custom tap detection: distinguishes tap vs swipe ──
+  const touchStart = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
+  const TAP_THRESHOLD = 10; // px — if finger moves more than this, it's a swipe
+
+  const onSlideTouchStart = useCallback((e: GestureResponderEvent) => {
+    const { pageX, pageY } = e.nativeEvent;
+    touchStart.current = { x: pageX, y: pageY, time: Date.now() };
+  }, []);
+
+  const onSlideTouchEnd = useCallback((destination: string) => (e: GestureResponderEvent) => {
+    const { pageX, pageY } = e.nativeEvent;
+    const dx = Math.abs(pageX - touchStart.current.x);
+    const dy = Math.abs(pageY - touchStart.current.y);
+    if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD) {
+      router.push(`/search?destination=${destination}`);
+    }
+  }, []);
 
   return (
     <View style={s.safe}>
@@ -118,15 +136,17 @@ export default function HomeScreen() {
               parallaxScrollingOffset: 45, // Peeks side items
             }}
             renderItem={({ item }) => (
-              <TouchableWithoutFeedback onPress={() => router.push(`/search?destination=${item.destination}`)}>
-                <View style={s.slide}>
-                  <Image source={{ uri: item.imageUrl }} style={s.slideImg} contentFit="cover" transition={300} />
-                  <LinearGradient colors={["transparent", "rgba(0,0,0,0.7)"]} style={s.slideOverlay}>
-                    <Text style={s.slideTitle}>{item.title}</Text>
-                    <Text style={s.slideSub}>{item.subtitle}</Text>
-                  </LinearGradient>
-                </View>
-              </TouchableWithoutFeedback>
+              <View
+                style={s.slide}
+                onTouchStart={onSlideTouchStart}
+                onTouchEnd={onSlideTouchEnd(item.destination)}
+              >
+                <Image source={{ uri: item.imageUrl }} style={s.slideImg} contentFit="cover" transition={300} />
+                <LinearGradient colors={["transparent", "rgba(0,0,0,0.7)"]} style={s.slideOverlay}>
+                  <Text style={s.slideTitle}>{item.title}</Text>
+                  <Text style={s.slideSub}>{item.subtitle}</Text>
+                </LinearGradient>
+              </View>
             )}
           />
           <View style={s.dots}>

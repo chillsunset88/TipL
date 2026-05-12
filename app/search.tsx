@@ -19,16 +19,26 @@ const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function SearchScreen() {
   const { destination } = useLocalSearchParams<{ destination?: string }>();
-  const [query, setQuery] = useState(destination || '');
+  const [query, setQuery] = useState('');
   const inputRef = useRef<TextInput>(null);
   const { history, loadHistory, addSearch, removeSearch, clearAll } = useSearchStore();
   const { t } = useSettingsStore();
 
-  useEffect(() => { loadHistory(); setTimeout(() => inputRef.current?.focus(), 100); }, []);
+  // Only auto-focus keyboard when there's no destination (user tapped search bar)
+  useEffect(() => {
+    loadHistory();
+    if (!destination) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, []);
 
-  const results: JastipProduct[] = query.trim().length > 0
-    ? JASTIP_PRODUCTS.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase()) || p.destination.toLowerCase().includes(query.toLowerCase()))
-    : [];
+  // Filter: search query takes priority, otherwise fall back to destination param
+  const activeFilter = query.trim().length > 0 ? query.trim().toLowerCase() : '';
+  const results: JastipProduct[] = activeFilter
+    ? JASTIP_PRODUCTS.filter((p) => p.name.toLowerCase().includes(activeFilter) || p.category.toLowerCase().includes(activeFilter) || p.destination.toLowerCase().includes(activeFilter))
+    : destination
+      ? JASTIP_PRODUCTS.filter((p) => p.destination.toLowerCase() === destination.toLowerCase())
+      : [];
 
   const handleSubmit = () => { if (query.trim()) { addSearch(query.trim()); Keyboard.dismiss(); } };
 
@@ -36,7 +46,7 @@ export default function SearchScreen() {
 
   const handleProductTap = (p: JastipProduct) => { addSearch(query.trim() || p.name); router.push(`/product/${p.id}`); };
 
-  const showResults = query.trim().length > 0;
+  const showResults = query.trim().length > 0 || !!destination;
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
