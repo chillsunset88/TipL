@@ -1,21 +1,15 @@
-/**
- * TipL — Auth Hook
- * Firebase Auth state observer with Zustand integration.
- */
-
 import { useEffect } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/src/lib/firebase';
+import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/store/authStore';
-import { User } from '@/src/lib/types';
+import { getProfile } from '@/src/services/supabase/profiles';
+import { signIn, signUp, signOut, resetPassword } from '@/src/services/supabase/auth';
 
-/** Subscribe to Firebase Auth state changes */
 export function useAuthListener() {
   const setUser = useAuthStore((s) => s.setUser);
   const setLoading = useAuthStore((s) => s.setLoading);
 
   useEffect(() => {
+<<<<<<< Updated upstream
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         // Fetch extended user profile from Firestore
@@ -29,54 +23,54 @@ export function useAuthListener() {
             email: firebaseUser.email ?? '',
             displayName: firebaseUser.displayName ?? 'User',
             avatarUrl: firebaseUser.photoURL,
+=======
+    setLoading(true);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        try {
+          const profile = await getProfile(session.user.id);
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            displayName: profile?.full_name ?? session.user.email?.split('@')[0] ?? 'User',
+            avatarUrl: profile?.avatar_url ?? null,
+            phone: profile?.phone ?? '',
+            rating: profile?.rating ?? 0,
+            reviewCount: profile?.total_reviews ?? 0,
+            verified: (profile?.total_trips ?? 0) >= 10,
+            createdAt: new Date(profile?.created_at ?? Date.now()).getTime(),
+            bio: profile?.bio ?? undefined,
+            role: (profile?.role as 'tiper' | 'triper') ?? 'tiper',
+          });
+        } catch {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            displayName: session.user.email?.split('@')[0] ?? 'User',
+            avatarUrl: null,
+>>>>>>> Stashed changes
             phone: '',
             rating: 0,
             reviewCount: 0,
             verified: false,
             createdAt: Date.now(),
+<<<<<<< Updated upstream
           };
           await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
           setUser(newUser);
+=======
+            role: 'tiper',
+          });
+>>>>>>> Stashed changes
         }
       } else {
         setUser(null);
       }
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [setUser, setLoading]);
 }
 
-/** Sign in with email + password */
-export async function loginWithEmail(email: string, password: string) {
-  return signInWithEmailAndPassword(auth, email, password);
-}
-
-/** Register with email + password + display name */
-export async function registerWithEmail(
-  email: string,
-  password: string,
-  displayName: string
-) {
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(cred.user, { displayName });
-
-  const newUser: User = {
-    id: cred.user.uid,
-    email,
-    displayName,
-    avatarUrl: null,
-    phone: '',
-    rating: 0,
-    reviewCount: 0,
-    verified: false,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, 'users', cred.user.uid), newUser);
-  return cred;
-}
-
-/** Sign out */
-export async function logoutUser() {
-  return signOut(auth);
-}
+export { signIn as loginWithEmail, signUp as registerWithEmail, signOut as logoutUser, resetPassword };

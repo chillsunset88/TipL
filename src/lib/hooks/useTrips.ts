@@ -1,66 +1,129 @@
-/**
- * TipL — Trips Hook
- * Firestore queries for trip listings with pagination.
- */
+import { useEffect, useState, useCallback } from 'react';
+import { getOpenTrips, getTripById, getMyTrips, createTrip as createTripService, getProductsByTrip, createProduct, uploadProductImage, subscribeToTrips, TripWithProfile } from '@/src/services/supabase/trips';
 
-import { useEffect, useState } from 'react';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  doc,
-  limit,
-} from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
-import { Trip } from '@/src/lib/types';
+export type { TripWithProfile };
+import type { Database } from '@/src/lib/database.types';
 
-/** Listen to active/upcoming trips for the marketplace */
-export function useTrips(maxItems: number = 20) {
-  const [trips, setTrips] = useState<Trip[]>([]);
+type Trip = Database['public']['Tables']['trips']['Row'];
+type Product = Database['public']['Tables']['products']['Row'];
+
+export function useTrips() {
+  const [trips, setTrips] = useState<TripWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getOpenTrips();
+      setTrips(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load trips');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'trips'),
-      where('status', 'in', ['upcoming', 'active']),
-      orderBy('departDate', 'asc'),
-      limit(maxItems)
-    );
+    load();
+    const unsub = subscribeToTrips(setTrips);
+    return () => { unsub(); };
+  }, [load]);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: Trip[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Trip, 'id'>),
-      }));
-      setTrips(data);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [maxItems]);
-
-  return { trips, loading };
+  return { trips, loading, error, refetch: load };
 }
 
-/** Listen to a single trip document */
 export function useTrip(tripId: string | undefined) {
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<TripWithProfile | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!tripId) return;
-
-    const unsubscribe = onSnapshot(doc(db, 'trips', tripId), (snapshot) => {
-      if (snapshot.exists()) {
-        setTrip({ id: snapshot.id, ...snapshot.data() } as Trip);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    setLoading(true);
+    Promise.all([getTripById(tripId), getProductsByTrip(tripId)])
+      .then(([t, p]) => { setTrip(t); setProducts(p); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [tripId]);
 
-  return { trip, loading };
+  return { trip, products, loading };
+}
+
+export function useMyTrips(triperId: string | undefined) {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!triperId) { setLoading(false); return; }
+    setLoading(true);
+    getMyTrips(triperId).then(setTrips).catch(() => {}).finally(() => setLoading(false));
+  }, [triperId]);
+
+  return { trips, loading };
+}
+
+export interface CreateTripPayload {
+  triperId: string;
+  originCountry: string;
+  destinationCountry: string;
+  destinationCity?: string;
+  departureDate: string;
+  returnDate: string;
+  capacityKg?: number;
+  capacityItems?: number;
+  priceRangeMin?: number;
+  priceRangeMax?: number;
+  currency?: string;
+  notes?: string;
+  products?: Array<{
+    name: string;
+    category?: string;
+    priceMin?: number;
+    priceMax?: number;
+    imageUris?: string[];
+  }>;
+}
+
+export async function createTrip(payload: CreateTripPayload): Promise<string> {
+  const trip = await createTripService({
+    triper_id: payload.triperId,
+    origin_country: payload.originCountry,
+    destination_country: payload.destinationCountry,
+    destination_city: payload.destinationCity,
+    departure_date: payload.departureDate,
+    return_date: payload.returnDate,
+    capacity_kg: payload.capacityKg,
+    capacity_items: payload.capacityItems,
+    price_range_min: payload.priceRangeMin,
+    price_range_max: payload.priceRangeMax,
+    currency: payload.currency ?? 'IDR',
+    notes: payload.notes,
+    status: 'open',
+  });
+
+  if (payload.products && payload.products.length > 0) {
+    for (const p of payload.products) {
+      const imageUrls: string[] = [];
+      for (const uri of (p.imageUris ?? [])) {
+        try {
+          const url = await uploadProductImage(trip.id, uri);
+          imageUrls.push(url);
+        } catch { /* skip failed uploads */ }
+      }
+      await createProduct({
+        trip_id: trip.id,
+        triper_id: payload.triperId,
+        name: p.name,
+        category: p.category,
+        price_min: p.priceMin,
+        price_max: p.priceMax,
+        currency: payload.currency ?? 'IDR',
+        image_urls: imageUrls,
+      });
+    }
+  }
+
+  return trip.id;
 }

@@ -5,25 +5,33 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Shadows } from '@/src/lib/constants';
+import { useChatStore } from '@/src/store/chatStore';
 
 export default function TabLayout() {
+  const totalUnread = useChatStore((s) => s.totalUnread);
+
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+      }}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.gray,
+        tabBarInactiveTintColor: Colors.midGray,
         tabBarLabelStyle: {
           fontFamily: Typography.medium.fontFamily,
           fontSize: 11,
           marginTop: -2,
+          letterSpacing: 0.2,
         },
         tabBarStyle: {
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.offWhite,
           borderTopWidth: 1,
           borderTopColor: Colors.lightGray,
           height: Platform.OS === 'ios' ? 88 : 65,
@@ -63,6 +71,15 @@ export default function TabLayout() {
         name="chats"
         options={{
           title: 'Chats',
+          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: Colors.primary,
+            fontSize: 10,
+            fontFamily: Typography.bold.fontFamily,
+            minWidth: 18,
+            height: 18,
+            lineHeight: 18,
+          },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
@@ -89,21 +106,3 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  createButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF8E7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    marginTop: -8,
-  },
-  createButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primaryGradientStart,
-    ...Shadows.glow,
-  },
-});

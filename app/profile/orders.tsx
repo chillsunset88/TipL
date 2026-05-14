@@ -13,7 +13,6 @@ import { OrderStatus } from '@/src/lib/constants';
 import { Order } from '@/src/lib/types';
 import { Image } from 'expo-image';
 
-const NAVY = { dark: '#002855', mid: '#003F7F' } as const;
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function OrdersScreen() {
@@ -25,7 +24,7 @@ export default function OrdersScreen() {
       case OrderStatus.DELIVERED:
       case OrderStatus.COMPLETED: return Colors.success;
       case OrderStatus.CANCELLED: return Colors.error;
-      default: return NAVY.mid;
+      default: return Colors.info;
     }
   };
 
@@ -121,5 +120,5 @@ const st = StyleSheet.create({
   itemInfo: { flex: 1, marginLeft: Spacing.md },
   itemName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 2 },
   itemDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginBottom: 4 },
-  itemPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: NAVY.mid },
+  itemPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
 });

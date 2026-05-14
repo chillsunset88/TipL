@@ -17,6 +17,7 @@ export interface User {
   verified: boolean;
   createdAt: number;
   bio?: string;
+  role?: 'tiper' | 'triper';
 }
 
 // ─── Jastip Product ─────────────────────────────────────────────────
@@ -144,6 +145,8 @@ export interface ChatMessage {
   productCard?: ProductCard;
   timestamp: number;
   read: boolean;
+  read_at?: number;
+  orderId?: string;
 }
 
 export interface ChatRoom {

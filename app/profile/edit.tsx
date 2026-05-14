@@ -20,7 +20,12 @@ import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
+<<<<<<< Updated upstream
 import { MOCK_USERS } from '@/src/lib/mockData';
+=======
+import { useAuthStore } from '@/src/store/authStore';
+import { updateProfile as updateSupabaseProfile, uploadAvatar } from '@/src/services/supabase/profiles';
+>>>>>>> Stashed changes
 
 export default function EditProfileScreen() {
   const user = MOCK_USERS[1];
@@ -50,8 +55,25 @@ export default function EditProfileScreen() {
     }
     setLoading(true);
     try {
+<<<<<<< Updated upstream
       // TODO: Update Firestore user doc
       await new Promise((r) => setTimeout(r, 1000));
+=======
+      let finalAvatarUrl = avatarUri;
+      if (avatarUri && avatarUri !== user.avatarUrl && !avatarUri.startsWith('http')) {
+        finalAvatarUrl = await uploadAvatar(user.id, avatarUri);
+      }
+
+      await updateSupabaseProfile(user.id, {
+        full_name: displayName.trim(),
+        phone: phone.trim(),
+        bio: bio.trim(),
+        avatar_url: finalAvatarUrl ?? undefined,
+      });
+
+      setUser({ ...user, displayName: displayName.trim(), phone: phone.trim(), bio: bio.trim(), avatarUrl: finalAvatarUrl ?? null });
+
+>>>>>>> Stashed changes
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);

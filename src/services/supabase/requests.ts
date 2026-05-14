@@ -1,0 +1,60 @@
+import { supabase } from '@/src/lib/supabase';
+import type { Database } from '@/src/lib/database.types';
+
+type CustomRequest = Database['public']['Tables']['custom_requests']['Row'];
+type CustomRequestInsert = Database['public']['Tables']['custom_requests']['Insert'];
+
+const db = supabase as any;
+
+export type CustomRequestWithProfile = CustomRequest & {
+  profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'full_name' | 'avatar_url'> | null;
+};
+
+export async function getOpenRequests(limit = 20, offset = 0): Promise<CustomRequestWithProfile[]> {
+  const { data, error } = await supabase
+    .from('custom_requests')
+    .select('*, profiles(id, full_name, avatar_url)')
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return (data ?? []) as CustomRequestWithProfile[];
+}
+
+export async function getMyRequests(tiperId: string): Promise<CustomRequestWithProfile[]> {
+  const { data, error } = await supabase
+    .from('custom_requests')
+    .select('*, profiles(id, full_name, avatar_url)')
+    .eq('tiper_id', tiperId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as CustomRequestWithProfile[];
+}
+
+export async function createRequest(payload: CustomRequestInsert): Promise<CustomRequest> {
+  const { data, error } = await db
+    .from('custom_requests')
+    .insert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as CustomRequest;
+}
+
+export async function acceptRequest(requestId: string, triperId: string): Promise<void> {
+  const { error } = await db
+    .from('custom_requests')
+    .update({ status: 'taken', taken_by: triperId, updated_at: new Date().toISOString() })
+    .eq('id', requestId);
+  if (error) throw error;
+}
+
+export async function uploadRequestImage(requestId: string, localUri: string): Promise<string> {
+  const response = await fetch(localUri);
+  const blob = await response.blob();
+  const path = `requests/${requestId}/${Date.now()}.jpg`;
+  const { error } = await supabase.storage.from('item-images').upload(path, blob);
+  if (error) throw error;
+  const { data } = supabase.storage.from('item-images').getPublicUrl(path);
+  return data.publicUrl;
+}

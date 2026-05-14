@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF8E7',
+    backgroundColor: Colors.primaryPale,
     borderRadius: BorderRadius.md,
     padding: Spacing.base,
     marginBottom: Spacing.xl,

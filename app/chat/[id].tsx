@@ -1,10 +1,9 @@
 /**
  * TipL — Chat Room Screen
- * Real-time messaging UI with dark theme.
- * Matches Stitch "Chat Room" design.
+ * Real-time messaging with image send, read receipts, and Supabase integration.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,128 +14,156 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import * as ImagePicker from 'expo-image-picker';
+
+import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
-import { ChatMessage, ProductCard } from '@/src/lib/types';
-import { MOCK_CHAT_MESSAGES, MOCK_CHAT_MESSAGES_2, MOCK_CHAT_ROOM, MOCK_USERS } from '@/src/lib/mockData';
-import { ChatRoom as ChatRoomType } from '@/src/lib/types';
+import { useChat } from '@/src/lib/hooks/useChat';
+import { useAuthStore } from '@/src/store/authStore';
+import { useChatStore } from '@/src/store/chatStore';
+import { getProfile } from '@/src/services/supabase/profiles';
+import type { Database } from '@/src/lib/database.types';
+
+type Message = Database['public']['Tables']['messages']['Row'];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CURRENT_USER_ID = 'u2'; // Simulated current user
-
-// Lookup maps for different chat rooms
-const CHAT_ROOMS_MAP: Record<string, ChatRoomType> = {
-  cr1: MOCK_CHAT_ROOM,
-  cr2: {
-    id: 'cr2',
-    participants: ['u2', 'u3'],
-    participantNames: { u2: 'Adriana V.', u3: 'Marcus T.' },
-    participantAvatars: { u2: MOCK_USERS[1].avatarUrl, u3: MOCK_USERS[2].avatarUrl },
-    lastMessage: 'I can pick up the bag from Harrods this weekend!',
-    lastMessageTimestamp: Date.now() - 3600000 * 5,
-    unreadCount: { u2: 2, u3: 0 },
-    createdAt: Date.now() - 86400000 * 2,
-  },
-};
-
-const MESSAGES_MAP: Record<string, ChatMessage[]> = {
-  cr1: MOCK_CHAT_MESSAGES,
-  cr2: MOCK_CHAT_MESSAGES_2,
-};
 
 export default function ChatRoomScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const chatRoom = CHAT_ROOMS_MAP[id ?? 'cr1'] ?? MOCK_CHAT_ROOM;
-  const initialMessages = MESSAGES_MAP[id ?? 'cr1'] ?? MOCK_CHAT_MESSAGES;
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const { id, orderId } = useLocalSearchParams<{ id: string; orderId?: string }>();
+  const user = useAuthStore((s) => s.user);
+  const currentUserId = user?.id ?? '';
+
+  const { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage } = useChat(id);
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
+
+  // The receiver is the other party — for a given orderId context we'd resolve
+  // it from the order, but for the chat screen we accept it as a param or fall back.
+  const { receiverId } = useLocalSearchParams<{ receiverId?: string }>();
+  const otherUserId = receiverId ?? '';
+
   const [inputText, setInputText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [otherUserName, setOtherUserName] = useState('Chat');
+  const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  const otherUserId = chatRoom.participants.find((p) => p !== CURRENT_USER_ID) || '';
-  const otherUserName = chatRoom.participantNames[otherUserId] || 'User';
-  const otherUserAvatar = chatRoom.participantAvatars[otherUserId] || null;
+  // Fetch the other user's profile
+  useEffect(() => {
+    if (!otherUserId) return;
+    getProfile(otherUserId)
+      .then((p) => {
+        if (p) {
+          setOtherUserName(p.full_name || 'User');
+          setOtherUserAvatar(p.avatar_url ?? null);
+        }
+      })
+      .catch(() => {});
+  }, [otherUserId]);
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Track active chat for unread management
+  useEffect(() => {
+    setActiveChatId(id ?? null);
+    return () => setActiveChatId(null);
+  }, [id, setActiveChatId]);
 
-    const newMsg: ChatMessage = {
-      id: `m${Date.now()}`,
-      senderId: CURRENT_USER_ID,
-      senderName: 'You',
-      senderAvatar: MOCK_USERS[1].avatarUrl,
-      text: inputText.trim(),
-      timestamp: Date.now(),
-      read: false,
-    };
+  // Mark messages as read when screen mounts / new messages arrive
+  useEffect(() => {
+    if (!id || messages.length === 0 || !currentUserId) return;
+    markMessagesRead(currentUserId).catch(() => {});
+  }, [messages.length, id, currentUserId, markMessagesRead]);
 
-    setMessages([newMsg, ...messages]);
+  // ─── Send text ──────────────────────────────────────────────────────────
+  const handleSend = useCallback(async () => {
+    const text = inputText.trim();
+    if (!text || sending || !id || !currentUserId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setInputText('');
+    setSending(true);
+    try {
+      await sendMessage(currentUserId, otherUserId, text, id);
+    } catch {
+      Alert.alert('Error', 'Failed to send message.');
+    } finally {
+      setSending(false);
+    }
+  }, [inputText, sending, sendMessage, currentUserId, otherUserId, id]);
+
+  // ─── Send image ──────────────────────────────────────────────────────────
+  const handlePickImage = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0] || !id || !currentUserId) return;
+
+    setUploadingImage(true);
+    try {
+      const url = await uploadChatImage(result.assets[0].uri);
+      await sendImage(currentUserId, otherUserId, url, id);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {
+      Alert.alert('Error', 'Failed to send image.');
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [uploadChatImage, sendImage, currentUserId, otherUserId, id]);
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  const formatTime = (iso: string | null) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatTime = (ts: number) => {
-    const date = new Date(ts);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
-    const isMe = item.senderId === CURRENT_USER_ID;
+  // ─── Message renderer ────────────────────────────────────────────────────
+  const renderMessage = useCallback(({ item }: { item: Message }) => {
+    const isMe = item.sender_id === currentUserId;
 
     return (
       <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
         {!isMe && (
-          <Avatar uri={item.senderAvatar} name={item.senderName} size="sm" />
+          <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
         )}
-        <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
-          {/* Product Card */}
-          {item.productCard && (
-            <View style={styles.productCard}>
-              <Image
-                source={{ uri: item.productCard.imageUrl }}
-                style={styles.productImage}
-                contentFit="cover"
-                transition={200}
-              />
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{item.productCard.name}</Text>
-                {item.productCard.description && (
-                  <Text style={styles.productDesc}>{item.productCard.description}</Text>
-                )}
-                <Text style={styles.productPrice}>{item.productCard.price}</Text>
-              </View>
-            </View>
-          )}
 
-          {/* Image Message */}
-          {item.imageUrl && (
+        <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
+          {/* Image message */}
+          {item.image_url ? (
             <Image
-              source={{ uri: item.imageUrl }}
+              source={{ uri: item.image_url }}
               style={styles.chatImage}
               contentFit="cover"
               transition={200}
             />
-          )}
+          ) : null}
 
           {/* Text */}
-          {item.text && (
+          {item.content ? (
             <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
-              {item.text}
+              {item.content}
             </Text>
-          )}
+          ) : null}
 
-          <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
-            {formatTime(item.timestamp)}
-          </Text>
+          {/* Timestamp + read receipt */}
+          <View style={[styles.metaRow, isMe && styles.metaRowMe]}>
+            <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
+              {formatTime(item.created_at)}
+            </Text>
+            {isMe && <ReadReceipt read={item.read_at !== null} />}
+          </View>
         </View>
       </View>
     );
-  };
+  }, [currentUserId]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -150,9 +177,14 @@ export default function ChatRoomScreen() {
           <Text style={styles.headerName}>{otherUserName}</Text>
           <Text style={styles.headerStatus}>Online</Text>
         </View>
-        <TouchableOpacity style={styles.headerAction}>
-          <Ionicons name="call-outline" size={20} color={Colors.darkTextPrimary} />
-        </TouchableOpacity>
+        {orderId && (
+          <TouchableOpacity
+            style={styles.headerAction}
+            onPress={() => router.push(`/order/${orderId}`)}
+          >
+            <Ionicons name="receipt-outline" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.headerAction}>
           <Ionicons name="ellipsis-vertical" size={20} color={Colors.darkTextPrimary} />
         </TouchableOpacity>
@@ -172,13 +204,26 @@ export default function ChatRoomScreen() {
           inverted
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            loading
+              ? <ActivityIndicator color={Colors.primary} style={{ margin: Spacing.base }} />
+              : null
+          }
         />
 
-        {/* Input Bar */}
+        {/* Input bar */}
         <View style={styles.inputBar}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Ionicons name="add-circle-outline" size={26} color={Colors.darkTextSecondary} />
+          <TouchableOpacity
+            style={styles.attachButton}
+            onPress={handlePickImage}
+            disabled={uploadingImage}
+          >
+            {uploadingImage
+              ? <ActivityIndicator size="small" color={Colors.primary} />
+              : <Ionicons name="image-outline" size={26} color={Colors.darkTextSecondary} />
+            }
           </TouchableOpacity>
+
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
@@ -188,18 +233,19 @@ export default function ChatRoomScreen() {
               onChangeText={setInputText}
               multiline
               maxLength={2000}
+              onSubmitEditing={handleSend}
             />
           </View>
+
           <TouchableOpacity
             style={[styles.sendButton, inputText.trim() && styles.sendButtonActive]}
-            onPress={sendMessage}
-            disabled={!inputText.trim()}
+            onPress={handleSend}
+            disabled={!inputText.trim() || sending}
           >
-            <Ionicons
-              name="send"
-              size={20}
-              color={inputText.trim() ? Colors.white : Colors.darkTextSecondary}
-            />
+            {sending
+              ? <ActivityIndicator size="small" color={Colors.white} />
+              : <Ionicons name="send" size={20} color={inputText.trim() ? Colors.white : Colors.darkTextSecondary} />
+            }
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -207,16 +253,27 @@ export default function ChatRoomScreen() {
   );
 }
 
+// ─── Read receipt indicator ───────────────────────────────────────────────────
+function ReadReceipt({ read }: { read: boolean }) {
+  return (
+    <View style={styles.readReceipt}>
+      <Ionicons
+        name="checkmark-done"
+        size={13}
+        color={read ? Colors.primary : 'rgba(255,255,255,0.5)'}
+      />
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.darkBg,
   },
-  flex: {
-    flex: 1,
-  },
+  flex: { flex: 1 },
 
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -255,7 +312,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Messages
   messageList: {
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
@@ -291,50 +347,27 @@ const styles = StyleSheet.create({
   messageTextMe: {
     color: Colors.white,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  metaRowMe: {
+    justifyContent: 'flex-end',
+    gap: 3,
+  },
   timestamp: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: 10,
     color: Colors.darkTextSecondary,
-    marginTop: Spacing.xs,
-    alignSelf: 'flex-end',
   },
   timestampMe: {
     color: 'rgba(255,255,255,0.6)',
   },
-
-  // Product Card
-  productCard: {
-    backgroundColor: Colors.darkCardLight,
-    borderRadius: BorderRadius.md,
-    overflow: 'hidden',
-    marginBottom: Spacing.sm,
-  },
-  productImage: {
-    width: '100%',
-    height: 140,
-  },
-  productInfo: {
-    padding: Spacing.md,
-  },
-  productName: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.darkTextPrimary,
-  },
-  productDesc: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkTextSecondary,
-    marginTop: 2,
-  },
-  productPrice: {
-    fontFamily: Typography.bold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.primary,
-    marginTop: Spacing.xs,
+  readReceipt: {
+    marginLeft: 2,
   },
 
-  // Chat Image
   chatImage: {
     width: SCREEN_WIDTH * 0.55,
     height: SCREEN_WIDTH * 0.4,
@@ -342,7 +375,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
 
-  // Input Bar
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
