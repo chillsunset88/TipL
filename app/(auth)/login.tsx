@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert,
-} from 'react-native';
-import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+/**
+ * TipL — Login Screen
+ */
+
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { loginWithEmail } from '@/src/lib/hooks/useAuth';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Button } from '@/src/components/ui/Button';
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
+import { signIn } from '@/src/services/supabase/auth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -36,8 +43,8 @@ export default function LoginScreen() {
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await loginWithEmail(email.trim(), password);
-      // Auth listener will update store and navigation will follow
+      await signIn(email.trim(), password);
+      // Auth listener in _layout.tsx will handle navigation
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const msg = err?.message ?? 'Login failed. Please try again.';
@@ -119,22 +126,39 @@ export default function LoginScreen() {
               <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
 
-            {/* Submit */}
-            <TouchableOpacity style={[styles.submitBtn, loading && styles.submitDisabled]} onPress={handleLogin} disabled={loading} activeOpacity={0.85}>
-              <LinearGradient colors={[Colors.primaryLight, Colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.submitGradient}>
-                {loading
-                  ? <ActivityIndicator color={Colors.white} />
-                  : <Text style={styles.submitText}>Sign In</Text>}
-              </LinearGradient>
-            </TouchableOpacity>
+            <Button
+              title="Sign In"
+              onPress={handleLogin}
+              loading={loading}
+              fullWidth
+              size="lg"
+              style={{ marginTop: Spacing.lg }}
+            />
+          </View>
 
-            {/* Register */}
-            <View style={styles.registerRow}>
-              <Text style={styles.registerPrompt}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(auth)/register' as any); }}>
-                <Text style={styles.registerLink}>Create one →</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Social Buttons */}
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialButton}>
+              <Ionicons name="logo-google" size={22} color={Colors.nearBlack} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <Ionicons name="logo-apple" size={22} color={Colors.nearBlack} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Register Link */}
+          <View style={styles.registerRow}>
+            <Text style={styles.registerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+              <Text style={styles.registerLink}>Sign Up</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -207,7 +231,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.offWhite,
+    backgroundColor: Colors.white,
     borderRadius: BorderRadius.md,
     borderWidth: 1.5,
     borderColor: Colors.lightGray,
@@ -228,29 +252,45 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
-
-  forgotBtn: { alignSelf: 'flex-end', marginBottom: Spacing.xl },
+  forgotBtn: { alignSelf: 'flex-end', marginTop: Spacing.xs, marginBottom: Spacing.sm },
   forgotText: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.primary,
   },
 
-  submitBtn: { borderRadius: BorderRadius.lg, overflow: 'hidden', ...Shadows.glow, marginBottom: Spacing.xl },
-  submitDisabled: { opacity: 0.7 },
-  submitGradient: { height: 54, alignItems: 'center', justifyContent: 'center' },
-  submitText: {
-    fontFamily: Typography.bold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.white,
-    letterSpacing: 0.5,
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
   },
-
-  registerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  registerPrompt: {
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.midGray },
+  dividerText: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.gray,
+    marginHorizontal: Spacing.base,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.base,
+    marginBottom: Spacing['2xl'],
+  },
+  socialButton: {
+    width: 56, height: 56,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.midGray,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.offWhite,
+  },
+  registerRow: { flexDirection: 'row', justifyContent: 'center', paddingBottom: Spacing.xl },
+  registerText: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.darkGray,
   },
   registerLink: {
     fontFamily: Typography.semiBold.fontFamily,

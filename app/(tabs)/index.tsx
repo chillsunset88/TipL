@@ -14,15 +14,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-<<<<<<< Updated upstream
-  Dimensions, FlatList, Platform, RefreshControl, ScrollView, StatusBar, StyleSheet,
-  Text, TouchableOpacity, View, Alert, TouchableWithoutFeedback
-=======
   Dimensions, FlatList, Platform, RefreshControl, ScrollView,
   StatusBar, StyleSheet, Text, TouchableOpacity, View, type GestureResponderEvent,
->>>>>>> Stashed changes
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Carousel from "react-native-reanimated-carousel";
@@ -61,8 +56,6 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-<<<<<<< Updated upstream
-=======
   const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const TAP_THRESHOLD = 10;
 
@@ -80,7 +73,6 @@ export default function HomeScreen() {
     }
   }, []);
 
->>>>>>> Stashed changes
   return (
     <View style={s.safe}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.nearBlack} />
@@ -156,17 +148,6 @@ export default function HomeScreen() {
             mode="parallax"
             modeConfig={{ parallaxScrollingScale: 0.9, parallaxScrollingOffset: 45 }}
             renderItem={({ item }) => (
-<<<<<<< Updated upstream
-              <TouchableWithoutFeedback onPress={() => router.push(`/search?destination=${item.destination}`)}>
-                <View style={s.slide}>
-                  <Image source={{ uri: item.imageUrl }} style={s.slideImg} contentFit="cover" transition={300} />
-                  <LinearGradient colors={["transparent", "rgba(0,0,0,0.7)"]} style={s.slideOverlay}>
-                    <Text style={s.slideTitle}>{item.title}</Text>
-                    <Text style={s.slideSub}>{item.subtitle}</Text>
-                  </LinearGradient>
-                </View>
-              </TouchableWithoutFeedback>
-=======
               <View
                 style={s.slide}
                 onTouchStart={onSlideTouchStart}
@@ -186,7 +167,6 @@ export default function HomeScreen() {
                   </View>
                 </LinearGradient>
               </View>
->>>>>>> Stashed changes
             )}
           />
           <View style={s.dots}>
@@ -399,7 +379,6 @@ function TravelerCard({ trip }: { trip: TripWithProfile }) {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  // Header
   header: { backgroundColor: Colors.nearBlack, borderBottomWidth: 2, borderBottomColor: Colors.primary },
   headerSafe: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.base },
   headerRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, paddingTop: Platform.OS === "android" ? Spacing.sm : 0 },
@@ -409,7 +388,6 @@ const s = StyleSheet.create({
   badge: { position: "absolute", top: 2, right: 2, backgroundColor: Colors.error, borderRadius: 10, minWidth: 17, height: 17, alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.nearBlack },
   badgeText: { fontFamily: Typography.bold.fontFamily, fontSize: 9, color: Colors.white },
 
-  // Balance
   balWrap: { backgroundColor: Colors.nearBlack, paddingHorizontal: Spacing.base, paddingBottom: Spacing.base },
   balCard: { flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, paddingHorizontal: Spacing.base, ...Shadows.md },
   balSec: { flex: 1, flexDirection: "row", alignItems: "center", gap: Spacing.sm },
@@ -421,10 +399,8 @@ const s = StyleSheet.create({
   topUpBtn: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary, marginLeft: Spacing.sm },
   topUpTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 11, color: Colors.primary },
 
-  // Scroll
   scroll: { flex: 1, paddingHorizontal: Spacing.xl },
 
-  // Carousel
   carouselWrap: { marginTop: Spacing.lg, marginBottom: Spacing.xl, marginHorizontal: -Spacing.xl, alignItems: "center" },
   slide: { flex: 1, borderRadius: BorderRadius.xl, overflow: "hidden" },
   slideImg: { width: "100%", height: "100%" },
@@ -439,7 +415,6 @@ const s = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.midGray },
   dotActive: { backgroundColor: Colors.primary, width: 22, borderRadius: 3 },
 
-  // Section
   section: { marginBottom: Spacing["2xl"] },
   sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: Spacing.base },
   sectionTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
@@ -447,7 +422,6 @@ const s = StyleSheet.create({
   viewAllRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   viewAll: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 
-  // Products
   prodGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.md },
   prodCard: { width: (SW - Spacing.xl * 2 - Spacing.md) / 2, backgroundColor: Colors.white, borderRadius: BorderRadius.lg, overflow: "hidden", borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm },
   prodImgWrap: { position: "relative" },
@@ -460,7 +434,6 @@ const s = StyleSheet.create({
   prodTravelerRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   prodTravelerTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray, flex: 1 },
 
-  // Destinations
   filterPill: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: 5, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.midGray, gap: 4 },
   filterTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
   destCard: { width: TRENDING_W, height: TRENDING_W * 1.3, borderRadius: BorderRadius.xl, overflow: "hidden", marginRight: TRENDING_GAP, ...Shadows.md },
@@ -471,7 +444,6 @@ const s = StyleSheet.create({
   destPill: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: Spacing.sm, alignSelf: "flex-start", backgroundColor: "rgba(197,162,103,0.2)", paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary },
   destPillTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 10, color: Colors.primary },
 
-  // Trips
   tripsEmpty: { alignItems: "center", paddingVertical: Spacing["2xl"], gap: Spacing.md },
   emptyTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
   postTripBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary },

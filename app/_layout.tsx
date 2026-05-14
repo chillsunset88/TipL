@@ -11,12 +11,9 @@ import { Stack, router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-<<<<<<< Updated upstream
-=======
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
->>>>>>> Stashed changes
 
 import {
   PlayfairDisplay_400Regular,
@@ -85,7 +82,6 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  // ── Auth listener — MUST be mounted here so it runs for the entire app lifetime
   useAuthListener();
 
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -93,27 +89,22 @@ function RootLayoutNav() {
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
-  // ── Navigation guard: redirect based on auth state ──────────────────────────
   useEffect(() => {
-    if (isLoading) return; // Wait until auth state is resolved
+    if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Not signed in — redirect to login
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Already signed in — redirect away from auth screens
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, segments]);
 
-  // ── Deep link handler for Supabase email confirmation ──────────────────────
   useEffect(() => {
     const handleDeepLink = async ({ url }: { url: string }) => {
       if (!url) return;
 
-      // PKCE flow: Supabase redirects with ?code=xxx
       if (url.includes('?code=') || url.includes('&code=')) {
         try {
           const { error } = await supabase.auth.exchangeCodeForSession(url);
@@ -124,7 +115,6 @@ function RootLayoutNav() {
         return;
       }
 
-      // Implicit flow: Supabase redirects with #access_token=xxx
       const hashIndex = url.indexOf('#');
       if (hashIndex !== -1) {
         const hash = url.slice(hashIndex + 1);
@@ -146,10 +136,8 @@ function RootLayoutNav() {
       }
     };
 
-    // Listen for URLs while app is open
     const subscription = Linking.addEventListener('url', handleDeepLink);
 
-    // Handle URL that launched the app (cold start via deep link)
     Linking.getInitialURL().then((url) => {
       if (url) handleDeepLink({ url });
     });
@@ -157,7 +145,6 @@ function RootLayoutNav() {
     return () => subscription.remove();
   }, []);
 
-  // ── Push notification tap handler ───────────────────────────────────────────
   useEffect(() => {
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, string>;
@@ -175,66 +162,6 @@ function RootLayoutNav() {
   }, []);
 
   return (
-<<<<<<< Updated upstream
-    <ThemeProvider value={TipLTheme}>
-      <StatusBar style="dark" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="search"
-          options={{ headerShown: false, presentation: 'card', animation: 'fade' }}
-        />
-        <Stack.Screen
-          name="product/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="auth/login"
-          options={{ headerShown: false, presentation: 'fullScreenModal' }}
-        />
-        <Stack.Screen
-          name="auth/register"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="trip/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="order/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="chat/[id]"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="payment/midtrans"
-          options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }}
-        />
-        <Stack.Screen
-          name="profile/settings"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/edit"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/trips"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/payments"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="profile/wishlist"
-          options={{ headerShown: false, presentation: 'card' }}
-        />
-      </Stack>
-    </ThemeProvider>
-=======
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={TipLTheme}>
         <StatusBar style="dark" />
@@ -242,81 +169,26 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="cart" options={{ presentation: 'card' }} />
-          <Stack.Screen
-            name="search"
-            options={{ presentation: 'card', animation: 'fade' }}
-          />
-          <Stack.Screen
-            name="product/[id]"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="auth/reset"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="trip/[id]"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="trip/create"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="order/[id]"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="chat/[id]"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="payment/midtrans"
-            options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }}
-          />
-          <Stack.Screen
-            name="profile/orders"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="profile/settings"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="profile/edit"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="profile/trips"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="profile/payments"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="profile/wishlist"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="request/create"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="request/index"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="notifications"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="wallet/topup"
-            options={{ headerShown: false, presentation: 'card' }}
-          />
+          <Stack.Screen name="search" options={{ presentation: 'card', animation: 'fade' }} />
+          <Stack.Screen name="product/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="auth/reset" options={{ presentation: 'card' }} />
+          <Stack.Screen name="trip/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="trip/create" options={{ presentation: 'card' }} />
+          <Stack.Screen name="order/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="payment/midtrans" options={{ presentation: 'modal', gestureEnabled: false }} />
+          <Stack.Screen name="profile/orders" options={{ presentation: 'card' }} />
+          <Stack.Screen name="profile/settings" options={{ presentation: 'card' }} />
+          <Stack.Screen name="profile/edit" options={{ presentation: 'card' }} />
+          <Stack.Screen name="profile/trips" options={{ presentation: 'card' }} />
+          <Stack.Screen name="profile/payments" options={{ presentation: 'card' }} />
+          <Stack.Screen name="profile/wishlist" options={{ presentation: 'card' }} />
+          <Stack.Screen name="request/create" options={{ presentation: 'card' }} />
+          <Stack.Screen name="request/index" options={{ presentation: 'card' }} />
+          <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
+          <Stack.Screen name="wallet/topup" options={{ presentation: 'card' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>
->>>>>>> Stashed changes
   );
 }

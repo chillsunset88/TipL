@@ -1,41 +1,21 @@
 /**
  * TipL — Profile / Account Tab
  * Tokopedia-inspired layout: left-aligned profile strip, wallet card,
- * transaction status shortcuts, jastip menu grid, account settings list.
+ * transaction status shortcuts, jastip menu grid.
  */
 
-import { Avatar } from '@/src/components/ui/Avatar';
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
-import { signOut } from '@/src/services/supabase/auth';
-import { useAuthStore } from '@/src/store/authStore';
-import { useWalletStore } from '@/src/store/walletStore';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import React from 'react';
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-<<<<<<< Updated upstream
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
-import { Button } from '@/src/components/ui/Button';
-import { MOCK_USERS, MOCK_ORDER } from '@/src/lib/mockData';
-
-const currentUser = MOCK_USERS[1]; // Adriana V.
-
-export default function ProfileScreen() {
-  const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-=======
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
+import { useAuthStore } from '@/src/store/authStore';
+import { useWalletStore } from '@/src/store/walletStore';
+import { signOut } from '@/src/services/supabase/auth';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
@@ -47,25 +27,18 @@ export default function ProfileScreen() {
   const handleSignOut = () => {
     Alert.alert('Keluar Akun', 'Apakah kamu yakin ingin keluar?', [
       { text: 'Batal', style: 'cancel' },
->>>>>>> Stashed changes
       {
         text: 'Keluar',
         style: 'destructive',
-<<<<<<< Updated upstream
-        onPress: () => router.replace('/(auth)/login'),
-=======
         onPress: async () => {
-          try { await signOut(); } catch { }
+          try { await signOut(); } catch {}
           logout();
           router.replace('/(auth)/login');
         },
->>>>>>> Stashed changes
       },
     ]);
   };
 
-<<<<<<< Updated upstream
-=======
   if (!user) {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
@@ -81,7 +54,6 @@ export default function ProfileScreen() {
     );
   }
 
->>>>>>> Stashed changes
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
@@ -147,20 +119,17 @@ export default function ProfileScreen() {
         <View style={s.card}>
           <View style={s.cardHeaderRow}>
             <Text style={s.cardTitle}>Pesanan Saya</Text>
-            <TouchableOpacity
-              style={s.seeAllBtn}
-              onPress={() => router.push('/profile/orders')}
-            >
+            <TouchableOpacity style={s.seeAllBtn} onPress={() => router.push('/profile/orders')}>
               <Text style={s.seeAllTxt}>Lihat Semua</Text>
               <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
             </TouchableOpacity>
           </View>
           <View style={s.orderRow}>
-            <OrderShortcut icon="time-outline" label="Belum Bayar" color={Colors.warning} onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="refresh-circle-outline" label="Diproses" color={Colors.info} onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="airplane-outline" label="Dikirim" color={Colors.primary} onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="checkmark-circle-outline" label="Selesai" color={Colors.success} onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="star-outline" label="Ulasan" color={Colors.charcoal} onPress={() => router.push('/profile/orders')} />
+            <OrderShortcut icon="time-outline"             label="Belum Bayar"  color={Colors.warning}  onPress={() => router.push('/profile/orders')} />
+            <OrderShortcut icon="refresh-circle-outline"   label="Diproses"     color={Colors.info}     onPress={() => router.push('/profile/orders')} />
+            <OrderShortcut icon="airplane-outline"         label="Dikirim"      color={Colors.primary}  onPress={() => router.push('/profile/orders')} />
+            <OrderShortcut icon="checkmark-circle-outline" label="Selesai"      color={Colors.success}  onPress={() => router.push('/profile/orders')} />
+            <OrderShortcut icon="star-outline"             label="Ulasan"       color={Colors.charcoal} onPress={() => router.push('/profile/orders')} />
           </View>
         </View>
 
@@ -168,9 +137,9 @@ export default function ProfileScreen() {
         <View style={s.card}>
           <Text style={s.cardTitle}>Jastip</Text>
           <View style={s.gridRow}>
-            <GridItem icon="airplane-outline" label="Trip Saya" color={Colors.info} onPress={() => router.push('/profile/trips')} />
-            <GridItem icon="add-circle-outline" label="Buat Trip" color={Colors.primary} onPress={() => router.push('/trip/create')} />
-            <GridItem icon="heart-outline" label="Wishlist" color={Colors.error} onPress={() => router.push('/profile/wishlist')} />
+            <GridItem icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips')} />
+            <GridItem icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
+            <GridItem icon="heart-outline"      label="Wishlist"   color={Colors.error}   onPress={() => router.push('/profile/wishlist')} />
             <GridItem icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
           </View>
         </View>
@@ -178,10 +147,10 @@ export default function ProfileScreen() {
         {/* ── Help & Support ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>Bantuan</Text>
-          <SettingRow icon="help-circle-outline" label="Pusat Bantuan" sub="FAQ & panduan penggunaan" onPress={() => { }} />
-          <SettingRow icon="chatbubble-ellipses-outline" label="Hubungi Kami" sub="Chat dengan tim TipL" onPress={() => { }} />
-          <SettingRow icon="document-text-outline" label="Syarat & Ketentuan" sub="Kebijakan privasi" onPress={() => { }} />
-          <SettingRow icon="information-circle-outline" label="Tentang TipL" sub="Versi 1.0.0" onPress={() => { }} last />
+          <SettingRow icon="help-circle-outline"         label="Pusat Bantuan"      sub="FAQ & panduan penggunaan"  onPress={() => {}} />
+          <SettingRow icon="chatbubble-ellipses-outline" label="Hubungi Kami"        sub="Chat dengan tim TipL"      onPress={() => {}} />
+          <SettingRow icon="document-text-outline"       label="Syarat & Ketentuan"  sub="Kebijakan privasi"         onPress={() => {}} />
+          <SettingRow icon="information-circle-outline"  label="Tentang TipL"        sub="Versi 1.0.0"               onPress={() => {}} last />
         </View>
 
         {/* ── Sign out ── */}
@@ -264,33 +233,12 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
   scroll: { flex: 1 },
 
-  // Auth required
   authRequired: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
   authTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack, marginTop: Spacing.md },
   authSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
   signInBtn: { marginTop: Spacing.xl, backgroundColor: Colors.primary, paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.md, borderRadius: BorderRadius.full },
   signInTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 
-  // Top bar
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  topTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack },
-  topActions: { flexDirection: 'row', gap: Spacing.xs },
-  topIconBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  // Profile strip (white bg, left-aligned like Tokopedia)
   profileStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -302,244 +250,82 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.lightGray,
   },
   profileInfo: { flex: 1 },
-  profileName: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-  },
-  profileEmail: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    marginTop: 2,
-  },
+  profileName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  profileEmail: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginTop: 2 },
   editBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    marginTop: Spacing.xs,
-    backgroundColor: Colors.primaryPale,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
+    flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+    marginTop: Spacing.xs, backgroundColor: Colors.primaryPale,
+    paddingHorizontal: Spacing.sm, paddingVertical: 3,
+    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primaryLight,
   },
   editBadgeTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 11, color: Colors.primary },
+  topActions: { flexDirection: 'row', gap: Spacing.xs },
+  topIconBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.offWhite,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
-  // Wallet card
   walletCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.white,
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    gap: Spacing.md,
-    ...Shadows.sm,
+    marginHorizontal: Spacing.xl, marginTop: Spacing.md,
+    borderRadius: BorderRadius.lg, padding: Spacing.base,
+    borderWidth: 1, borderColor: Colors.lightGray,
+    gap: Spacing.md, ...Shadows.sm,
   },
   walletSec: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   walletIconBox: {
     width: 36, height: 36, borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.cream,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center',
   },
   walletIconGold: { backgroundColor: Colors.primaryPale },
-  walletVal: {
-    fontFamily: Typography.bold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-  },
-  walletLbl: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginTop: 1,
-  },
+  walletVal: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  walletLbl: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
   walletDivider: { width: 1, height: 32, backgroundColor: Colors.lightGray },
   topUpPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Colors.primaryPale,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary,
   },
   topUpTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 11, color: Colors.primary },
 
-  // Card container
   card: {
-    backgroundColor: Colors.white,
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    ...Shadows.sm,
+    backgroundColor: Colors.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,
+    borderRadius: BorderRadius.lg, padding: Spacing.base,
+    borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm,
   },
-  cardTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    marginBottom: Spacing.md,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
+  cardTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.md },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   seeAllTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 
-  // Order shortcuts row (Tokopedia-style)
   orderRow: { flexDirection: 'row', justifyContent: 'space-between' },
   orderShortcut: { flex: 1, alignItems: 'center', paddingHorizontal: 2 },
-  orderIconCircle: {
-    width: 50, height: 50, borderRadius: 25,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  orderIconLabel: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 10,
-    color: Colors.charcoal,
-    textAlign: 'center',
-    lineHeight: 13,
-  },
+  orderIconCircle: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
+  orderIconLabel: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.charcoal, textAlign: 'center', lineHeight: 13 },
 
-  // Jastip grid
   gridRow: { flexDirection: 'row', justifyContent: 'space-around' },
   gridItem: { alignItems: 'center', flex: 1, paddingVertical: Spacing.xs },
-  gridIcon: {
-    width: 54, height: 54,
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  gridLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.charcoal,
-    textAlign: 'center',
-  },
+  gridIcon: { width: 54, height: 54, borderRadius: BorderRadius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
+  gridLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, textAlign: 'center' },
 
-  // Settings rows (Tokopedia-style: icon + label + subtitle)
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    gap: Spacing.md,
-  },
+  settingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
   settingRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
-  settingIconBox: {
-    width: 38, height: 38,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
+  settingIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   settingInfo: { flex: 1 },
-  settingLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-  },
-  settingSub: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginTop: 2,
-  },
+  settingLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  settingSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 2 },
 
-  // Sign out
-  signOutWrap: {
-    alignItems: 'center',
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.md,
-    gap: Spacing.md,
-  },
+  signOutWrap: { alignItems: 'center', marginHorizontal: Spacing.xl, marginTop: Spacing.md, gap: Spacing.md },
   signOutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-<<<<<<< Updated upstream
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.md, borderWidth: 1,
+    borderColor: Colors.errorLight, backgroundColor: Colors.errorLight,
+    alignSelf: 'stretch', justifyContent: 'center',
   },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-  },
-
-  // Menu
-  menuCard: {
-    backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.base,
-    paddingHorizontal: Spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.md,
-  },
-  menuLabel: {
-    flex: 1,
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-  },
-  menuBadge: {
-    backgroundColor: '#FFF8E7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-  },
-  menuBadgeText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 10,
-    color: Colors.primary,
-=======
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.errorLight,
-    backgroundColor: Colors.errorLight,
-    alignSelf: 'stretch',
-    justifyContent: 'center',
-  },
-  signOutTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.error,
-  },
-  versionTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.gray,
->>>>>>> Stashed changes
-  },
+  signOutTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.error },
+  versionTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
 });

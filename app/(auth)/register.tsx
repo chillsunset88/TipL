@@ -1,3 +1,7 @@
+/**
+ * TipL — Register Screen
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
@@ -6,16 +10,10 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-<<<<<<< Updated upstream
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
-import { Input } from '@/src/components/ui/Input';
-import { Button } from '@/src/components/ui/Button';
-import { registerWithEmail } from '@/src/lib/hooks/useAuth';
-=======
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { registerWithEmail } from '@/src/lib/hooks/useAuth';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { signUp } from '@/src/services/supabase/auth';
 
 type Role = 'tiper' | 'triper';
 
@@ -23,7 +21,6 @@ const ROLES: Array<{ id: Role; emoji: string; title: string; desc: string }> = [
   { id: 'tiper', emoji: '🛍️', title: 'Tiper (Buyer)', desc: 'I want to request items from travelers' },
   { id: 'triper', emoji: '✈️', title: 'Triper (Traveler)', desc: 'I travel and bring items for others' },
 ];
->>>>>>> Stashed changes
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
@@ -57,13 +54,13 @@ export default function RegisterScreen() {
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-<<<<<<< Updated upstream
-      await registerWithEmail(email.trim(), password, name.trim());
-      router.replace('/(tabs)');
-=======
-      await registerWithEmail(email.trim(), password, fullName.trim(), role);
+      await signUp(email.trim(), password, fullName.trim(), role);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
->>>>>>> Stashed changes
+      Alert.alert(
+        'Account Created!',
+        'Please check your email to verify your account, then sign in.',
+        [{ text: 'OK', onPress: () => router.back() }],
+      );
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Registration Failed', err?.message ?? 'Please try again.');
@@ -199,7 +196,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.base, paddingVertical: Spacing.base },
   backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
-  content: { paddingHorizontal: Spacing.base, gap: 0 },
+  content: { paddingHorizontal: Spacing.base },
   subtitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray, marginBottom: Spacing.xl },
   sectionLabel: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
   roleGrid: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.xl },
