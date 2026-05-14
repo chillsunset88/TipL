@@ -1,30 +1,30 @@
 //TipL/app/(auth)/login.tsx
 
 /**
- * TipL — Login Screen (Merged Version)
- * Premium UI from teammate + Firebase Logic from v1
+ * TipL — Login Screen
+ * Premium UI with Supabase Auth
  */
 
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 // Import constants & components sesuai struktur baru
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
-import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
+import { Input } from '@/src/components/ui/Input';
+import { Colors, Spacing, Typography } from '@/src/lib/constants';
 
 import { loginWithEmail } from '@/src/services/supabase';
 
@@ -37,26 +37,25 @@ export default function LoginScreen() {
 
   // Fungsi Validasi dari 
   const validate = () => {
-  const e: Record<string, string> = {}; // Beri tipe di sini
-  if (!email.trim()) e.email = 'Email wajib diisi';
-  else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Format email tidak valid';
-  
-  if (!password) e.password = 'Password wajib diisi';
-  else if (password.length < 6) e.password = 'Password minimal 6 karakter';
-  
-  setErrors(e);
-  return Object.keys(e).length === 0;
-};
+    const e: Record<string, string> = {}; // Beri tipe di sini
+    if (!email.trim()) e.email = 'Email wajib diisi';
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Format email tidak valid';
 
-  // Handler Login dengan Firebase Error Messages kamu
+    if (!password) e.password = 'Password wajib diisi';
+    else if (password.length < 6) e.password = 'Password minimal 6 karakter';
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleLogin = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
       await loginWithEmail(email.trim(), password);
-      router.replace('/(tabs)');
+      // Navigation is handled automatically by the auth guard in _layout.tsx
     } catch (err: any) {
-    Alert.alert('Login Gagal', firebaseErrorMessage(err.code || ''));
+      Alert.alert('Login Gagal', supabaseErrorMessage(err?.message || ''));
     } finally {
       setLoading(false);
     }
@@ -163,20 +162,21 @@ export default function LoginScreen() {
   );
 }
 
-// Fungsi Helper Error Message kamu dari v1
-function firebaseErrorMessage(code: string) {
-  switch (code) {
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential':
-      return 'Email atau password salah.';
-    case 'auth/too-many-requests':
-      return 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.';
-    case 'auth/network-request-failed':
-      return 'Koneksi gagal. Periksa internet kamu.';
-    default:
-      return 'Terjadi kesalahan. Silakan coba lagi.';
+function supabaseErrorMessage(message: string) {
+  const msg = message.toLowerCase();
+  if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
+    return 'Email atau password salah.';
   }
+  if (msg.includes('email not confirmed')) {
+    return 'Email belum diverifikasi. Cek inbox kamu.';
+  }
+  if (msg.includes('too many requests') || msg.includes('rate limit')) {
+    return 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.';
+  }
+  if (msg.includes('network') || msg.includes('fetch')) {
+    return 'Koneksi gagal. Periksa internet kamu.';
+  }
+  return message || 'Terjadi kesalahan. Silakan coba lagi.';
 }
 
 const styles = StyleSheet.create({

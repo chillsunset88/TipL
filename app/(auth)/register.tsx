@@ -49,8 +49,17 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       // Pass phone as empty string initially (can be updated in profile)
-      await registerWithEmail(email.trim(), password, name.trim(), '');
-      router.replace('/(tabs)');
+      const data = await registerWithEmail(email.trim(), password, name.trim(), '');
+
+      // Supabase may require email confirmation before granting a session
+      if (data?.user && !data?.session) {
+        Alert.alert(
+          'Verifikasi Email',
+          'Kami sudah mengirim link verifikasi ke email kamu. Silakan cek inbox dan klik link tersebut, lalu login.',
+          [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+        );
+      }
+      // If session exists, the auth guard in _layout.tsx handles navigation automatically
     } catch (err: any) {
       Alert.alert('Registration Failed', err?.message || 'Please try again.');
     } finally {

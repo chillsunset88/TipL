@@ -6,9 +6,10 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { onAuthChange } from '@/src/services/supabase';
+import { onAuthChange, supabase } from '@/src/services/supabase';
 import type { User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import {
@@ -76,13 +77,46 @@ function RootLayoutNav() {
 
   // Auth listener pakai onAuthChange dari supabase.js
   useEffect(() => {
-  const unsub = onAuthChange((u: User | null) => {  // ← tambah type di sini
-    setUser(u);
-    setInitializing(false)
-    
-  });
-  return () => unsub();
-}, []);
+    const unsub = onAuthChange((u: User | null) => {
+      setUser(u);
+      setInitializing(false);
+    });
+    return () => unsub();
+  }, []);
+
+  // Handle Supabase email confirmation / magic link deep links
+  useEffect(() => {
+    const handleDeepLink = async (url: string | null) => {
+      if (!url) return;
+
+      // PKCE flow: URL contains ?code=xxx
+      const parsed = Linking.parse(url);
+      const code = parsed.queryParams?.code as string | undefined;
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+        return;
+      }
+
+      // Implicit flow fallback: URL fragment contains access_token & refresh_token
+      const fragment = url.split('#')[1];
+      if (fragment) {
+        const params = new URLSearchParams(fragment);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        }
+      }
+    };
+
+    Linking.getInitialURL().then(handleDeepLink);
+
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   // Auth guard
   useEffect(() => {

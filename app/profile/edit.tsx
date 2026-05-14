@@ -1,6 +1,6 @@
 /**
  * TipL — Edit Profile Screen
- * Change avatar, display name, and email.
+ * Change avatar, display name, phone, and bio via Supabase.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -16,34 +16,48 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { Colors, Typography, Spacing } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
-import { auth } from '@/src/lib/firebase';
-import { updateProfile } from 'firebase/auth';
-import { useAuthStore } from '@/src/store/authStore';
-import { updateUserProfile } from '@/src/services/firebase';
+import { supabase, updateUserProfile } from '@/src/services/supabase';
 
 export default function EditProfileScreen() {
-  const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+62');
   const [bio, setBio] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      setDisplayName(user.displayName);
-      setEmail(user.email);
-      setPhone(user.phone || '+62');
-      setBio(user.bio ?? '');
-      setAvatarUri(user.avatarUrl);
-    }
-  }, [user]);
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setUserId(user.id);
+      setEmail(user.email ?? '');
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('full_name, phone_number, bio, profile_image')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setDisplayName(profile.full_name ?? '');
+        setPhone(profile.phone_number ?? '+62');
+        setBio(profile.bio ?? '');
+        setAvatarUri(profile.profile_image ?? null);
+      } else {
+        // Fall back to auth metadata if no DB row yet
+        setDisplayName(user.user_metadata?.name ?? '');
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -58,11 +72,10 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!user) {
+    if (!userId) {
       Alert.alert('Error', 'No authenticated user found.');
       return;
     }
-
     if (!displayName.trim()) {
       Alert.alert('Error', 'Name cannot be empty.');
       return;
@@ -70,22 +83,17 @@ export default function EditProfileScreen() {
 
     setLoading(true);
     try {
-      const updates = {
-        displayName: displayName.trim(),
-        avatarUrl: avatarUri ?? null,
-        phone: phone.trim(),
+      await updateUserProfile(userId, {
+        full_name: displayName.trim(),
+        phone_number: phone.trim(),
         bio: bio.trim(),
-      };
+        profile_image: avatarUri ?? null,
+      });
 
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, {
-          displayName: updates.displayName,
-          ...(updates.avatarUrl ? { photoURL: updates.avatarUrl } : {}),
-        });
-      }
-
-      await updateUserProfile(user.id, updates);
-      setUser({ ...user, ...updates });
+      // Keep auth metadata in sync
+      await supabase.auth.updateUser({
+        data: { name: displayName.trim() },
+      });
 
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
@@ -99,7 +107,6 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
@@ -109,7 +116,6 @@ export default function EditProfileScreen() {
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Avatar */}
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={pickAvatar}>
             <Avatar uri={avatarUri} name={displayName} size="xl" />
@@ -120,7 +126,6 @@ export default function EditProfileScreen() {
           <Text style={styles.changePhotoText}>Tap to change photo</Text>
         </View>
 
-        {/* Form */}
         <Input label="Full Name" value={displayName} onChangeText={setDisplayName} icon="person-outline" />
         <Input label="Email" value={email} editable={false} icon="mail-outline" keyboardType="email-address" autoCapitalize="none" />
         <Input label="Phone Number" value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />

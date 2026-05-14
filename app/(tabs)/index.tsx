@@ -7,6 +7,7 @@ import { Button } from "@/src/components/ui/Button";
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from "@/src/lib/constants";
 import { JASTIP_PRODUCTS, MOCK_TRIPS, TRENDING_DESTINATIONS } from "@/src/lib/mockData";
 import { Trip } from "@/src/lib/types";
+import { supabase, getOrCreateChatRoom } from "@/src/services/supabase";
 import { useCartStore } from "@/src/store/cartStore";
 import { useNotificationStore } from "@/src/store/notificationStore";
 import { useSettingsStore } from "@/src/store/settingsStore";
@@ -222,6 +223,30 @@ function Badge({ count }: { count: number }) {
 
 function TravelerCard({ trip }: { trip: Trip }) {
   const { t } = useSettingsStore();
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleChat = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push('/(auth)/login' as any);
+      return;
+    }
+    if (user.id === trip.travelerId) {
+      Alert.alert('Info', 'This is your own trip.');
+      return;
+    }
+    setChatLoading(true);
+    try {
+      // Pass null for orderId — no order exists yet when chatting from a trip card
+      const roomId = await getOrCreateChatRoom(user.id, trip.travelerId, null);
+      router.push(`/chat/${roomId}`);
+    } catch {
+      Alert.alert('Error', 'Could not open chat. Make sure the database is set up.');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   return (
     <TouchableOpacity style={s.tripCard} activeOpacity={0.7} onPress={() => router.push(`/trip/${trip.id}`)}>
       <View style={s.tripRow}>
@@ -238,7 +263,13 @@ function TravelerCard({ trip }: { trip: Trip }) {
       </View>
       <View style={s.tripFoot}>
         <Text style={s.dateTxt}><Ionicons name="calendar-outline" size={13} color={Colors.darkGray} /> {trip.departDate}</Text>
-        <Button title={t.requestItem} onPress={() => router.push(`/trip/${trip.id}`)} size="sm" variant="secondary" />
+        <View style={s.tripActions}>
+          <TouchableOpacity style={s.chatBtn} onPress={handleChat} disabled={chatLoading} activeOpacity={0.7}>
+            <Ionicons name={chatLoading ? "hourglass-outline" : "chatbubble-outline"} size={16} color={Colors.primary} />
+            <Text style={s.chatBtnTxt}>Chat</Text>
+          </TouchableOpacity>
+          <Button title={t.requestItem} onPress={() => router.push(`/trip/${trip.id}`)} size="sm" variant="secondary" />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -311,4 +342,7 @@ const s = StyleSheet.create({
   routeLine: { width: 16, height: 1.5, backgroundColor: Colors.midGray },
   tripFoot: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: Colors.lightGray, paddingTop: Spacing.md },
   dateTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
+  tripActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  chatBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary, backgroundColor: "transparent" },
+  chatBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 });

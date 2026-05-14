@@ -42,11 +42,15 @@ export const MOCK_USERS: User[] = [
   },
 ];
 
+// Real Supabase UUIDs — update these when trips are loaded from DB
+const SURYA_ID = 'ba5415d4-50d8-470c-95ac-275c21de93fd';
+const STEVEN_ID = '76296dd0-d7ac-4082-afe2-0c4a9417b169';
+
 export const MOCK_TRIPS: Trip[] = [
   {
     id: 't1',
-    travelerId: 'u2',
-    travelerName: 'Adriana V.',
+    travelerId: SURYA_ID,
+    travelerName: 'Surya',
     travelerAvatar: MOCK_USERS[1].avatarUrl,
     travelerRating: 4.9,
     travelerVerified: true,
@@ -68,8 +72,8 @@ export const MOCK_TRIPS: Trip[] = [
   },
   {
     id: 't2',
-    travelerId: 'u3',
-    travelerName: 'Marcus T.',
+    travelerId: SURYA_ID,
+    travelerName: 'Surya',
     travelerAvatar: MOCK_USERS[2].avatarUrl,
     travelerRating: 4.7,
     travelerVerified: true,
@@ -89,8 +93,8 @@ export const MOCK_TRIPS: Trip[] = [
   },
   {
     id: 't3',
-    travelerId: 'u1',
-    travelerName: 'Emi Tanaka',
+    travelerId: STEVEN_ID,
+    travelerName: 'Steven',
     travelerAvatar: MOCK_USERS[0].avatarUrl,
     travelerRating: 4.8,
     travelerVerified: true,

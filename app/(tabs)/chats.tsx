@@ -1,58 +1,43 @@
-/**
- * TipL — Chat List Screen
- * List of active conversations with last message preview.
- */
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
-import { MOCK_CHAT_ROOM, MOCK_USERS } from '@/src/lib/mockData';
-import { ChatRoom } from '@/src/lib/types';
-
-const CURRENT_USER_ID = 'u2';
-
-// Mock multiple chat rooms for the list
-const CHAT_ROOMS: ChatRoom[] = [
-  MOCK_CHAT_ROOM,
-  {
-    id: 'cr2',
-    participants: ['u2', 'u3'],
-    participantNames: { u2: 'Adriana V.', u3: 'Marcus T.' },
-    participantAvatars: {
-      u2: MOCK_USERS[1].avatarUrl,
-      u3: MOCK_USERS[2].avatarUrl,
-    },
-    lastMessage: 'I can pick up the bag from Harrods this weekend!',
-    lastMessageTimestamp: Date.now() - 3600000 * 5,
-    unreadCount: { u2: 2, u3: 0 },
-    createdAt: Date.now() - 86400000 * 2,
-  },
-];
+import { supabase } from '@/src/services/supabase';
+import { useChatRooms } from '@/src/lib/hooks/useChatRooms';
+import { ChatRoomWithParticipant } from '@/src/types/chat';
 
 export default function ChatsScreen() {
-  const formatTime = (ts?: number) => {
-    if (!ts) return '';
-    const diff = Date.now() - ts;
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id);
+    });
+  }, []);
+
+  const { rooms, loading, refresh } = useChatRooms(currentUserId);
+
+  const formatTime = (iso?: string | null) => {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
-  const renderChatItem = ({ item }: { item: ChatRoom }) => {
-    const otherUserId = item.participants.find((p) => p !== CURRENT_USER_ID) || '';
-    const otherName = item.participantNames[otherUserId] || 'User';
-    const otherAvatar = item.participantAvatars[otherUserId] || null;
-    const unread = item.unreadCount[CURRENT_USER_ID] || 0;
+  const renderItem = ({ item }: { item: ChatRoomWithParticipant }) => {
+    const { other_user, unread_count, last_message, last_message_at } = item;
 
     return (
       <TouchableOpacity
@@ -60,24 +45,26 @@ export default function ChatsScreen() {
         activeOpacity={0.7}
         onPress={() => router.push(`/chat/${item.id}`)}
       >
-        <Avatar uri={otherAvatar} name={otherName} size="lg" />
+        <Avatar uri={other_user.profile_image} name={other_user.full_name} size="lg" />
         <View style={styles.chatInfo}>
           <View style={styles.chatTopRow}>
-            <Text style={[styles.chatName, unread > 0 && styles.chatNameUnread]}>
-              {otherName}
+            <Text style={[styles.chatName, unread_count > 0 && styles.chatNameUnread]}>
+              {other_user.full_name || 'User'}
             </Text>
-            <Text style={styles.chatTime}>{formatTime(item.lastMessageTimestamp)}</Text>
+            <Text style={styles.chatTime}>{formatTime(last_message_at)}</Text>
           </View>
           <View style={styles.chatBottomRow}>
             <Text
-              style={[styles.chatPreview, unread > 0 && styles.chatPreviewUnread]}
+              style={[styles.chatPreview, unread_count > 0 && styles.chatPreviewUnread]}
               numberOfLines={1}
             >
-              {item.lastMessage || 'Start a conversation'}
+              {last_message || 'Start a conversation'}
             </Text>
-            {unread > 0 && (
+            {unread_count > 0 && (
               <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>{unread}</Text>
+                <Text style={styles.unreadText}>
+                  {unread_count > 99 ? '99+' : unread_count}
+                </Text>
               </View>
             )}
           </View>
@@ -88,15 +75,10 @@ export default function ChatsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Messages</Text>
-        <TouchableOpacity style={styles.composeButton}>
-          <Ionicons name="create-outline" size={22} color={Colors.nearBlack} />
-        </TouchableOpacity>
       </View>
 
-      {/* Search */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={18} color={Colors.gray} />
@@ -104,33 +86,40 @@ export default function ChatsScreen() {
         </View>
       </View>
 
-      {/* Chat List */}
-      <FlatList
-        data={CHAT_ROOMS}
-        keyExtractor={(item) => item.id}
-        renderItem={renderChatItem}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons name="chatbubbles-outline" size={48} color={Colors.gray} />
-            <Text style={styles.emptyTitle}>No conversations yet</Text>
-            <Text style={styles.emptySubtext}>
-              Start chatting with travelers to arrange your jastip orders.
-            </Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={rooms}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={Colors.primary} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="chatbubbles-outline" size={48} color={Colors.gray} />
+              <Text style={styles.emptyTitle}>No conversations yet</Text>
+              <Text style={styles.emptySubtext}>
+                Tap "Chat" on a trip card to start talking with a traveler.
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
+  safe: { flex: 1, backgroundColor: Colors.white },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -143,20 +132,8 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.xl,
     color: Colors.nearBlack,
   },
-  composeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
-  // Search
-  searchContainer: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.md,
-  },
+  searchContainer: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.md },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -172,19 +149,14 @@ const styles = StyleSheet.create({
     color: Colors.gray,
   },
 
-  // List
-  list: {
-    paddingHorizontal: Spacing.xl,
-  },
+  list: { paddingHorizontal: Spacing.xl },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: Spacing.base,
     gap: Spacing.md,
   },
-  chatInfo: {
-    flex: 1,
-  },
+  chatInfo: { flex: 1 },
   chatTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -196,9 +168,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
-  chatNameUnread: {
-    fontFamily: Typography.semiBold.fontFamily,
-  },
+  chatNameUnread: { fontFamily: Typography.semiBold.fontFamily },
   chatTime: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.xs,
@@ -234,12 +204,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.white,
   },
-  separator: {
-    height: 1,
-    backgroundColor: Colors.lightGray,
-  },
+  separator: { height: 1, backgroundColor: Colors.lightGray },
 
-  // Empty
   emptyState: {
     alignItems: 'center',
     paddingTop: Spacing['5xl'],
