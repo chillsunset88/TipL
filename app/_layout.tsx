@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -107,6 +108,15 @@ function RootLayoutNav() {
           await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
         }
       }
+
+      // Xendit Redirects
+      if (url.includes('payment-finished')) {
+        Alert.alert('Payment Success', 'Your payment has been processed successfully!', [
+          { text: 'View Orders', onPress: () => router.push('/profile/orders') }
+        ]);
+      } else if (url.includes('payment-failed')) {
+        Alert.alert('Payment Failed', 'Something went wrong with your payment. Please try again.');
+      }
     };
 
     Linking.getInitialURL().then(handleDeepLink);
@@ -143,10 +153,13 @@ function RootLayoutNav() {
         <Stack.Screen name="trip/[id]" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="order/[id]" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="chat/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="cart" options={{ headerShown: false }} />
         <Stack.Screen name="payment/midtrans" options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }} />
+        <Stack.Screen name="payment/xendit-qr" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="profile/settings" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="profile/trips" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="profile/orders" options={{ headerShown: false }} />
         <Stack.Screen name="profile/payments" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="profile/wishlist" options={{ headerShown: false, presentation: 'card' }} />
       </Stack>

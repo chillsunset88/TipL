@@ -5,7 +5,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
@@ -13,11 +13,14 @@ import { useCartStore } from '@/src/store/cartStore';
 import { useOrderStore } from '@/src/store/orderStore';
 import { OrderStatus } from '@/src/lib/constants';
 import { Order } from '@/src/lib/types';
+import { createInvoice } from '@/src/lib/xendit';
+import * as WebBrowser from 'expo-web-browser';
 
 const GREEN = '#00AA5B'; // Tokopedia-like green
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function CartScreen() {
+  const insets = useSafeAreaInsets();
   const {
     items,
     selectedItems,
@@ -53,54 +56,73 @@ export default function CartScreen() {
   const total = subtotal + platformFee;
 
   const allSelected = items.length > 0 && selectedItems.length === items.length;
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (selectedItems.length === 0) {
       Alert.alert('No Items Selected', 'Please select at least one item to checkout.');
       return;
     }
 
-    // Create a mock order from the selected items
-    const newOrder: Order = {
-      id: `ord_${Date.now()}`,
-      orderNumber: `TPL-${Math.floor(Math.random() * 10000)}`,
-      requestId: `req_${Date.now()}`,
-      tripId: 't1',
-      travelerId: selectedItemsData[0].travelerId,
-      travelerName: selectedItemsData[0].travelerName,
-      buyerId: 'u2',
-      buyerName: 'Adriana V.',
-      itemName: selectedItemsData.length === 1 ? selectedItemsData[0].name : `${selectedItemsData.length} Items`,
-      itemDescription: selectedItemsData.map((i) => `${i.quantity}x ${i.name}`).join(', '),
-      itemImageUrl: selectedItemsData[0]?.imageUrl || null,
-      quantity: selectedItemsData.reduce((sum, i) => sum + i.quantity, 0),
-      status: OrderStatus.PAYMENT_CONFIRMED,
-      timeline: [
-        { status: OrderStatus.PENDING, label: 'Order Placed', timestamp: Date.now() - 60000 },
-        { status: OrderStatus.PAYMENT_CONFIRMED, label: 'Payment Confirmed', timestamp: Date.now() },
-        { status: OrderStatus.ITEM_PURCHASED, label: 'Item Purchased', timestamp: null },
-      ],
-      paymentSummary: {
-        itemPrice: subtotal,
-        travelerFee: 0,
-        platformFee: platformFee,
-        totalAmount: total,
-        currency: 'IDR',
-      },
-      proofOfPurchaseUrls: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    setIsProcessing(true);
 
-    setOrders([newOrder, ...orders]);
-    // Remove selected items from cart
-    selectedItems.forEach((id) => removeItem(id));
+    const externalId = `TPL-${Date.now()}`;
 
-    Alert.alert('Success', 'Order placed successfully!', [
-      { text: 'View Orders', onPress: () => router.replace('/profile/orders') },
-    ]);
+    try {
+      // Generate Invoice via Xendit
+      // Using a dummy email for the sandbox demo
+      const invoiceData = await createInvoice(externalId, total, 'customer@example.com');
+
+      // Create the mock order (but keep it in PENDING until payment confirmed)
+      const newOrder: Order = {
+        id: `ord_${Date.now()}`,
+        orderNumber: externalId,
+        requestId: `req_${Date.now()}`,
+        tripId: 't1',
+        travelerId: selectedItemsData[0].travelerId,
+        travelerName: selectedItemsData[0].travelerName,
+        buyerId: 'u2',
+        buyerName: 'Adriana V.',
+        itemName: selectedItemsData.length === 1 ? selectedItemsData[0].name : `${selectedItemsData.length} Items`,
+        itemDescription: selectedItemsData.map((i) => `${i.quantity}x ${i.name}`).join(', '),
+        itemImageUrl: selectedItemsData[0]?.imageUrl || null,
+        quantity: selectedItemsData.reduce((sum, i) => sum + i.quantity, 0),
+        status: OrderStatus.PENDING,
+        timeline: [
+          { status: OrderStatus.PENDING, label: 'Order Placed', timestamp: Date.now() },
+          { status: OrderStatus.PAYMENT_CONFIRMED, label: 'Payment Confirmed', timestamp: null },
+        ],
+        paymentSummary: {
+          itemPrice: subtotal,
+          travelerFee: 0,
+          platformFee: platformFee,
+          totalAmount: total,
+          currency: 'IDR',
+        },
+        proofOfPurchaseUrls: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      setOrders([newOrder, ...orders]);
+      
+      // Remove selected items from cart
+      selectedItems.forEach((id) => removeItem(id));
+
+      setIsProcessing(false);
+
+      // Open Xendit Invoice in WebBrowser
+      if (invoiceData.invoice_url) {
+        await WebBrowser.openBrowserAsync(invoiceData.invoice_url);
+      } else {
+        throw new Error('Invoice URL not found');
+      }
+
+    } catch (err: any) {
+      setIsProcessing(false);
+      Alert.alert('Payment Error', err.message || 'Could not generate invoice');
+    }
   };
-
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
       {/* Header */}
@@ -122,7 +144,11 @@ export default function CartScreen() {
         </View>
       </View>
 
-      <ScrollView style={st.body} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={st.body} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+      >
         {items.length === 0 ? (
           <View style={st.empty}>
             <Ionicons name="cart-outline" size={64} color={Colors.midGray} />
@@ -194,7 +220,7 @@ export default function CartScreen() {
 
       {/* Bottom Bar */}
       {items.length > 0 && (
-        <View style={st.bottomBar}>
+        <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
           <TouchableOpacity style={st.selectAllRow} onPress={() => toggleAllSelection(!allSelected)}>
             <Ionicons
               name={allSelected ? 'checkbox' : 'square-outline'}
@@ -210,12 +236,14 @@ export default function CartScreen() {
           </View>
 
           <TouchableOpacity
-            style={[st.buyBtn, selectedItems.length === 0 && st.buyBtnDisabled]}
+            style={[st.buyBtn, (selectedItems.length === 0 || isProcessing) && st.buyBtnDisabled]}
             activeOpacity={0.8}
             onPress={handleCheckout}
-            disabled={selectedItems.length === 0}
+            disabled={selectedItems.length === 0 || isProcessing}
           >
-            <Text style={st.buyTxt}>Beli ({selectedItems.length})</Text>
+            <Text style={st.buyTxt}>
+              {isProcessing ? 'Processing...' : `Beli (${selectedItems.length})`}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
