@@ -52,12 +52,12 @@ function mapRequest(r: CustomRequestWithProfile): CustomRequest {
     description: r.description ?? '',
     maxBudget: r.budget_max ?? 0,
     currency: r.currency ?? 'IDR',
-    category: r.category ?? 'other',
+    category: (r as any).category ?? 'other',
     targetCountries: r.target_country ? [r.target_country] : [],
     referenceUrl: r.item_url ?? null,
     imageUrl: (r.image_urls as string[] | null)?.[0] ?? null,
     status: (r.status === 'taken' ? 'matched' : r.status) as 'open' | 'matched' | 'closed',
-    createdAt: new Date(r.created_at).getTime(),
+    createdAt: new Date(r.created_at ?? Date.now()).getTime(),
   };
 }
 

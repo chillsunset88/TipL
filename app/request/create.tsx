@@ -103,11 +103,9 @@ export default function CreateCustomRequestScreen() {
         item_name: productName.trim(),
         item_url: referenceUrl.trim() || undefined,
         description: description.trim() || undefined,
-        category: category || undefined,
         target_country: targetCountries[0] ?? '',
         budget_max: Number(maxBudget),
         currency,
-        status: 'open',
       });
 
       // Upload image after we have the request id

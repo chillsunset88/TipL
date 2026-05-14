@@ -55,5 +55,5 @@ export function subscribeToNotifications(userId: string, onNotif: (n: Notificati
       onNotif(payload.new as Notification);
     })
     .subscribe();
-  return () => supabase.removeChannel(channel);
+  return () => { supabase.removeChannel(channel); };
 }

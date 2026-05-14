@@ -20,20 +20,17 @@ import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
-<<<<<<< Updated upstream
-import { MOCK_USERS } from '@/src/lib/mockData';
-=======
 import { useAuthStore } from '@/src/store/authStore';
 import { updateProfile as updateSupabaseProfile, uploadAvatar } from '@/src/services/supabase/profiles';
->>>>>>> Stashed changes
 
 export default function EditProfileScreen() {
-  const user = MOCK_USERS[1];
-  const [displayName, setDisplayName] = useState(user.displayName);
-  const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState(user.phone || '+62');
-  const [bio, setBio] = useState(user.bio || '');
-  const [avatarUri, setAvatarUri] = useState<string | null>(user.avatarUrl);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '+62');
+  const [bio, setBio] = useState(user?.bio ?? '');
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatarUrl ?? null);
   const [loading, setLoading] = useState(false);
 
   const pickAvatar = async () => {
@@ -53,12 +50,9 @@ export default function EditProfileScreen() {
       Alert.alert('Error', 'Name cannot be empty.');
       return;
     }
+    if (!user) return;
     setLoading(true);
     try {
-<<<<<<< Updated upstream
-      // TODO: Update Firestore user doc
-      await new Promise((r) => setTimeout(r, 1000));
-=======
       let finalAvatarUrl = avatarUri;
       if (avatarUri && avatarUri !== user.avatarUrl && !avatarUri.startsWith('http')) {
         finalAvatarUrl = await uploadAvatar(user.id, avatarUri);
@@ -73,7 +67,6 @@ export default function EditProfileScreen() {
 
       setUser({ ...user, displayName: displayName.trim(), phone: phone.trim(), bio: bio.trim(), avatarUrl: finalAvatarUrl ?? null });
 
->>>>>>> Stashed changes
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);

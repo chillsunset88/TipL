@@ -65,27 +65,15 @@ function fromSupabase(p: ProductWithTripInfo): DisplayProduct {
 }
 
 export default function SearchScreen() {
-<<<<<<< Updated upstream
-  const { destination } = useLocalSearchParams<{ destination?: string }>();
-  const [query, setQuery] = useState(destination || '');
-=======
   const { destination: destParam } = useLocalSearchParams<{ destination?: string }>();
   const [query, setQuery] = useState('');
   const [selectedDest, setSelectedDest] = useState<string>(destParam ?? '');
   const [results, setResults] = useState<DisplayProduct[]>([]);
   const [loading, setLoading] = useState(false);
->>>>>>> Stashed changes
   const inputRef = useRef<TextInput>(null);
   const { history, loadHistory, addSearch, removeSearch, clearAll } = useSearchStore();
   const { t } = useSettingsStore();
 
-<<<<<<< Updated upstream
-  useEffect(() => { loadHistory(); setTimeout(() => inputRef.current?.focus(), 100); }, []);
-
-  const results: JastipProduct[] = query.trim().length > 0
-    ? JASTIP_PRODUCTS.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase()) || p.destination.toLowerCase().includes(query.toLowerCase()))
-    : [];
-=======
   useEffect(() => {
     loadHistory();
     if (!destParam) setTimeout(() => inputRef.current?.focus(), 100);
@@ -98,7 +86,6 @@ export default function SearchScreen() {
       if (supabaseResults.length > 0) {
         setResults(supabaseResults.map(fromSupabase));
       } else {
-        // Fallback to mock data
         const mock = JASTIP_PRODUCTS.filter((p) => {
           const matchQuery = !q || p.name.toLowerCase().includes(q.toLowerCase()) || p.category.toLowerCase().includes(q.toLowerCase());
           const matchDest = !dest || p.destination.toLowerCase().includes(dest.toLowerCase());
@@ -125,7 +112,6 @@ export default function SearchScreen() {
       setResults([]);
     }
   }, [query, selectedDest, doSearch]);
->>>>>>> Stashed changes
 
   const handleSubmit = () => {
     if (query.trim()) { addSearch(query.trim()); Keyboard.dismiss(); }
@@ -138,9 +124,6 @@ export default function SearchScreen() {
     router.push(`/product/${p.id}`);
   };
 
-<<<<<<< Updated upstream
-  const showResults = query.trim().length > 0;
-=======
   const showResults = query.trim().length > 0 || !!selectedDest;
 
   const priceDisplay = (p: DisplayProduct) => {
@@ -149,7 +132,6 @@ export default function SearchScreen() {
     }
     return fmtIDR(p.priceMin);
   };
->>>>>>> Stashed changes
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>

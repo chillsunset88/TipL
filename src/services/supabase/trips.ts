@@ -101,7 +101,7 @@ export async function getProductsByDestination(destination: string, limit = 8): 
     .select('id')
     .ilike('destination_country', `%${destination}%`)
     .eq('status', 'open');
-  const tripIds = (matchedTrips ?? []).map((t) => t.id);
+  const tripIds = ((matchedTrips ?? []) as { id: string }[]).map((t) => t.id);
   if (tripIds.length === 0) return [];
 
   const { data, error } = await supabase
@@ -123,7 +123,7 @@ export async function searchProducts(query: string, destination?: string, limit 
       .select('id')
       .ilike('destination_country', `%${destination}%`)
       .eq('status', 'open');
-    tripIds = (trips ?? []).map((t) => t.id);
+    tripIds = ((trips ?? []) as { id: string }[]).map((t) => t.id);
     if (tripIds.length === 0) return [];
   }
 

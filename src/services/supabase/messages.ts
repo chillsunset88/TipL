@@ -47,7 +47,7 @@ export async function uploadChatImage(orderId: string, localUri: string): Promis
   return data.publicUrl;
 }
 
-export async function getConversations(userId: string) {
+export async function getConversations(userId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('messages')
     .select('*, orders(id, item_name, status, tiper_id, triper_id)')

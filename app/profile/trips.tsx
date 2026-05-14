@@ -102,8 +102,8 @@ export default function MyTripsScreen() {
                 </View>
                 <View style={styles.tripFooter}>
                   <Badge
-                    label={item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                    variant={statusVariant(item.status)}
+                    label={(item.status ?? 'closed').charAt(0).toUpperCase() + (item.status ?? 'closed').slice(1)}
+                    variant={statusVariant(item.status ?? 'closed')}
                     small
                   />
                   <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
