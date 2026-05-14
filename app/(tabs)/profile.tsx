@@ -19,33 +19,40 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Button } from '@/src/components/ui/Button';
-import { MOCK_USERS, MOCK_ORDER } from '@/src/lib/mockData';
 import { logout } from '@/src/services/supabase';
 import { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { supabase } from '@/src/services/supabase';
 import type { User } from '@supabase/supabase-js';
-
-const currentUser = MOCK_USERS[1]; // Adriana V.
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
+    const loadProfile = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      setUser(userData.user);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
+      if (!userData.user) {
+        setProfile(null);
+        return;
+      }
+
       const { data } = await supabase
         .from('users')
         .select('*')
-        .eq('id', session.user.id)
+        .eq('id', userData.user.id)
         .single();
+
       setProfile(data);
-    });
-  }, []);
+    };
+
+    if (isFocused) {
+      loadProfile();
+    }
+  }, [isFocused]);
 
   const handleLogout = () => {
   Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -78,12 +85,12 @@ export default function ProfileScreen() {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <Avatar
-            uri={currentUser.avatarUrl}
-            name={currentUser.displayName}
+            uri={profile?.profile_image ?? null}
+            name={profile?.full_name ?? user?.user_metadata?.name ?? user?.email ?? 'User'}
             size="xl"
-            verified={currentUser.verified}
+            verified={profile?.is_verified ?? false}
           />
-          <Text style={styles.userName}>{profile?.full_name ?? user?.email ?? 'Loading...'}</Text>
+          <Text style={styles.userName}>{profile?.full_name ?? user?.user_metadata?.name ?? user?.email ?? 'Loading...'}</Text>
           <Text style={styles.userEmail}>{user?.email ?? ''}</Text>
 
 
