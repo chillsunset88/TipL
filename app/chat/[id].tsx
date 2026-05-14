@@ -11,6 +11,7 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -26,17 +27,23 @@ import { ChatMessageWithSender } from '@/src/types/chat';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Approximate height of the input bar (used to pad FlatList so messages
+// aren't hidden behind the absolutely-positioned bar).
+const INPUT_BAR_HEIGHT = 60;
+
 export default function ChatRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
-  // Animated value: lifts the whole chat area when keyboard opens
-  const keyboardPadding = useRef(new Animated.Value(0)).current;
+  // Bottom offset of the absolutely-positioned input bar.
+  // 0   → bar sits at screen bottom (keyboard closed)
+  // > 0 → bar rises above keyboard (keyboard open)
+  const inputBarBottom = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -44,28 +51,27 @@ export default function ChatRoomScreen() {
     });
   }, []);
 
-  // Manual keyboard listener — reliable on Android edge-to-edge
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardVisible(true);
-      Animated.timing(keyboardPadding, {
+      setKeyboardOpen(true);
+      Animated.timing(inputBarBottom, {
         toValue: e.endCoordinates.height,
-        // iOS: keyboardWillShow fires before keyboard appears → animate smoothly
-        // Android: keyboardDidShow fires after keyboard is already visible → jump instantly
+        // iOS fires before keyboard animates → use its duration for a smooth slide.
+        // Android fires AFTER keyboard is visible → jump instantly to avoid lag.
         duration: Platform.OS === 'ios' ? e.duration : 0,
         useNativeDriver: false,
       }).start();
     });
 
     const hideSub = Keyboard.addListener(hideEvent, (e) => {
-      Animated.timing(keyboardPadding, {
+      Animated.timing(inputBarBottom, {
         toValue: 0,
-        duration: Platform.OS === 'ios' ? e.duration : 180,
+        duration: Platform.OS === 'ios' ? e.duration : 150,
         useNativeDriver: false,
-      }).start(() => setKeyboardVisible(false));
+      }).start(() => setKeyboardOpen(false));
     });
 
     return () => {
@@ -83,6 +89,8 @@ export default function ChatRoomScreen() {
     try {
       await sendMessage(inputText.trim());
       setInputText('');
+    } catch (err: any) {
+      Alert.alert('Failed to send', err?.message ?? 'Unknown error');
     } finally {
       setSending(false);
     }
@@ -137,6 +145,10 @@ export default function ChatRoomScreen() {
     );
   };
 
+  // For an inverted FlatList, paddingTop creates space at the *visual* bottom
+  // (closest to the input bar), so the last message isn't hidden behind the bar.
+  const listBottomPad = INPUT_BAR_HEIGHT + insets.bottom + Spacing.md;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
@@ -150,8 +162,8 @@ export default function ChatRoomScreen() {
         </View>
       </View>
 
-      {/* Animated.View naik saat keyboard muncul, turun saat keyboard tutup */}
-      <Animated.View style={[styles.flex, { paddingBottom: keyboardPadding }]}>
+      {/* Message list — fills space above the absolutely-positioned input bar */}
+      <View style={styles.flex}>
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={Colors.primary} />
@@ -163,7 +175,7 @@ export default function ChatRoomScreen() {
             keyExtractor={(item) => item.id}
             renderItem={renderMessage}
             inverted
-            contentContainerStyle={styles.messageList}
+            contentContainerStyle={[styles.messageList, { paddingTop: listBottomPad }]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
@@ -176,8 +188,20 @@ export default function ChatRoomScreen() {
           />
         )}
 
-        {/* Input Bar */}
-        <View style={[styles.inputBar, { paddingBottom: keyboardVisible ? Spacing.sm : insets.bottom + Spacing.sm }]}>
+        {/* Input bar — absolutely positioned so it slides up with the keyboard */}
+        <Animated.View
+          style={[
+            styles.inputBar,
+            {
+              bottom: inputBarBottom,
+              // When keyboard is open the bar already sits above the nav area;
+              // when closed we need insets.bottom so content clears the gesture bar.
+              paddingBottom: keyboardOpen
+                ? Spacing.sm
+                : insets.bottom + Spacing.sm,
+            },
+          ]}
+        >
           <TouchableOpacity style={styles.attachButton} onPress={handlePickImage} disabled={sending}>
             <Ionicons name="image-outline" size={26} color={Colors.darkTextSecondary} />
           </TouchableOpacity>
@@ -204,8 +228,8 @@ export default function ChatRoomScreen() {
               color={inputText.trim() ? Colors.white : Colors.darkTextSecondary}
             />
           </TouchableOpacity>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -235,7 +259,7 @@ const styles = StyleSheet.create({
     color: Colors.darkTextPrimary,
   },
 
-  messageList: { paddingHorizontal: Spacing.base, paddingVertical: Spacing.md },
+  messageList: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.md },
   messageRow: {
     flexDirection: 'row',
     marginBottom: Spacing.md,
@@ -280,10 +304,13 @@ const styles = StyleSheet.create({
   },
 
   inputBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Colors.darkBorder,
     backgroundColor: Colors.darkBg,

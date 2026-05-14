@@ -17,21 +17,20 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
     let active = true;
 
     const init = async () => {
-      // Reset unread count when opening room
       await supabase.rpc('reset_unread_count', {
         p_chat_room_id: chatRoomId,
         p_user_id: currentUserId,
       });
 
-      // Load messages with sender info
-      const { data: msgs } = await supabase
+      const { data: msgs, error: msgsErr } = await supabase
         .from('chat_messages')
         .select('*, sender:users!sender_id(id, full_name, profile_image)')
         .eq('chat_room_id', chatRoomId)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      // Get other participant's profile for the header
+      if (msgsErr) console.warn('useChat load error:', msgsErr.message);
+
       const { data: other } = await supabase
         .from('chat_participants')
         .select('users(id, full_name, profile_image)')
@@ -48,9 +47,9 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
 
     init();
 
-    // Realtime: listen for new messages in this room
+    // Unique suffix prevents "cannot add callbacks after subscribe()" on re-runs.
     const channel = supabase
-      .channel(`room-${chatRoomId}`)
+      .channel(`room-${chatRoomId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -60,7 +59,6 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
           filter: `chat_room_id=eq.${chatRoomId}`,
         },
         async (payload) => {
-          // Fetch the new message with sender info
           const { data } = await supabase
             .from('chat_messages')
             .select('*, sender:users!sender_id(id, full_name, profile_image)')
@@ -68,7 +66,11 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
             .single();
 
           if (data && active) {
-            setMessages((prev) => [data as ChatMessageWithSender, ...prev]);
+            setMessages((prev) => {
+              // Deduplicate: optimistic update may have already added this message
+              if (prev.some((m) => m.id === (data as ChatMessageWithSender).id)) return prev;
+              return [data as ChatMessageWithSender, ...prev];
+            });
           }
         }
       )
@@ -83,11 +85,24 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
   const sendMessage = useCallback(
     async (text: string) => {
       if (!chatRoomId || !currentUserId || !text.trim()) return;
-      await supabase.from('chat_messages').insert({
-        chat_room_id: chatRoomId,
-        sender_id: currentUserId,
-        text: text.trim(),
-      });
+
+      // Insert and immediately fetch the full row (with sender info) so we can
+      // add it to local state right away without waiting for realtime.
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          chat_room_id: chatRoomId,
+          sender_id: currentUserId,
+          text: text.trim(),
+        })
+        .select('*, sender:users!sender_id(id, full_name, profile_image)')
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setMessages((prev) => [data as ChatMessageWithSender, ...prev]);
+      }
     },
     [chatRoomId, currentUserId]
   );
@@ -101,21 +116,31 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
       const response = await fetch(imageUri);
       const blob = await response.blob();
 
-      const { data: upload, error } = await supabase.storage
+      const { data: upload, error: uploadErr } = await supabase.storage
         .from('chat-images')
         .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
 
-      if (error) throw error;
+      if (uploadErr) throw uploadErr;
 
       const { data: { publicUrl } } = supabase.storage
         .from('chat-images')
         .getPublicUrl(upload.path);
 
-      await supabase.from('chat_messages').insert({
-        chat_room_id: chatRoomId,
-        sender_id: currentUserId,
-        image_url: publicUrl,
-      });
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          chat_room_id: chatRoomId,
+          sender_id: currentUserId,
+          image_url: publicUrl,
+        })
+        .select('*, sender:users!sender_id(id, full_name, profile_image)')
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setMessages((prev) => [data as ChatMessageWithSender, ...prev]);
+      }
     },
     [chatRoomId, currentUserId]
   );

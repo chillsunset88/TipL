@@ -62,7 +62,7 @@ export function useChatRooms(currentUserId: string | undefined) {
     if (!currentUserId) return;
 
     const channel = supabase
-      .channel('inbox-updates')
+      .channel(`inbox-${currentUserId}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'chat_rooms' },
