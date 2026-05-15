@@ -1,16 +1,13 @@
+// app/profile/edit.tsx — MERGED
 /**
  * TipL — Edit Profile Screen
  * Change avatar, display name, phone, and bio via Supabase.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,44 +17,20 @@ import { Colors, Typography, Spacing } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
-import { supabase, updateUserProfile } from '@/src/services/supabase';
+import { useAuthStore } from '@/src/store/authStore';
+import { updateProfile as updateSupabaseProfile, uploadAvatar } from '@/src/services/supabase/profiles';
+import { supabase } from '@/src/lib/supabase';
 
 export default function EditProfileScreen() {
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('+62');
-  const [bio, setBio] = useState('');
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+  const [email] = useState(user?.email ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '+62');
+  const [bio, setBio] = useState(user?.bio ?? '');
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatarUrl ?? null);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setUserId(user.id);
-      setEmail(user.email ?? '');
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('full_name, phone_number, bio, profile_image')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        setDisplayName(profile.full_name ?? '');
-        setPhone(profile.phone_number ?? '+62');
-        setBio(profile.bio ?? '');
-        setAvatarUri(profile.profile_image ?? null);
-      } else {
-        // Fall back to auth metadata if no DB row yet
-        setDisplayName(user.user_metadata?.name ?? '');
-      }
-    };
-
-    loadProfile();
-  }, []);
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -72,7 +45,7 @@ export default function EditProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!userId) {
+    if (!user) {
       Alert.alert('Error', 'No authenticated user found.');
       return;
     }
@@ -83,16 +56,32 @@ export default function EditProfileScreen() {
 
     setLoading(true);
     try {
-      await updateUserProfile(userId, {
+      // Upload avatar dulu kalau ada perubahan (URI lokal, bukan URL)
+      let finalAvatarUrl = avatarUri;
+      if (avatarUri && avatarUri !== user.avatarUrl && !avatarUri.startsWith('http')) {
+        finalAvatarUrl = await uploadAvatar(user.id, avatarUri);
+      }
+
+      // Update profil di DB
+      await updateSupabaseProfile(user.id, {
         full_name: displayName.trim(),
-        phone_number: phone.trim(),
+        phone: phone.trim(),
         bio: bio.trim(),
-        profile_image: avatarUri ?? null,
+        avatar_url: finalAvatarUrl ?? undefined,
       });
 
-      // Keep auth metadata in sync
+      // Sync auth metadata supaya konsisten
       await supabase.auth.updateUser({
         data: { name: displayName.trim() },
+      });
+
+      // Update Zustand store
+      setUser({
+        ...user,
+        displayName: displayName.trim(),
+        phone: phone.trim(),
+        bio: bio.trim(),
+        avatarUrl: finalAvatarUrl ?? null,
       });
 
       Alert.alert('Saved', 'Your profile has been updated.', [
@@ -115,7 +104,11 @@ export default function EditProfileScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={pickAvatar}>
             <Avatar uri={avatarUri} name={displayName} size="xl" />
@@ -156,12 +149,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center',
   },
   headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack,
+    fontFamily: Typography.serifBold.fontFamily,
+    fontSize: Typography.sizes.md,
+    color: Colors.nearBlack,
   },
   container: { flex: 1, paddingHorizontal: Spacing.xl },
-  avatarSection: {
-    alignItems: 'center', paddingVertical: Spacing['2xl'],
-  },
+  avatarSection: { alignItems: 'center', paddingVertical: Spacing['2xl'] },
   cameraBadge: {
     position: 'absolute', bottom: 0, right: 0,
     width: 30, height: 30, borderRadius: 15,
@@ -170,7 +163,9 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.white,
   },
   changePhotoText: {
-    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
-    color: Colors.primary, marginTop: Spacing.sm,
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.primary,
+    marginTop: Spacing.sm,
   },
 });

@@ -1,10 +1,10 @@
 /**
  * TipL — Trip Detail Screen
- * Parallax hero, traveler profile, itinerary timeline, category chips.
- * Matches Stitch "Trip Detail" design.
+ * Connected to Supabase via useTrip hook.
+ * Shows hero, triper profile, capacity badges, products, and CTA to request/create.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,208 +12,290 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Badge } from '@/src/components/ui/Badge';
-import { Button } from '@/src/components/ui/Button';
-import { MOCK_TRIPS } from '@/src/lib/mockData';
+import { Skeleton } from '@/src/components/ui/Skeleton';
+import { useTrip } from '@/src/lib/hooks/useTrips';
+import { useAuthStore } from '@/src/store/authStore';
+import * as Haptics from 'expo-haptics';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
+
+// Country → image mapping using picsum (deterministic hash)
+function countryImageUrl(country: string) {
+  const seed = country.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return `https://picsum.photos/seed/${seed}/800/600`;
+}
+
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatPrice(min?: number | null, max?: number | null, currency?: string | null) {
+  if (!min && !max) return null;
+  const c = currency ?? 'IDR';
+  if (min && max) return `${c} ${min.toLocaleString()} – ${max.toLocaleString()}`;
+  if (min) return `${c} ${min.toLocaleString()}+`;
+  return `up to ${c} ${max!.toLocaleString()}`;
+}
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  // In production: const { trip, loading } = useTrip(id);
-  const trip = MOCK_TRIPS.find((t) => t.id === id) || MOCK_TRIPS[0];
+  const { trip, products, loading } = useTrip(id);
+  const user = useAuthStore((s) => s.user);
+  const [wishlisted, setWishlisted] = useState(false);
 
-  const categoryItems = ITEM_CATEGORIES.filter((c) =>
-    trip.categories.includes(c.id)
-  );
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.white }}>
+        <Skeleton width={W} height={W * 0.7} borderRadius={0} />
+        <View style={{ padding: Spacing.xl }}>
+          <Skeleton width={200} height={24} borderRadius={BorderRadius.sm} />
+          <View style={{ marginTop: Spacing.md }}>
+            <Skeleton width={150} height={16} borderRadius={BorderRadius.sm} />
+          </View>
+          <View style={{ marginTop: Spacing.xl }}>
+            <Skeleton width={W - Spacing.xl * 2} height={80} borderRadius={BorderRadius.lg} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' }}
+        edges={['top']}
+      >
+        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+        <Text
+          style={{
+            fontFamily: Typography.semiBold.fontFamily,
+            fontSize: Typography.sizes.md,
+            color: Colors.nearBlack,
+            marginTop: Spacing.md,
+          }}
+        >
+          Trip not found
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: Spacing.base }}>
+          <Text
+            style={{
+              fontFamily: Typography.medium.fontFamily,
+              fontSize: Typography.sizes.base,
+              color: Colors.primary,
+            }}
+          >
+            Go Back
+          </Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const profile = trip.profiles;
+  const priceStr = formatPrice(trip.price_range_min, trip.price_range_max, trip.currency);
+  const isSelf = user?.id === trip.triper_id;
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Hero Image */}
-        <View style={styles.heroContainer}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <View style={styles.hero}>
           <Image
-            source={{ uri: trip.imageUrl || 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800' }}
-            style={styles.heroImage}
+            source={{ uri: countryImageUrl(trip.destination_country) }}
+            style={styles.heroImg}
             contentFit="cover"
             transition={300}
           />
           <LinearGradient
-            colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.6)']}
-            locations={[0, 0.3, 1]}
-            style={styles.heroOverlay}
+            colors={['rgba(0,0,0,0.35)', 'transparent', 'rgba(0,0,0,0.65)']}
+            locations={[0, 0.35, 1]}
+            style={StyleSheet.absoluteFill}
           >
-            {/* Back Button */}
             <SafeAreaView edges={['top']}>
               <View style={styles.heroHeader}>
-                <TouchableOpacity
-                  onPress={() => router.back()}
-                  style={styles.heroBackButton}
-                >
+                <TouchableOpacity onPress={() => router.back()} style={styles.heroBtn}>
                   <Ionicons name="arrow-back" size={22} color={Colors.white} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.heroBackButton}>
-                  <Ionicons name="heart-outline" size={22} color={Colors.white} />
+                <TouchableOpacity
+                  style={styles.heroBtn}
+                  onPress={() => {
+                    setWishlisted((w) => !w);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Ionicons
+                    name={wishlisted ? 'heart' : 'heart-outline'}
+                    size={22}
+                    color={wishlisted ? '#F87171' : Colors.white}
+                  />
                 </TouchableOpacity>
               </View>
             </SafeAreaView>
-
-            {/* Destination Label */}
             <View style={styles.heroContent}>
-              <Text style={styles.heroCity}>{trip.destination},</Text>
-              <Text style={styles.heroCountry}>
-                {trip.itinerary.find((s) => s.city === trip.destination)?.country || ''}
-              </Text>
+              <View style={styles.routeRow}>
+                <Text style={styles.heroOrigin}>{trip.origin_country}</Text>
+                <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.heroDestination}>{trip.destination_country}</Text>
+              </View>
+              {trip.destination_city && (
+                <Text style={styles.heroCity}>{trip.destination_city}</Text>
+              )}
               <Text style={styles.heroDates}>
-                {trip.departDate} — {trip.returnDate}
+                {formatDate(trip.departure_date)} — {formatDate(trip.return_date)}
               </Text>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Traveler Profile */}
-        <View style={styles.profileCard}>
-          <Avatar
-            uri={trip.travelerAvatar}
-            name={trip.travelerName}
-            size="xl"
-            verified={trip.travelerVerified}
-          />
-          <View style={styles.profileInfo}>
-            <View style={styles.profileNameRow}>
-              <Text style={styles.profileName}>{trip.travelerName}</Text>
-              {trip.travelerVerified && (
-                <Badge label="Verified" variant="gold" icon="checkmark-circle" small />
+        {/* Quick info badges */}
+        <View style={styles.badgesRow}>
+          {trip.capacity_kg != null && (
+            <View style={styles.badge}>
+              <Ionicons name="cube-outline" size={14} color={Colors.primary} />
+              <Text style={styles.badgeText}>{trip.capacity_kg} kg</Text>
+            </View>
+          )}
+          {trip.capacity_items != null && (
+            <View style={styles.badge}>
+              <Ionicons name="bag-outline" size={14} color={Colors.secondary} />
+              <Text style={[styles.badgeText, { color: Colors.secondary }]}>{trip.capacity_items} items max</Text>
+            </View>
+          )}
+          {priceStr && (
+            <View style={styles.badge}>
+              <Ionicons name="cash-outline" size={14} color={Colors.success} />
+              <Text style={[styles.badgeText, { color: Colors.success }]}>{priceStr}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Triper profile */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Your Traveler</Text>
+          <View style={styles.profileRow}>
+            <Avatar
+              uri={profile?.avatar_url ?? null}
+              name={profile?.full_name ?? 'Traveler'}
+              size="xl"
+              verified={(profile?.total_trips ?? 0) >= 10}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{profile?.full_name ?? 'Traveler'}</Text>
+              {profile?.rating != null && profile.rating > 0 && (
+                <View style={styles.ratingRow}>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Ionicons
+                      key={s}
+                      name={s <= Math.round(profile.rating ?? 0) ? 'star' : 'star-outline'}
+                      size={14}
+                      color={Colors.warning}
+                    />
+                  ))}
+                  <Text style={styles.ratingText}>{profile.rating.toFixed(1)}</Text>
+                </View>
               )}
-            </View>
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={15} color={Colors.primary} />
-              <Text style={styles.ratingText}>{trip.travelerRating}</Text>
-              <Text style={styles.reviewText}>• Trusted Traveler</Text>
+              <Text style={styles.profileStat}>{profile?.total_trips ?? 0} trips completed</Text>
             </View>
           </View>
         </View>
 
-        {/* Trip Itinerary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Trip Itinerary</Text>
-          {trip.itinerary.map((stop, index) => (
-            <View key={index} style={styles.itineraryRow}>
-              <View style={styles.itineraryDot}>
-                <View
-                  style={[
-                    styles.dot,
-                    index === 0 && styles.dotStart,
-                    index === trip.itinerary.length - 1 && styles.dotEnd,
-                  ]}
-                />
-                {index < trip.itinerary.length - 1 && (
-                  <View style={styles.itineraryLine} />
-                )}
-              </View>
-              <View style={styles.itineraryContent}>
-                <View style={styles.itineraryHeader}>
-                  <Text style={styles.itineraryCity}>{stop.city}</Text>
-                  {index === 0 && (
-                    <Badge label="Origin" variant="info" small />
-                  )}
-                </View>
-                <Text style={styles.itineraryDate}>
-                  {stop.arrivalDate}
-                  {stop.departureDate ? ` — ${stop.departureDate}` : ''}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* What I can bring back */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What I can bring back</Text>
-          <View style={styles.categoryGrid}>
-            {categoryItems.map((cat) => (
-              <View key={cat.id} style={styles.categoryCard}>
-                <View style={styles.categoryIconContainer}>
-                  <Ionicons name={cat.icon as any} size={24} color={Colors.primary} />
-                </View>
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Capacity Info */}
-        {trip.maxWeight && (
-          <View style={styles.capacityCard}>
-            <Ionicons name="cube-outline" size={22} color={Colors.primary} />
-            <View style={styles.capacityInfo}>
-              <Text style={styles.capacityTitle}>Available Capacity</Text>
-              <Text style={styles.capacityValue}>{trip.maxWeight} kg spare luggage</Text>
-            </View>
+        {/* Notes */}
+        {trip.notes && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Traveler's Notes</Text>
+            <Text style={styles.notesText}>{trip.notes}</Text>
           </View>
         )}
 
-        {/* Description */}
-        {trip.description && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notes from Traveler</Text>
-            <Text style={styles.descriptionText}>{trip.description}</Text>
+        {/* Products */}
+        {products.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Available Products</Text>
+            {products.map((p) => (
+              <View key={p.id} style={styles.productRow}>
+                {p.image_urls && p.image_urls.length > 0 ? (
+                  <Image
+                    source={{ uri: p.image_urls[0] }}
+                    style={styles.productThumb}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[styles.productThumb, styles.productThumbEmpty]}>
+                    <Ionicons name="image-outline" size={20} color={Colors.gray} />
+                  </View>
+                )}
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{p.name}</Text>
+                  {p.category && (
+                    <Text style={styles.productCategory}>{p.category}</Text>
+                  )}
+                  {(p.price_min || p.price_max) && (
+                    <Text style={styles.productPrice}>
+                      {formatPrice(p.price_min, p.price_max, p.currency)}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ))}
           </View>
         )}
 
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Fixed Bottom CTA */}
-      <View style={styles.bottomBar}>
-        <Button
-          title="Request Item"
-          onPress={() => router.push('/(tabs)/create')}
-          fullWidth
-          size="lg"
-        />
-      </View>
+      {/* CTA */}
+      {!isSelf && (
+        <View style={styles.cta}>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            activeOpacity={0.85}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push({
+                pathname: '/request/create',
+                params: { tripId: id, triperId: trip.triper_id },
+              });
+            }}
+          >
+            <LinearGradient
+              colors={[Colors.primaryLight, Colors.primaryDark]}
+              style={styles.ctaGrad}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="bag-add-outline" size={22} color={Colors.white} />
+              <Text style={styles.ctaText}>Request Item from This Trip</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
-  scroll: {
-    flex: 1,
-  },
-
-  // Hero
-  heroContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 0.75,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
+  container: { flex: 1, backgroundColor: Colors.white },
+  hero: { width: W, height: W * 0.72 },
+  heroImg: { width: '100%', height: '100%' },
   heroHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.sm,
   },
-  heroBackButton: {
+  heroBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -222,199 +304,139 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xl,
   },
-  heroCity: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes['3xl'],
-    color: Colors.white,
-    lineHeight: 40,
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: 2,
   },
-  heroCountry: {
-    fontFamily: Typography.serif.fontFamily,
-    fontSize: Typography.sizes['3xl'],
-    color: Colors.white,
-    lineHeight: 40,
-  },
-  heroDates: {
+  heroOrigin: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: 'rgba(255,255,255,0.8)',
-    marginTop: Spacing.xs,
   },
-
-  // Profile
-  profileCard: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xl,
-    marginTop: -40,
+  heroDestination: {
+    fontFamily: Typography.serifBold.fontFamily,
+    fontSize: Typography.sizes['2xl'],
+    color: Colors.white,
   },
-  profileInfo: {
-    alignItems: 'center',
-    marginTop: Spacing.md,
-  },
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  profileName: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.lg,
-    color: Colors.nearBlack,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xs,
-    gap: 4,
-  },
-  ratingText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-  },
-  reviewText: {
+  heroCity: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 4,
   },
-
-  // Sections
-  section: {
+  heroDates: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
     paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.base,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primaryPale,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.primaryLight,
+  },
+  badgeText: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.primary,
+  },
+  card: {
+    marginHorizontal: Spacing.xl,
     marginBottom: Spacing.xl,
+    backgroundColor: Colors.offWhite,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+    ...Shadows.sm,
   },
   sectionTitle: {
     fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.lg,
+    fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
     marginBottom: Spacing.base,
   },
-
-  // Itinerary
-  itineraryRow: {
-    flexDirection: 'row',
-    minHeight: 56,
-  },
-  itineraryDot: {
-    alignItems: 'center',
-    width: 24,
-    marginRight: Spacing.md,
-  },
-  dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.midGray,
-    borderWidth: 2,
-    borderColor: Colors.midGray,
-  },
-  dotStart: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  dotEnd: {
-    backgroundColor: Colors.success,
-    borderColor: Colors.success,
-  },
-  itineraryLine: {
-    width: 2,
-    flex: 1,
-    backgroundColor: Colors.midGray,
-    minHeight: 24,
-  },
-  itineraryContent: {
-    flex: 1,
-    paddingBottom: Spacing.lg,
-  },
-  itineraryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  itineraryCity: {
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.base },
+  profileInfo: { flex: 1 },
+  profileName: {
     fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
-  itineraryDate: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    marginTop: 2,
-  },
-
-  // Categories
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-  },
-  categoryCard: {
-    width: (SCREEN_WIDTH - Spacing.xl * 2 - Spacing.md) / 2,
-    backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    alignItems: 'center',
-  },
-  categoryIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF8E7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.sm,
-  },
-  categoryLabel: {
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
+  ratingText: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-    textAlign: 'center',
+    color: Colors.charcoal,
+    marginLeft: 4,
   },
-
-  // Capacity
-  capacityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
-    padding: Spacing.base,
-    backgroundColor: '#FFF8E7',
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-    gap: Spacing.md,
-  },
-  capacityInfo: {
-    flex: 1,
-  },
-  capacityTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-  },
-  capacityValue: {
+  profileStat: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.darkGray,
     marginTop: 2,
   },
-
-  // Description
-  descriptionText: {
+  notesText: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.charcoal,
     lineHeight: 22,
   },
-
-  // Bottom Bar
-  bottomBar: {
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
+  },
+  productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, overflow: 'hidden' },
+  productThumbEmpty: {
+    backgroundColor: Colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productInfo: { flex: 1 },
+  productName: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.nearBlack,
+  },
+  productCategory: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.darkGray,
+    marginTop: 2,
+    textTransform: 'capitalize',
+  },
+  productPrice: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  cta: {
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -426,5 +448,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
     ...Shadows.lg,
+  },
+  ctaBtn: { borderRadius: BorderRadius.xl, overflow: 'hidden' },
+  ctaGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.base,
+    gap: Spacing.sm,
+  },
+  ctaText: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.white,
+    letterSpacing: 0.3,
   },
 });

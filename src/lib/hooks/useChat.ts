@@ -1,8 +1,21 @@
+// src/lib/hooks/useChat.ts
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/src/services/supabase';
+import {
+  getMessages,
+  sendMessage as sendMessageService,
+  sendImageMessage as sendImageMessageService,
+  markMessagesRead as markReadService,
+  uploadChatImage as uploadImageService,
+  subscribeToMessages,
+  resetUnreadCount,
+  getOtherParticipant,
+} from '@/src/services/supabase/messages';
 import { ChatMessageWithSender } from '@/src/types/chat';
 
-export function useChat(chatRoomId: string | undefined, currentUserId: string | undefined) {
+export function useChat(
+  chatRoomId: string | undefined,
+  currentUserId: string | undefined
+) {
   const [messages, setMessages] = useState<ChatMessageWithSender[]>([]);
   const [loading, setLoading] = useState(true);
   const [otherUser, setOtherUser] = useState<{
@@ -17,92 +30,46 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
     let active = true;
 
     const init = async () => {
-      await supabase.rpc('reset_unread_count', {
-        p_chat_room_id: chatRoomId,
-        p_user_id: currentUserId,
-      });
+      // Reset unread count saat chat dibuka
+      await resetUnreadCount(chatRoomId, currentUserId);
 
-      const { data: msgs, error: msgsErr } = await supabase
-        .from('chat_messages')
-        .select('*, sender:users!sender_id(id, full_name, profile_image)')
-        .eq('chat_room_id', chatRoomId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (msgsErr) console.warn('useChat load error:', msgsErr.message);
-
-      const { data: other } = await supabase
-        .from('chat_participants')
-        .select('users(id, full_name, profile_image)')
-        .eq('chat_room_id', chatRoomId)
-        .neq('user_id', currentUserId)
-        .limit(1)
-        .maybeSingle();
+      const [msgs, other] = await Promise.all([
+        getMessages(chatRoomId),
+        getOtherParticipant(chatRoomId, currentUserId),
+      ]);
 
       if (!active) return;
-      setMessages((msgs as ChatMessageWithSender[]) ?? []);
-      if (other?.users) setOtherUser(other.users as any);
+      setMessages(msgs ?? []);
+      if (other) setOtherUser(other);
       setLoading(false);
     };
 
     init();
 
-    // Unique suffix prevents "cannot add callbacks after subscribe()" on re-runs.
-    const channel = supabase
-      .channel(`room-${chatRoomId}-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `chat_room_id=eq.${chatRoomId}`,
-        },
-        async (payload) => {
-          const { data } = await supabase
-            .from('chat_messages')
-            .select('*, sender:users!sender_id(id, full_name, profile_image)')
-            .eq('id', payload.new.id)
-            .single();
-
-          if (data && active) {
-            setMessages((prev) => {
-              // Deduplicate: optimistic update may have already added this message
-              if (prev.some((m) => m.id === (data as ChatMessageWithSender).id)) return prev;
-              return [data as ChatMessageWithSender, ...prev];
-            });
-          }
-        }
-      )
-      .subscribe();
+    // Unique suffix mencegah "cannot add callbacks after subscribe()" saat re-run
+    const unsub = subscribeToMessages(chatRoomId, (newMsg) => {
+      if (!active) return;
+      setMessages((prev) => {
+        // Deduplicate: optimistic update mungkin sudah menambahkan pesan ini
+        if (prev.some((m) => m.id === newMsg.id)) return prev;
+        return [newMsg, ...prev];
+      });
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
+      unsub();
     };
   }, [chatRoomId, currentUserId]);
 
   const sendMessage = useCallback(
     async (text: string) => {
       if (!chatRoomId || !currentUserId || !text.trim()) return;
-
-      // Insert and immediately fetch the full row (with sender info) so we can
-      // add it to local state right away without waiting for realtime.
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          chat_room_id: chatRoomId,
-          sender_id: currentUserId,
-          text: text.trim(),
-        })
-        .select('*, sender:users!sender_id(id, full_name, profile_image)')
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setMessages((prev) => [data as ChatMessageWithSender, ...prev]);
-      }
+      await sendMessageService({
+        chatRoomId,
+        senderId: currentUserId,
+        text: text.trim(),
+      });
     },
     [chatRoomId, currentUserId]
   );
@@ -110,40 +77,28 @@ export function useChat(chatRoomId: string | undefined, currentUserId: string | 
   const sendImage = useCallback(
     async (imageUri: string) => {
       if (!chatRoomId || !currentUserId) return;
-      const ext = imageUri.split('.').pop() ?? 'jpg';
-      const path = `${currentUserId}/${Date.now()}.${ext}`;
-
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-
-      const { data: upload, error: uploadErr } = await supabase.storage
-        .from('chat-images')
-        .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-
-      if (uploadErr) throw uploadErr;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-images')
-        .getPublicUrl(upload.path);
-
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          chat_room_id: chatRoomId,
-          sender_id: currentUserId,
-          image_url: publicUrl,
-        })
-        .select('*, sender:users!sender_id(id, full_name, profile_image)')
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setMessages((prev) => [data as ChatMessageWithSender, ...prev]);
-      }
+      const publicUrl = await uploadImageService(chatRoomId, currentUserId, imageUri);
+      await sendImageMessageService({
+        chatRoomId,
+        senderId: currentUserId,
+        imageUrl: publicUrl,
+      });
     },
     [chatRoomId, currentUserId]
   );
 
-  return { messages, loading, otherUser, sendMessage, sendImage };
+  const markMessagesRead = useCallback(async () => {
+    if (!chatRoomId || !currentUserId) return;
+    await markReadService(chatRoomId, currentUserId);
+  }, [chatRoomId, currentUserId]);
+
+  const uploadChatImage = useCallback(
+    async (localUri: string): Promise<string> => {
+      if (!chatRoomId || !currentUserId) throw new Error('chatRoomId or currentUserId missing');
+      return uploadImageService(chatRoomId, currentUserId, localUri);
+    },
+    [chatRoomId, currentUserId]
+  );
+
+  return { messages, loading, otherUser, sendMessage, sendImage, markMessagesRead, uploadChatImage };
 }

@@ -1,7 +1,6 @@
 /**
  * TipL — Settings Screen
- * Account settings: Edit Profile, Notifications, Payment Methods, Verification, Help, Terms, Sign Out.
- * Language toggle: English / Bahasa Indonesia.
+ * Shopee-inspired flat list: gray section headers, plain dividers, no card boxes.
  */
 
 import React from 'react';
@@ -18,8 +17,9 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
-import { Button } from '@/src/components/ui/Button';
 import { useSettingsStore } from '@/src/store/settingsStore';
+import { useAuthStore } from '@/src/store/authStore';
+import { signOut } from '@/src/services/supabase/auth';
 import { Locale } from '@/src/lib/i18n';
 
 export default function SettingsScreen() {
@@ -27,6 +27,7 @@ export default function SettingsScreen() {
   const [orderUpdates, setOrderUpdates] = React.useState(true);
   const [chatNotifications, setChatNotifications] = React.useState(true);
   const { locale, setLocale, t } = useSettingsStore();
+  const logout = useAuthStore((s) => s.logout);
 
   const handleLogout = () => {
     Alert.alert(t.signOut, t.signOutConfirm, [
@@ -34,7 +35,11 @@ export default function SettingsScreen() {
       {
         text: t.signOut,
         style: 'destructive',
-        onPress: () => router.replace('/(auth)/login'),
+        onPress: async () => {
+          try { await signOut(); } catch {}
+          logout();
+          router.replace('/(auth)/login');
+        },
       },
     ]);
   };
@@ -45,153 +50,156 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={st.safe} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+      <View style={st.header}>
+        <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
           <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.settings}</Text>
+        <Text style={st.headerTitle}>{t.settings}</Text>
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Account Section */}
-        <Text style={styles.sectionLabel}>{t.account}</Text>
-        <View style={styles.menuCard}>
-          <MenuItem
+      <ScrollView style={st.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ── Akun Saya ── */}
+        <SectionHeader label="Akun Saya" />
+        <View style={st.group}>
+          <RowItem
             icon="person-outline"
             label={t.editProfile}
             onPress={() => router.push('/profile/edit')}
           />
-          <MenuItem
+          <RowItem
             icon="card-outline"
             label={t.paymentMethods}
             onPress={() => router.push('/profile/payments')}
           />
-          <MenuItem
+          <RowItem
             icon="shield-checkmark-outline"
             label={t.verification}
-            subtitle={t.verified}
+            value={t.verified}
             onPress={() => {}}
+            last
           />
         </View>
 
-        {/* Language Section */}
-        <Text style={styles.sectionLabel}>{t.language}</Text>
-        <View style={styles.menuCard}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            activeOpacity={0.7}
-            onPress={toggleLanguage}
-          >
-            <Ionicons name="language-outline" size={22} color={Colors.charcoal} />
-            <Text style={styles.menuLabel}>{t.languageLabel}</Text>
-            <View style={styles.languagePill}>
-              <Text style={styles.languagePillText}>
-                {locale === 'en' ? '🇺🇸 English' : '🇮🇩 Indonesia'}
-              </Text>
+        {/* ── Pengaturan ── */}
+        <SectionHeader label="Pengaturan" />
+        <View style={st.group}>
+          <TouchableOpacity style={st.row} activeOpacity={0.7} onPress={toggleLanguage}>
+            <View style={st.rowLeft}>
+              <Ionicons name="language-outline" size={20} color={Colors.charcoal} />
+              <Text style={st.rowLabel}>{t.languageLabel}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
+            <View style={st.rowRight}>
+              <View style={st.langPill}>
+                <Text style={st.langPillTxt}>{locale === 'en' ? '🇺🇸 EN' : '🇮🇩 ID'}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.gray} />
+            </View>
           </TouchableOpacity>
-        </View>
-
-        {/* Notifications Section */}
-        <Text style={styles.sectionLabel}>{t.notifications}</Text>
-        <View style={styles.menuCard}>
-          <ToggleItem
+          <ToggleRow
             icon="notifications-outline"
             label={t.pushNotifications}
             value={pushNotifications}
             onToggle={setPushNotifications}
           />
-          <ToggleItem
+          <ToggleRow
             icon="receipt-outline"
             label={t.orderUpdates}
             value={orderUpdates}
             onToggle={setOrderUpdates}
           />
-          <ToggleItem
+          <ToggleRow
             icon="chatbubble-outline"
             label={t.chatMessages}
             value={chatNotifications}
             onToggle={setChatNotifications}
+            last
           />
         </View>
 
-        {/* Support Section */}
-        <Text style={styles.sectionLabel}>{t.support}</Text>
-        <View style={styles.menuCard}>
-          <MenuItem
-            icon="help-circle-outline"
-            label={t.helpSupport}
-            onPress={() => {}}
-          />
-          <MenuItem
-            icon="document-text-outline"
-            label={t.termsPrivacy}
-            onPress={() => {}}
-          />
-          <MenuItem
-            icon="information-circle-outline"
-            label={t.aboutApp}
-            subtitle="v1.0.0"
-            onPress={() => {}}
-          />
+        {/* ── Bantuan ── */}
+        <SectionHeader label="Bantuan" />
+        <View style={st.group}>
+          <RowItem icon="help-circle-outline" label={t.helpSupport} onPress={() => {}} />
+          <RowItem icon="document-text-outline" label={t.termsPrivacy} onPress={() => {}} />
+          <RowItem icon="information-circle-outline" label={t.aboutApp} value="v1.0.0" onPress={() => {}} last />
         </View>
 
-        {/* Sign Out */}
-        <Button
-          title={t.signOut}
-          onPress={handleLogout}
-          variant="danger"
-          fullWidth
-          icon={<Ionicons name="log-out-outline" size={20} color={Colors.error} />}
-          style={{ marginTop: Spacing.xl, marginBottom: Spacing['5xl'] }}
-        />
+        {/* ── Sign out ── */}
+        <View style={st.signOutWrap}>
+          <TouchableOpacity style={st.signOutRow} activeOpacity={0.7} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color={Colors.error} />
+            <Text style={st.signOutTxt}>{t.signOut}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 60 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MenuItem({
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <View style={st.sectionHeader}>
+      <Text style={st.sectionLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function RowItem({
   icon,
   label,
-  subtitle,
+  value,
   onPress,
+  last = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
-  subtitle?: string;
+  value?: string;
   onPress: () => void;
+  last?: boolean;
 }) {
   return (
-    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={onPress}>
-      <Ionicons name={icon} size={22} color={Colors.charcoal} />
-      <Text style={styles.menuLabel}>{label}</Text>
-      {subtitle && (
-        <Text style={styles.menuSubtitle}>{subtitle}</Text>
-      )}
-      <Ionicons name="chevron-forward" size={18} color={Colors.gray} />
+    <TouchableOpacity
+      style={[st.row, !last && st.rowBorder]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      <View style={st.rowLeft}>
+        <Ionicons name={icon} size={20} color={Colors.charcoal} />
+        <Text style={st.rowLabel}>{label}</Text>
+      </View>
+      <View style={st.rowRight}>
+        {value && <Text style={st.rowValue}>{value}</Text>}
+        <Ionicons name="chevron-forward" size={16} color={Colors.gray} />
+      </View>
     </TouchableOpacity>
   );
 }
 
-function ToggleItem({
+function ToggleRow({
   icon,
   label,
   value,
   onToggle,
+  last = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: boolean;
-  onToggle: (val: boolean) => void;
+  onToggle: (v: boolean) => void;
+  last?: boolean;
 }) {
   return (
-    <View style={styles.menuItem}>
-      <Ionicons name={icon} size={22} color={Colors.charcoal} />
-      <Text style={styles.menuLabel}>{label}</Text>
+    <View style={[st.row, !last && st.rowBorder]}>
+      <View style={st.rowLeft}>
+        <Ionicons name={icon} size={20} color={Colors.charcoal} />
+        <Text style={st.rowLabel}>{label}</Text>
+      </View>
       <Switch
         value={value}
         onValueChange={onToggle}
@@ -202,18 +210,20 @@ function ToggleItem({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
+const st = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.offWhite },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
   },
-  backButton: {
+  backBtn: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: Colors.offWhite,
     alignItems: 'center', justifyContent: 'center',
@@ -223,52 +233,87 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
-  container: { flex: 1, paddingHorizontal: Spacing.xl },
-  sectionLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 11,
-    color: Colors.darkGray,
-    letterSpacing: 1.2,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.sm,
-    marginLeft: Spacing.xs,
-  },
-  menuCard: {
+
+  scroll: { flex: 1 },
+
+  sectionHeader: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.sm,
     backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    overflow: 'hidden',
   },
-  menuItem: {
+  sectionLabel: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.charcoal,
+    letterSpacing: 0.3,
+  },
+
+  group: {
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: Colors.lightGray,
+  },
+
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 14,
-    paddingHorizontal: Spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    backgroundColor: Colors.white,
+    minHeight: 52,
   },
-  menuLabel: {
-    flex: 1,
-    fontFamily: Typography.medium.fontFamily,
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.lightGray,
+  },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
+  rowRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  rowLabel: {
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
-  menuSubtitle: {
+  rowValue: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.darkGray,
   },
-  languagePill: {
-    backgroundColor: '#EBF2FF',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+
+  langPill: {
+    backgroundColor: Colors.primaryPale,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.primaryLight,
   },
-  languagePillText: {
+  langPillTxt: {
     fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: '#003F7F',
+    fontSize: Typography.sizes.xs,
+    color: Colors.primary,
+  },
+
+  signOutWrap: {
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.xl,
+  },
+  signOutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.errorLight,
+    backgroundColor: Colors.white,
+  },
+  signOutTxt: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.error,
   },
 });

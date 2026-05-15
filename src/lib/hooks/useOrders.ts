@@ -1,69 +1,45 @@
-/**
- * TipL — Orders Hook
- * Real-time Firestore listener for order status (escrow state machine).
- */
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  doc,
-} from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
-import { Order } from '@/src/lib/types';
-import { useOrderStore } from '@/src/store/orderStore';
+  getMyOrders, getOrderById, createOrder as createOrderService,
+  updateOrderStatus as updateOrderStatusService,
+  subscribeToOrder, subscribeToMyOrders, OrderWithProfiles,
+} from '@/src/services/supabase/orders';
 
-/** Listen to a single order document (real-time escrow state) */
 export function useOrder(orderId: string | undefined) {
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<OrderWithProfiles | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!orderId) return;
-
-    const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (snapshot) => {
-      if (snapshot.exists()) {
-        const data = { id: snapshot.id, ...snapshot.data() } as Order;
-        setOrder(data);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    setLoading(true);
+    getOrderById(orderId).then(setOrder).catch(() => {}).finally(() => setLoading(false));
+    const unsub = subscribeToOrder(orderId, setOrder);
+    return () => { unsub(); };
   }, [orderId]);
 
   return { order, loading };
 }
 
-/** Listen to all orders for a user (buyer or traveler) */
-export function useUserOrders(userId: string | undefined) {
-  const setOrders = useOrderStore((s) => s.setOrders);
+export function useMyOrders(userId: string | undefined) {
+  const [orders, setOrders] = useState<OrderWithProfiles[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const load = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    setLoading(true);
+    try { setOrders(await getMyOrders(userId)); } catch { }
+    setLoading(false);
+  }, [userId]);
+
   useEffect(() => {
+    load();
     if (!userId) return;
+    const unsub = subscribeToMyOrders(userId, setOrders);
+    return () => { unsub(); };
+  }, [userId, load]);
 
-    // Listen to orders where user is buyer
-    const buyerQuery = query(
-      collection(db, 'orders'),
-      where('buyerId', '==', userId),
-      orderBy('updatedAt', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(buyerQuery, (snapshot) => {
-      const orders: Order[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Order, 'id'>),
-      }));
-      setOrders(orders);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [userId, setOrders]);
-
-  return { loading };
+  return { orders, loading, refetch: load };
 }
+
+export const updateOrderStatus = updateOrderStatusService;
+export { createOrderService as createOrder };

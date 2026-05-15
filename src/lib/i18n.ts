@@ -63,6 +63,37 @@ export interface Translations {
 
   // General
   nearestStore: string;
+
+  // Create Trip
+  createTrip: string;
+  tripOrigin: string;
+  tripDestination: string;
+  selectCountry: string;
+  searchCountry: string;
+  departureDate: string;
+  returnDate: string;
+  capacityKg: string;
+  priceRange: string;
+  priceMin: string;
+  priceMax: string;
+  currency: string;
+  tripNotes: string;
+  tripNotesPlaceholder: string;
+  addProduct: string;
+  productName: string;
+  productCategory: string;
+  productPhoto: string;
+  addPhoto: string;
+  changePhoto: string;
+  removeProduct: string;
+  submitTrip: string;
+  tripCreated: string;
+  tripCreatedMsg: string;
+  validationRequired: string;
+  validationPriceOrder: string;
+  validationDateOrder: string;
+  validationMinOneDay: string;
+  validationCapacity: string;
 }
 
 const en: Translations = {
@@ -122,6 +153,37 @@ const en: Translations = {
 
   // General
   nearestStore: 'Nearest Store',
+
+  // Create Trip
+  createTrip: 'Create Trip',
+  tripOrigin: 'Origin Country',
+  tripDestination: 'Destination Country',
+  selectCountry: 'Select Country',
+  searchCountry: 'Search country...',
+  departureDate: 'Departure Date',
+  returnDate: 'Return Date',
+  capacityKg: 'Capacity (kg)',
+  priceRange: 'Price Range',
+  priceMin: 'Min Price',
+  priceMax: 'Max Price',
+  currency: 'Currency',
+  tripNotes: 'Notes',
+  tripNotesPlaceholder: 'What items can you bring? Any conditions?',
+  addProduct: 'Add Product',
+  productName: 'Product Name',
+  productCategory: 'Category',
+  productPhoto: 'Product Photo',
+  addPhoto: 'Add Photo',
+  changePhoto: 'Change Photo',
+  removeProduct: 'Remove',
+  submitTrip: 'Publish Trip',
+  tripCreated: 'Trip Published!',
+  tripCreatedMsg: 'Your trip is now visible to buyers.',
+  validationRequired: 'Please fill all required fields.',
+  validationPriceOrder: 'Min price must be less than max price.',
+  validationDateOrder: 'Departure must be before return date.',
+  validationMinOneDay: 'Trip must be at least 1 day.',
+  validationCapacity: 'Capacity must be greater than 0.',
 };
 
 const id: Translations = {
@@ -181,6 +243,37 @@ const id: Translations = {
 
   // General
   nearestStore: 'Toko Terdekat',
+
+  // Create Trip
+  createTrip: 'Buat Perjalanan',
+  tripOrigin: 'Negara Asal',
+  tripDestination: 'Negara Tujuan',
+  selectCountry: 'Pilih Negara',
+  searchCountry: 'Cari negara...',
+  departureDate: 'Tanggal Berangkat',
+  returnDate: 'Tanggal Kembali',
+  capacityKg: 'Kapasitas (kg)',
+  priceRange: 'Rentang Harga',
+  priceMin: 'Harga Min',
+  priceMax: 'Harga Maks',
+  currency: 'Mata Uang',
+  tripNotes: 'Catatan',
+  tripNotesPlaceholder: 'Barang apa yang bisa kamu bawa? Ada syarat tertentu?',
+  addProduct: 'Tambah Produk',
+  productName: 'Nama Produk',
+  productCategory: 'Kategori',
+  productPhoto: 'Foto Produk',
+  addPhoto: 'Tambah Foto',
+  changePhoto: 'Ganti Foto',
+  removeProduct: 'Hapus',
+  submitTrip: 'Publikasi Perjalanan',
+  tripCreated: 'Perjalanan Dipublikasikan!',
+  tripCreatedMsg: 'Perjalananmu kini terlihat oleh pembeli.',
+  validationRequired: 'Harap isi semua kolom yang wajib diisi.',
+  validationPriceOrder: 'Harga min harus lebih kecil dari harga maks.',
+  validationDateOrder: 'Tanggal berangkat harus sebelum tanggal kembali.',
+  validationMinOneDay: 'Perjalanan minimal 1 hari.',
+  validationCapacity: 'Kapasitas harus lebih dari 0.',
 };
 
 const translations: Record<Locale, Translations> = { en, id };

@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { Order } from '@/lib/types';
+import { Order } from '@/src/lib/types';
 
 interface OrderState {
   activeOrder: Order | null;

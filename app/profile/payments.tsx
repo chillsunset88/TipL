@@ -59,7 +59,7 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
   back: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  card: { margin: Spacing.xl, padding: Spacing.xl, backgroundColor: '#FFF8E7', borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.primaryLight, alignItems: 'center' },
+  card: { margin: Spacing.xl, padding: Spacing.xl, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.primaryLight, alignItems: 'center' },
   cardLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
   cardAmount: { fontFamily: Typography.bold.fontFamily, fontSize: 28, color: Colors.nearBlack, marginTop: 4 },
   cardNote: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 4 },

@@ -1,22 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import React, { useEffect, useRef } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-import { onAuthChange, supabase } from '@/src/services/supabase';
-import type { User } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import 'react-native-reanimated';
 
 import {
   PlayfairDisplay_400Regular,
   PlayfairDisplay_700Bold,
 } from '@expo-google-fonts/playfair-display';
+
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -26,9 +23,15 @@ import {
 
 import { Colors } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
+import { useAuthStore } from '@/src/store/authStore';
+import { useAuthListener } from '@/src/lib/hooks/useAuth';
+import { supabase } from '@/src/lib/supabase';
 
 export { ErrorBoundary } from 'expo-router';
-export const unstable_settings = { initialRouteName: '(tabs)' };
+
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,8 +40,8 @@ const TipLTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: Colors.primary,
-    background: Colors.white,
-    card: Colors.white,
+    background: Colors.offWhite,
+    card: Colors.offWhite,
     text: Colors.nearBlack,
     border: Colors.lightGray,
     notification: Colors.primary,
@@ -56,7 +59,10 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  useEffect(() => { if (error) throw error; }, [error]);
+  useEffect(() => {
+    if (error) throw error;
+  }, [error]);
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -64,82 +70,91 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  
-
   if (!loaded) return null;
+
   return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
+  useAuthListener(); // ← ini yang handle auth state, cukup ini saja
+
+  const { isAuthenticated, isLoading } = useAuthStore();
   const segments = useSegments();
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
-  // Auth listener pakai onAuthChange dari supabase.js
+  // Auth guard
   useEffect(() => {
-    const unsub = onAuthChange((u: User | null) => {
-      setUser(u);
-      setInitializing(false);
-    });
-    return () => unsub();
-  }, []);
+    if (isLoading) return; // ganti 'initializing' → 'isLoading' dari store
+    const inAuthGroup = segments[0] === '(auth)';
 
-  // Handle Supabase email confirmation / magic link deep links
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isLoading, segments]);
+
+  // Deep link handler (Supabase PKCE & magic link)
   useEffect(() => {
-    const handleDeepLink = async (url: string | null) => {
+    const handleDeepLink = async ({ url }: { url: string }) => {
       if (!url) return;
 
-      // PKCE flow: URL contains ?code=xxx
-      const parsed = Linking.parse(url);
-      const code = parsed.queryParams?.code as string | undefined;
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
+      if (url.includes('?code=') || url.includes('&code=')) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(url);
+          if (error) console.warn('PKCE exchange error:', error.message);
+        } catch (e) {
+          console.warn('PKCE exchange failed:', e);
+        }
         return;
       }
 
-      // Implicit flow fallback: URL fragment contains access_token & refresh_token
-      const fragment = url.split('#')[1];
-      if (fragment) {
-        const params = new URLSearchParams(fragment);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      const hashIndex = url.indexOf('#');
+      if (hashIndex !== -1) {
+        const hash = url.slice(hashIndex + 1);
+        if (hash.includes('access_token')) {
+          const params = new URLSearchParams(hash);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          if (accessToken && refreshToken) {
+            try {
+              await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+            } catch (e) {
+              console.warn('Session set failed:', e);
+            }
+          }
         }
-      }
-
-      // Xendit Redirects
-      if (url.includes('payment-finished')) {
-        Alert.alert('Payment Success', 'Your payment has been processed successfully!', [
-          { text: 'View Orders', onPress: () => router.push('/profile/orders') }
-        ]);
-      } else if (url.includes('payment-failed')) {
-        Alert.alert('Payment Failed', 'Something went wrong with your payment. Please try again.');
       }
     };
 
-    Linking.getInitialURL().then(handleDeepLink);
-
-    const subscription = Linking.addEventListener('url', (event) => {
-      handleDeepLink(event.url);
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink({ url });
     });
 
     return () => subscription.remove();
   }, []);
 
-  // Auth guard
+  // Notification tap handler
   useEffect(() => {
-    if (initializing) return;
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!user && !inAuthGroup) {
-      router.replace('/(auth)/login' as any);
-    } else if (user && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
-  }, [user, initializing, segments]);
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as Record<string, string>;
+      if (data.type === 'order' && data.orderId) {
+        router.push(`/order/${data.orderId}`);
+      } else if (data.type === 'chat' && data.chatId) {
+        router.push(`/chat/${data.chatId}`);
+      }
+    });
 
-  if (initializing) return null;
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, []);
 
   return (
     <ThemeProvider value={TipLTheme}>
@@ -153,13 +168,10 @@ function RootLayoutNav() {
         <Stack.Screen name="trip/[id]" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="order/[id]" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="chat/[id]" options={{ headerShown: false, presentation: 'card' }} />
-        <Stack.Screen name="cart" options={{ headerShown: false }} />
         <Stack.Screen name="payment/midtrans" options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }} />
-        <Stack.Screen name="payment/xendit-qr" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="profile/settings" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="profile/trips" options={{ headerShown: false, presentation: 'card' }} />
-        <Stack.Screen name="profile/orders" options={{ headerShown: false }} />
         <Stack.Screen name="profile/payments" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="profile/wishlist" options={{ headerShown: false, presentation: 'card' }} />
       </Stack>

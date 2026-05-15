@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+// app/chat/[id].tsx — MERGED
+/**
+ * TipL — Chat Room Screen
+ * Real-time messaging with image send, read receipts, and Supabase integration.
+ */
+
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,8 +16,8 @@ import {
   Animated,
   Platform,
   Dimensions,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -19,38 +25,51 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
-import { supabase } from '@/src/services/supabase';
 import { useChat } from '@/src/lib/hooks/useChat';
-import { ChatMessageWithSender } from '@/src/types/chat';
+import { useAuthStore } from '@/src/store/authStore';
+import { useChatStore } from '@/src/store/chatStore';
+import type { ChatMessage } from '@/src/services/supabase/messages';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Approximate height of the input bar (used to pad FlatList so messages
-// aren't hidden behind the absolutely-positioned bar).
 const INPUT_BAR_HEIGHT = 60;
 
 export default function ChatRoomScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+  const { id, orderId } = useLocalSearchParams<{ id: string; orderId?: string }>();
+  const user = useAuthStore((s) => s.user);
+  const currentUserId = user?.id ?? '';
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
+
+  const {
+    messages,
+    loading,
+    otherUser,
+    sendMessage,
+    sendImage,
+    markMessagesRead,
+    uploadChatImage,
+  } = useChat(id, currentUserId);
+
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
-  // Bottom offset of the absolutely-positioned input bar.
-  // 0   → bar sits at screen bottom (keyboard closed)
-  // > 0 → bar rises above keyboard (keyboard open)
+  // Bottom offset untuk input bar — naik saat keyboard muncul
   const inputBarBottom = useRef(new Animated.Value(0)).current;
 
+  // ─── Track active chat (untuk unread management) ──────────────────────────
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setCurrentUserId(data.user?.id);
-    });
-  }, []);
+    setActiveChatId(id ?? null);
+    return () => setActiveChatId(null);
+  }, [id, setActiveChatId]);
 
+  // ─── Keyboard animation ───────────────────────────────────────────────────
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
@@ -59,8 +78,6 @@ export default function ChatRoomScreen() {
       setKeyboardOpen(true);
       Animated.timing(inputBarBottom, {
         toValue: e.endCoordinates.height,
-        // iOS fires before keyboard animates → use its duration for a smooth slide.
-        // Android fires AFTER keyboard is visible → jump instantly to avoid lag.
         duration: Platform.OS === 'ios' ? e.duration : 0,
         useNativeDriver: false,
       }).start();
@@ -80,73 +97,94 @@ export default function ChatRoomScreen() {
     };
   }, []);
 
-  const { messages, loading, otherUser, sendMessage, sendImage } = useChat(id, currentUserId);
+  // ─── Mark as read saat pesan baru masuk ───────────────────────────────────
+  useEffect(() => {
+    if (!id || messages.length === 0 || !currentUserId) return;
+    markMessagesRead().catch(() => {});
+  }, [messages.length, id, currentUserId, markMessagesRead]);
 
-  const handleSend = async () => {
-    if (!inputText.trim() || sending) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // ─── Send text ────────────────────────────────────────────────────────────
+  const handleSend = useCallback(async () => {
+    const text = inputText.trim();
+    if (!text || sending) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setInputText('');
     setSending(true);
     try {
-      await sendMessage(inputText.trim());
-      setInputText('');
+      await sendMessage(text);
     } catch (err: any) {
       Alert.alert('Failed to send', err?.message ?? 'Unknown error');
     } finally {
       setSending(false);
     }
-  };
+  }, [inputText, sending, sendMessage]);
 
-  const handlePickImage = async () => {
+  // ─── Send image ───────────────────────────────────────────────────────────
+  const handlePickImage = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.85,
     });
-    if (result.canceled) return;
-    setSending(true);
+    if (result.canceled || !result.assets[0]) return;
+
+    setUploadingImage(true);
     try {
       await sendImage(result.assets[0].uri);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {
-      // silently fail — storage bucket may not be configured yet
+      Alert.alert('Error', 'Failed to send image.');
     } finally {
-      setSending(false);
+      setUploadingImage(false);
     }
+  }, [sendImage]);
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  const formatTime = (iso: string | null) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // ─── Message renderer ─────────────────────────────────────────────────────
+  const renderMessage = useCallback(
+    ({ item }: { item: ChatMessage }) => {
+      const isMe = item.sender_id === currentUserId;
+      const senderName = item.sender?.full_name ?? 'User';
+      const senderAvatar = item.sender?.profile_image ?? null;
 
-  const renderMessage = ({ item }: { item: ChatMessageWithSender }) => {
-    const isMe = item.sender_id === currentUserId;
-    const senderName = item.sender?.full_name ?? 'User';
-    const senderAvatar = item.sender?.profile_image ?? null;
+      return (
+        <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
+          {!isMe && <Avatar uri={senderAvatar} name={senderName} size="sm" />}
+          <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
+            {item.image_url ? (
+              <Image
+                source={{ uri: item.image_url }}
+                style={styles.chatImage}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : null}
 
-    return (
-      <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
-        {!isMe && <Avatar uri={senderAvatar} name={senderName} size="sm" />}
-        <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
-          {item.image_url && (
-            <Image
-              source={{ uri: item.image_url }}
-              style={styles.chatImage}
-              contentFit="cover"
-              transition={200}
-            />
-          )}
-          {item.text && (
-            <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
-              {item.text}
-            </Text>
-          )}
-          <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
-            {formatTime(item.created_at)}
-          </Text>
+            {item.text ? (
+              <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
+                {item.text}
+              </Text>
+            ) : null}
+
+            <View style={[styles.metaRow, isMe && styles.metaRowMe]}>
+              <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
+                {formatTime(item.created_at)}
+              </Text>
+              {isMe && <ReadReceipt read={item.read_at !== null} />}
+            </View>
+          </View>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [currentUserId]
+  );
 
-  // For an inverted FlatList, paddingTop creates space at the *visual* bottom
-  // (closest to the input bar), so the last message isn't hidden behind the bar.
   const listBottomPad = INPUT_BAR_HEIGHT + insets.bottom + Spacing.md;
 
   return (
@@ -156,13 +194,28 @@ export default function ChatRoomScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color={Colors.darkTextPrimary} />
         </TouchableOpacity>
-        <Avatar uri={otherUser?.profile_image ?? null} name={otherUser?.full_name ?? ''} size="sm" />
+        <Avatar
+          uri={otherUser?.profile_image ?? null}
+          name={otherUser?.full_name ?? ''}
+          size="sm"
+        />
         <View style={styles.headerInfo}>
           <Text style={styles.headerName}>{otherUser?.full_name ?? '...'}</Text>
         </View>
+        {orderId && (
+          <TouchableOpacity
+            style={styles.headerAction}
+            onPress={() => router.push(`/order/${orderId}`)}
+          >
+            <Ionicons name="receipt-outline" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={styles.headerAction}>
+          <Ionicons name="ellipsis-vertical" size={20} color={Colors.darkTextPrimary} />
+        </TouchableOpacity>
       </View>
 
-      {/* Message list — fills space above the absolutely-positioned input bar */}
+      {/* Message list */}
       <View style={styles.flex}>
         {loading ? (
           <View style={styles.loadingWrap}>
@@ -188,23 +241,30 @@ export default function ChatRoomScreen() {
           />
         )}
 
-        {/* Input bar — absolutely positioned so it slides up with the keyboard */}
+        {/* Input bar — absolute, naik bareng keyboard */}
         <Animated.View
           style={[
             styles.inputBar,
             {
               bottom: inputBarBottom,
-              // When keyboard is open the bar already sits above the nav area;
-              // when closed we need insets.bottom so content clears the gesture bar.
               paddingBottom: keyboardOpen
                 ? Spacing.sm
                 : insets.bottom + Spacing.sm,
             },
           ]}
         >
-          <TouchableOpacity style={styles.attachButton} onPress={handlePickImage} disabled={sending}>
-            <Ionicons name="image-outline" size={26} color={Colors.darkTextSecondary} />
+          <TouchableOpacity
+            style={styles.attachButton}
+            onPress={handlePickImage}
+            disabled={uploadingImage}
+          >
+            {uploadingImage ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Ionicons name="image-outline" size={26} color={Colors.darkTextSecondary} />
+            )}
           </TouchableOpacity>
+
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
@@ -217,16 +277,21 @@ export default function ChatRoomScreen() {
               onSubmitEditing={handleSend}
             />
           </View>
+
           <TouchableOpacity
             style={[styles.sendButton, inputText.trim() && styles.sendButtonActive]}
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
           >
-            <Ionicons
-              name="send"
-              size={20}
-              color={inputText.trim() ? Colors.white : Colors.darkTextSecondary}
-            />
+            {sending ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Ionicons
+                name="send"
+                size={20}
+                color={inputText.trim() ? Colors.white : Colors.darkTextSecondary}
+              />
+            )}
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -234,6 +299,20 @@ export default function ChatRoomScreen() {
   );
 }
 
+// ─── Read receipt indicator ───────────────────────────────────────────────────
+function ReadReceipt({ read }: { read: boolean }) {
+  return (
+    <View style={styles.readReceipt}>
+      <Ionicons
+        name="checkmark-done"
+        size={13}
+        color={read ? Colors.primary : 'rgba(255,255,255,0.5)'}
+      />
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.darkBg },
   flex: { flex: 1 },
@@ -258,6 +337,10 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.base,
     color: Colors.darkTextPrimary,
   },
+  headerAction: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   messageList: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.md },
   messageRow: {
@@ -281,21 +364,23 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   messageTextMe: { color: Colors.white },
+
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.xs },
+  metaRowMe: { justifyContent: 'flex-end', gap: 3 },
   timestamp: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: 10,
     color: Colors.darkTextSecondary,
-    marginTop: Spacing.xs,
-    alignSelf: 'flex-end',
   },
   timestampMe: { color: 'rgba(255,255,255,0.6)' },
+  readReceipt: { marginLeft: 2 },
+
   chatImage: {
     width: SCREEN_WIDTH * 0.55,
     height: SCREEN_WIDTH * 0.4,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.xs,
   },
-
   emptyWrap: { flex: 1, alignItems: 'center', paddingTop: Spacing['5xl'] },
   emptyText: {
     fontFamily: Typography.regular.fontFamily,
