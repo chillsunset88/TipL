@@ -13,7 +13,7 @@ export type CustomRequestWithProfile = CustomRequest & {
 export async function getOpenRequests(limit = 20, offset = 0): Promise<CustomRequestWithProfile[]> {
   const { data, error } = await supabase
     .from('custom_requests')
-    .select('*, profiles(id, full_name, avatar_url)')
+    .select('*, profiles!tiper_id(id, full_name, avatar_url)')
     .eq('status', 'open')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -24,7 +24,7 @@ export async function getOpenRequests(limit = 20, offset = 0): Promise<CustomReq
 export async function getMyRequests(tiperId: string): Promise<CustomRequestWithProfile[]> {
   const { data, error } = await supabase
     .from('custom_requests')
-    .select('*, profiles(id, full_name, avatar_url)')
+    .select('*, profiles!tiper_id(id, full_name, avatar_url)')
     .eq('tiper_id', tiperId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -35,7 +35,7 @@ export async function getMyRequests(tiperId: string): Promise<CustomRequestWithP
 export async function getRequestsForTriper(triperId: string): Promise<CustomRequestWithProfile[]> {
   const { data, error } = await db
     .from('custom_requests')
-    .select('*, profiles(id, full_name, avatar_url)')
+    .select('*, profiles!tiper_id(id, full_name, avatar_url)')
     .eq('taken_by', triperId)
     .order('created_at', { ascending: false });
   if (error) throw error;

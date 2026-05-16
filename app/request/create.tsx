@@ -1,322 +1,283 @@
 /**
- * TipL — Create Custom Request Screen (Tiper/Buyer)
- * Premium UI for buyers to post a custom jastip request.
+ * TipL — Create Request (tripper-specific)
+ * Opened from trip detail page with tripId + triperId params.
+ * Same UI style as the Order tab form.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { createRequest, uploadRequestImage, updateRequestImageUrls } from '@/src/services/supabase/requests';
+import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import { Input } from '@/src/components/ui/Input';
+import { Button } from '@/src/components/ui/Button';
 import { useAuthStore } from '@/src/store/authStore';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
-
-const CATEGORIES = [
-  { id: 'luxury', label: 'Luxury', icon: 'diamond-outline' },
-  { id: 'skincare', label: 'Skincare', icon: 'leaf-outline' },
-  { id: 'food', label: 'Food', icon: 'restaurant-outline' },
-  { id: 'electronics', label: 'Electronics', icon: 'hardware-chip-outline' },
-  { id: 'fashion', label: 'Fashion', icon: 'shirt-outline' },
-  { id: 'other', label: 'Other', icon: 'grid-outline' },
-];
+import { createRequest, uploadRequestImage, updateRequestImageUrls, acceptRequest } from '@/src/services/supabase/requests';
 
 const COUNTRIES = [
   'Japan', 'South Korea', 'Singapore', 'United Kingdom', 'United States',
   'France', 'Germany', 'Australia', 'Thailand', 'Malaysia', 'Hong Kong',
 ];
 
-export default function CreateCustomRequestScreen() {
+export default function CreateRequestScreen() {
+  const { tripId, triperId, triperName } = useLocalSearchParams<{
+    tripId?: string;
+    triperId?: string;
+    triperName?: string;
+  }>();
   const user = useAuthStore((s) => s.user);
 
-  const [productName, setProductName] = useState('');
-  const [description, setDescription] = useState('');
-  const [maxBudget, setMaxBudget] = useState('');
-  const [currency, setCurrency] = useState('IDR');
-  const [category, setCategory] = useState('');
-  const [targetCountries, setTargetCountries] = useState<string[]>([]);
-  const [referenceUrl, setReferenceUrl] = useState('');
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [images, setImages]                 = useState<string[]>([]);
+  const [itemName, setItemName]             = useState('');
+  const [brand, setBrand]                   = useState('');
+  const [description, setDescription]       = useState('');
+  const [category, setCategory]             = useState('');
+  const [quantity, setQuantity]             = useState('1');
+  const [estimatedPrice, setEstimatedPrice] = useState('');
+  const [maxBudget, setMaxBudget]           = useState('');
+  const [notes, setNotes]                   = useState('');
+  const [targetCountry, setTargetCountry]   = useState('');
+  const [loading, setLoading]               = useState(false);
 
-  const toggleCountry = useCallback((country: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTargetCountries((prev) =>
-      prev.includes(country) ? prev.filter((c) => c !== country) : [...prev, country],
-    );
-  }, []);
-
-  const handlePickImage = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      selectionLimit: 5,
     });
-    if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
-    }
-  }, []);
-
-  const validate = (): string | null => {
-    if (!productName.trim()) return 'Product name is required.';
-    if (!description.trim()) return 'Description is required.';
-    if (!maxBudget || isNaN(Number(maxBudget)) || Number(maxBudget) <= 0) return 'Enter a valid budget.';
-    if (!category) return 'Select a category.';
-    if (targetCountries.length === 0) return 'Select at least one target country.';
-    return null;
+    if (!result.canceled) setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
   };
 
-  const handleSubmit = useCallback(async () => {
-    const err = validate();
-    if (err) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Validation', err);
-      return;
+  const removeImage = (index: number) => setImages(images.filter((_, i) => i !== index));
+
+  const handleSubmit = async () => {
+    if (!itemName.trim()) { Alert.alert('Info Kurang', 'Masukkan nama item.'); return; }
+    if (!category) { Alert.alert('Info Kurang', 'Pilih kategori.'); return; }
+    if (!maxBudget || isNaN(Number(maxBudget)) || Number(maxBudget) <= 0) {
+      Alert.alert('Info Kurang', 'Masukkan budget maksimal yang valid.'); return;
     }
+    if (!targetCountry) { Alert.alert('Info Kurang', 'Pilih negara tujuan.'); return; }
     if (!user) return;
 
-    setSubmitting(true);
+    setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
     try {
-      // Create the request first
+      const fullDesc = [description.trim(), notes.trim()].filter(Boolean).join('\n\n');
       const request = await createRequest({
         tiper_id: user.id,
-        item_name: productName.trim(),
-        item_url: referenceUrl.trim() || undefined,
-        description: description.trim() || undefined,
-        target_country: targetCountries[0] ?? '',
+        item_name: itemName.trim(),
+        description: fullDesc || undefined,
         budget_max: Number(maxBudget),
-        currency,
+        currency: 'IDR',
+        target_country: targetCountry,
+        item_url: undefined,
       });
 
-      // Upload image and save URL back to the request row
-      if (imageUri) {
+      // Langsung link ke tripper jika ini request spesifik
+      if (triperId) {
+        await acceptRequest(request.id, triperId);
+      }
+
+      // Upload images
+      if (images.length > 0) {
         try {
-          const url = await uploadRequestImage(request.id, imageUri);
-          await updateRequestImageUrls(request.id, [url]);
-        } catch { /* skip on upload failure, request is still created */ }
+          const urls: string[] = [];
+          for (const uri of images) {
+            const url = await uploadRequestImage(request.id, uri);
+            urls.push(url);
+          }
+          await updateRequestImageUrls(request.id, urls);
+        } catch { /* skip on upload failure */ }
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'Request Posted!',
-        'Travelers matching your destination will see your request.',
+        'Berhasil!',
+        triperId
+          ? `Permintaanmu sudah dikirim ke ${triperName ?? 'traveler'}.`
+          : 'Permintaanmu sudah diposting.',
         [{ text: 'OK', onPress: () => router.back() }],
       );
-    } catch (e) {
+    } catch (e: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to post request. Please try again.');
+      Alert.alert('Error', e?.message ?? 'Gagal submit permintaan. Coba lagi.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productName, description, maxBudget, currency, category, targetCountries, referenceUrl, imageUri, user]);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <LinearGradient colors={['#1A1A1A', '#2A2A2A']} style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.white} />
-        </TouchableOpacity>
-        <View style={styles.headerText}>
-          <Text style={styles.headerTitle}>New Request</Text>
-          <Text style={styles.headerSub}>Tell travelers what you need</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Request Jastip</Text>
+          <View style={{ width: 40 }} />
         </View>
-        <View style={styles.headerIcon}>
-          <Ionicons name="bag-handle-outline" size={22} color={Colors.primary} />
-        </View>
-      </LinearGradient>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Product Image */}
-          <Text style={styles.sectionLabel}>Product Photo</Text>
-          <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage} activeOpacity={0.8}>
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.imagePreview} contentFit="cover" />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Ionicons name="camera-outline" size={32} color={Colors.primary} />
-                <Text style={styles.imagePlaceholderText}>Add reference photo</Text>
+          {/* Tripper banner jika request spesifik */}
+          {triperId && (
+            <View style={styles.triperBanner}>
+              <View style={styles.triperAvatarCircle}>
+                <Text style={styles.triperInitial}>
+                  {(triperName?.[0] ?? 'T').toUpperCase()}
+                </Text>
               </View>
-            )}
-            {imageUri && (
-              <View style={styles.imageEditBadge}>
-                <Ionicons name="pencil" size={12} color={Colors.white} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.triperBannerLabel}>Requesting to</Text>
+                <Text style={styles.triperBannerName}>{triperName ?? 'Traveler'}</Text>
               </View>
-            )}
-          </TouchableOpacity>
+              <Ionicons name="airplane" size={20} color={Colors.primary} />
+            </View>
+          )}
 
-          {/* Product Name */}
-          <Text style={styles.sectionLabel}>Product Name <Text style={styles.required}>*</Text></Text>
-          <View style={styles.inputWrap}>
-            <Ionicons name="cube-outline" size={18} color={Colors.gray} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Dyson Airwrap Limited Edition"
-              placeholderTextColor={Colors.gray}
-              value={productName}
-              onChangeText={setProductName}
-              returnKeyType="next"
-            />
+          {/* Deskripsi halaman */}
+          <Text style={styles.pageDescription}>
+            {triperId
+              ? `Ceritakan barang yang kamu inginkan. ${triperName ?? 'Traveler'} akan membawakan untuk kamu.`
+              : 'Provide the details of the item you wish to purchase. Our elite travelers will handle the rest.'}
+          </Text>
+
+          {/* Section 1: Visual Reference */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Visual Reference</Text>
+            <TouchableOpacity style={styles.uploadArea} onPress={pickImage} activeOpacity={0.8}>
+              <View style={styles.uploadIcon}>
+                <Ionicons name="cloud-upload-outline" size={36} color={Colors.gray} />
+              </View>
+              <Text style={styles.uploadTitle}>Upload Reference Photo</Text>
+              <Text style={styles.uploadSubtext}>Tap to browse from gallery</Text>
+            </TouchableOpacity>
+            {images.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageRow}>
+                {images.map((uri, idx) => (
+                  <View key={idx} style={styles.previewContainer}>
+                    <Image source={{ uri }} style={styles.previewImage} contentFit="cover" />
+                    <TouchableOpacity style={styles.removeImage} onPress={() => removeImage(idx)}>
+                      <Ionicons name="close-circle" size={22} color={Colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
-          {/* Description */}
-          <Text style={styles.sectionLabel}>Description <Text style={styles.required}>*</Text></Text>
-          <View style={[styles.inputWrap, styles.textAreaWrap]}>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Color, size, specific variant, where to buy..."
-              placeholderTextColor={Colors.gray}
+          {/* Section 2: Item Details */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Item Details</Text>
+            <Input label="Item Name" placeholder="e.g. Artisan Ceramic Vase" value={itemName} onChangeText={setItemName} />
+            <Input label="Brand (Optional)" placeholder="e.g. Studio Ghibli" value={brand} onChangeText={setBrand} />
+            <Input
+              label="Description"
+              placeholder="Color, size, model, specifications..."
               value={description}
               onChangeText={setDescription}
               multiline
-              numberOfLines={4}
-              textAlignVertical="top"
+              numberOfLines={3}
             />
-          </View>
 
-          {/* Budget */}
-          <Text style={styles.sectionLabel}>Maximum Budget <Text style={styles.required}>*</Text></Text>
-          <View style={styles.budgetRow}>
-            <TouchableOpacity
-              style={[styles.currencyBtn, currency === 'IDR' && styles.currencyBtnActive]}
-              onPress={() => { setCurrency('IDR'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-            >
-              <Text style={[styles.currencyText, currency === 'IDR' && styles.currencyTextActive]}>IDR</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.currencyBtn, currency === 'USD' && styles.currencyBtnActive]}
-              onPress={() => { setCurrency('USD'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-            >
-              <Text style={[styles.currencyText, currency === 'USD' && styles.currencyTextActive]}>USD</Text>
-            </TouchableOpacity>
-            <View style={[styles.inputWrap, styles.budgetInput]}>
-              <Ionicons name="wallet-outline" size={18} color={Colors.gray} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="500,000"
-                placeholderTextColor={Colors.gray}
-                value={maxBudget}
-                onChangeText={setMaxBudget}
-                keyboardType="numeric"
-                returnKeyType="done"
-              />
+            <Text style={styles.fieldLabel}>Category</Text>
+            <View style={styles.chipGrid}>
+              {ITEM_CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[styles.chip, category === cat.id && styles.chipActive]}
+                  onPress={() => { setCategory(cat.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Ionicons name={cat.icon as any} size={15} color={category === cat.id ? Colors.white : Colors.darkGray} />
+                  <Text style={[styles.chipText, category === cat.id && styles.chipTextActive]}>{cat.label}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
+
+            <Input label="Quantity" value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
           </View>
 
-          {/* Category */}
-          <Text style={styles.sectionLabel}>Category <Text style={styles.required}>*</Text></Text>
-          <View style={styles.chipGrid}>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.chip, category === cat.id && styles.chipActive]}
-                onPress={() => { setCategory(cat.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={cat.icon as any}
-                  size={14}
-                  color={category === cat.id ? Colors.white : Colors.darkGray}
-                />
-                <Text style={[styles.chipText, category === cat.id && styles.chipTextActive]}>
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Target Countries */}
-          <Text style={styles.sectionLabel}>Target Countries <Text style={styles.required}>*</Text></Text>
-          <Text style={styles.sectionHint}>Which countries can travelers buy this from?</Text>
-          <View style={styles.chipGrid}>
-            {COUNTRIES.map((country) => (
-              <TouchableOpacity
-                key={country}
-                style={[styles.chip, targetCountries.includes(country) && styles.chipActive]}
-                onPress={() => toggleCountry(country)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, targetCountries.includes(country) && styles.chipTextActive]}>
-                  {country}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Reference URL */}
-          <Text style={styles.sectionLabel}>Reference Link</Text>
-          <View style={styles.inputWrap}>
-            <Ionicons name="link-outline" size={18} color={Colors.gray} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="https://store.com/product..."
-              placeholderTextColor={Colors.gray}
-              value={referenceUrl}
-              onChangeText={setReferenceUrl}
-              keyboardType="url"
-              autoCapitalize="none"
-              returnKeyType="done"
+          {/* Section 3: Pricing */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Pricing Estimate</Text>
+            <Input
+              label="Estimated Item Price"
+              placeholder="e.g. ¥5,000"
+              value={estimatedPrice}
+              onChangeText={setEstimatedPrice}
+              keyboardType="numeric"
+              icon="pricetag-outline"
             />
+            <Input
+              label="Maximum Budget (IDR)"
+              placeholder="e.g. 1,500,000"
+              value={maxBudget}
+              onChangeText={setMaxBudget}
+              keyboardType="numeric"
+              icon="wallet-outline"
+            />
+            <Input
+              label="Additional Notes"
+              placeholder="Special instructions for the traveler..."
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Section 4: Target Country */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Target Country</Text>
+            <Text style={styles.fieldLabel}>Where should the traveler buy this?</Text>
+            <View style={styles.chipGrid}>
+              {COUNTRIES.map((country) => (
+                <TouchableOpacity
+                  key={country}
+                  style={[styles.chip, targetCountry === country && styles.chipActive]}
+                  onPress={() => { setTargetCountry(country); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Text style={[styles.chipText, targetCountry === country && styles.chipTextActive]}>{country}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Info Banner */}
           <View style={styles.infoBanner}>
-            <Ionicons name="shield-checkmark-outline" size={18} color={Colors.primary} />
+            <Ionicons name="shield-checkmark" size={20} color={Colors.primary} />
             <Text style={styles.infoText}>
-              Your payment is protected by TipL escrow. Funds are only released after you confirm receipt.
+              Funds will be held in escrow until you confirm delivery. Your purchase is protected.
             </Text>
           </View>
 
-          {/* Submit */}
-          <TouchableOpacity
-            style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+          <Button
+            title={triperId ? `Kirim ke ${triperName ?? 'Traveler'}` : 'Submit Request'}
             onPress={handleSubmit}
-            disabled={submitting}
-            activeOpacity={0.85}
-          >
-            <LinearGradient
-              colors={[Colors.primaryGradientStart, Colors.primaryGradientEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.submitGradient}
-            >
-              {submitting ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <>
-                  <Ionicons name="paper-plane-outline" size={20} color={Colors.white} />
-                  <Text style={styles.submitText}>Post Request</Text>
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
+            loading={loading}
+            fullWidth
+            size="lg"
+            style={{ marginBottom: Spacing['5xl'] }}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -324,207 +285,68 @@ export default function CreateCustomRequestScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  flex: { flex: 1 },
-
+  safe: { flex: 1, backgroundColor: Colors.white },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.base,
-    gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
   },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerText: { flex: 1 },
-  headerTitle: {
-    fontFamily: Typography.bold.fontFamily,
-    fontSize: Typography.sizes.lg,
-    color: Colors.white,
-  },
-  headerSub: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 2,
-  },
-  headerIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(196,162,101,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
 
   scroll: { flex: 1 },
-  content: { padding: Spacing.base, paddingBottom: 40 },
+  content: { paddingHorizontal: Spacing.xl, paddingBottom: 40 },
 
-  sectionLabel: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.charcoal,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.base,
+  triperBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    backgroundColor: Colors.primary + '12', borderRadius: BorderRadius.lg,
+    padding: Spacing.md, marginTop: Spacing.base,
+    borderWidth: 1, borderColor: Colors.primary + '30',
   },
-  sectionHint: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.gray,
-    marginTop: -Spacing.xs,
-    marginBottom: Spacing.sm,
+  triperAvatarCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center',
   },
-  required: { color: Colors.error },
+  triperInitial: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  triperBannerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
+  triperBannerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
 
-  imagePicker: {
-    width: 120,
-    height: 120,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: Spacing.xs,
-    ...Shadows.md,
-  },
-  imagePreview: { width: '100%', height: '100%' },
-  imagePlaceholder: {
-    flex: 1,
-    backgroundColor: Colors.lightGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-  },
-  imagePlaceholderText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.gray,
-    textAlign: 'center',
-  },
-  imageEditBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  pageDescription: {
+    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+    color: Colors.darkGray, lineHeight: 20, marginTop: Spacing.base,
+    marginBottom: Spacing.xl, textAlign: 'center',
   },
 
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.midGray,
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
-    ...Shadows.sm,
-  },
-  inputIcon: { marginRight: Spacing.sm },
-  input: {
-    flex: 1,
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    paddingVertical: Spacing.md,
-  },
-  textAreaWrap: { alignItems: 'flex-start', paddingTop: Spacing.sm },
-  textArea: { minHeight: 100, paddingVertical: Spacing.sm },
+  section: { marginBottom: Spacing['2xl'] },
+  sectionTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack, marginBottom: Spacing.base },
+  fieldLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginBottom: Spacing.sm },
 
-  budgetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xs,
+  uploadArea: {
+    borderWidth: 2, borderColor: Colors.midGray, borderStyle: 'dashed',
+    borderRadius: BorderRadius.lg, padding: Spacing['2xl'], alignItems: 'center', backgroundColor: Colors.offWhite,
   },
-  currencyBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.midGray,
-    backgroundColor: Colors.white,
-  },
-  currencyBtnActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '15',
-  },
-  currencyText: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-  },
-  currencyTextActive: { color: Colors.primaryDark },
-  budgetInput: { flex: 1, marginBottom: 0 },
+  uploadIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
+  uploadTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.xs },
+  uploadSubtext: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
+  imageRow: { marginTop: Spacing.md },
+  previewContainer: { marginRight: Spacing.sm, position: 'relative' },
+  previewImage: { width: 80, height: 80, borderRadius: BorderRadius.md },
+  removeImage: { position: 'absolute', top: -6, right: -6, backgroundColor: Colors.white, borderRadius: 11 },
 
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xs,
-  },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.base },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    borderColor: Colors.midGray,
-    backgroundColor: Colors.white,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm, borderRadius: BorderRadius.full, borderWidth: 1,
+    borderColor: Colors.midGray, backgroundColor: Colors.offWhite, gap: 6,
   },
-  chipActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  chipText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-  },
+  chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  chipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
   chipTextActive: { color: Colors.white },
 
   infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary + '12',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryPale,
+    borderRadius: BorderRadius.md, padding: Spacing.base, marginBottom: Spacing.xl,
+    gap: Spacing.md, borderWidth: 1, borderColor: Colors.primaryLight,
   },
-  infoText: {
-    flex: 1,
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.charcoal,
-    lineHeight: 18,
-  },
-
-  submitBtn: { marginTop: Spacing.md, borderRadius: BorderRadius.lg, overflow: 'hidden', ...Shadows.glow },
-  submitBtnDisabled: { opacity: 0.7 },
-  submitGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.base,
-  },
-  submitText: {
-    fontFamily: Typography.bold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.white,
-    letterSpacing: 0.5,
-  },
+  infoText: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, lineHeight: 17 },
 });

@@ -4,13 +4,14 @@
  * Permintaan Saya = request yang sudah diterima / diarahkan ke akun traveler ini
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Alert, RefreshControl, TextInput,
+  Modal, ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -72,17 +73,207 @@ const timeAgo = (ms: number): string => {
   return `${Math.floor(h / 24)}h lalu`;
 };
 
+// ─── Detail Modal ─────────────────────────────────────────────────────────────
+
+function DetailModal({ item, mode, onClose, onAccept, accepting }: {
+  item: CustomRequest | null;
+  mode: 'browse' | 'mine';
+  onClose: () => void;
+  onAccept: (item: CustomRequest) => void;
+  accepting: boolean;
+}) {
+  const user = useAuthStore((s) => s.user);
+  if (!item) return null;
+
+  const isOwn = item.buyerId === user?.id;
+  const canAccept = !isOwn && item.status === 'open' && mode === 'browse';
+
+  const statusColor = item.status === 'open'
+    ? Colors.success
+    : item.status === 'matched' ? Colors.primary : Colors.gray;
+  const statusLabel = item.status === 'open' ? 'Terbuka' : item.status === 'matched' ? 'Diambil' : 'Ditutup';
+
+  return (
+    <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={d.safe} edges={['top']}>
+        {/* Header */}
+        <View style={d.header}>
+          <TouchableOpacity onPress={onClose} style={d.closeBtn}>
+            <Ionicons name="close" size={22} color={Colors.nearBlack} />
+          </TouchableOpacity>
+          <Text style={d.headerTitle}>Detail Permintaan</Text>
+          <View style={d.statusPill}>
+            <View style={[d.statusDot, { backgroundColor: statusColor }]} />
+            <Text style={[d.statusLabel, { color: statusColor }]}>{statusLabel}</Text>
+          </View>
+        </View>
+
+        <ScrollView style={d.scroll} contentContainerStyle={d.content} showsVerticalScrollIndicator={false}>
+          {/* Product Image */}
+          {item.imageUrl ? (
+            <Image source={{ uri: item.imageUrl }} style={d.heroImage} contentFit="cover" transition={300} />
+          ) : (
+            <View style={d.heroPlaceholder}>
+              <Ionicons name="cube-outline" size={56} color={Colors.midGray} />
+              <Text style={d.noImageText}>Tidak ada foto referensi</Text>
+            </View>
+          )}
+
+          {/* Product Name */}
+          <Text style={d.productName}>{item.productName}</Text>
+
+          {/* Buyer Info */}
+          <View style={d.buyerCard}>
+            <View style={d.buyerAvatar}>
+              <Text style={d.buyerInitial}>{(item.buyerName[0] ?? 'U').toUpperCase()}</Text>
+            </View>
+            <View style={d.buyerInfo}>
+              <Text style={d.buyerLabel}>Diminta oleh</Text>
+              <Text style={d.buyerName}>{item.buyerName}</Text>
+            </View>
+            <Text style={d.timeAgo}>{timeAgo(item.createdAt)}</Text>
+          </View>
+
+          {/* Description */}
+          {item.description ? (
+            <View style={d.section}>
+              <Text style={d.sectionTitle}>Deskripsi</Text>
+              <Text style={d.descText}>{item.description}</Text>
+            </View>
+          ) : null}
+
+          {/* Details Grid */}
+          <View style={d.detailGrid}>
+            <View style={d.detailItem}>
+              <Ionicons name="wallet-outline" size={18} color={Colors.primary} />
+              <Text style={d.detailLabel}>Budget Maks</Text>
+              <Text style={d.detailValue}>{fmtCurrency(item.maxBudget, item.currency)}</Text>
+            </View>
+
+            <View style={d.detailItem}>
+              <Ionicons name="grid-outline" size={18} color={Colors.primary} />
+              <Text style={d.detailLabel}>Kategori</Text>
+              <Text style={d.detailValue} numberOfLines={1}>{item.category}</Text>
+            </View>
+
+            {item.targetCountries.length > 0 && (
+              <View style={d.detailItem}>
+                <Ionicons name="location-outline" size={18} color={Colors.primary} />
+                <Text style={d.detailLabel}>Negara Tujuan</Text>
+                <Text style={d.detailValue}>{item.targetCountries.join(', ')}</Text>
+              </View>
+            )}
+
+            {item.referenceUrl && (
+              <View style={d.detailItem}>
+                <Ionicons name="link-outline" size={18} color={Colors.primary} />
+                <Text style={d.detailLabel}>Link Referensi</Text>
+                <Text style={d.detailValue} numberOfLines={2}>{item.referenceUrl}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Badge milik sendiri */}
+          {isOwn && (
+            <View style={d.ownBanner}>
+              <Ionicons name="person-circle-outline" size={18} color={Colors.primary} />
+              <Text style={d.ownBannerText}>Ini adalah permintaanmu sendiri</Text>
+            </View>
+          )}
+
+          {/* Accept button */}
+          {canAccept && (
+            <TouchableOpacity
+              style={[d.acceptBtn, accepting && d.acceptBtnDisabled]}
+              onPress={() => onAccept(item)}
+              disabled={accepting}
+              activeOpacity={0.85}
+            >
+              {accepting ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
+                  <Text style={d.acceptText}>Ambil Permintaan</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+const d = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.white },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base, paddingVertical: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
+  },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.offWhite, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusLabel: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.xs },
+  scroll: { flex: 1 },
+  content: { paddingBottom: 48 },
+  heroImage: { width: '100%', height: 260 },
+  heroPlaceholder: { width: '100%', height: 180, backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
+  noImageText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
+  productName: { fontFamily: Typography.serifBold.fontFamily, fontSize: 22, color: Colors.nearBlack, paddingHorizontal: Spacing.base, paddingTop: Spacing.base, marginBottom: Spacing.sm },
+  buyerCard: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    marginHorizontal: Spacing.base, padding: Spacing.md,
+    backgroundColor: Colors.offWhite, borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.base,
+  },
+  buyerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center' },
+  buyerInitial: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  buyerInfo: { flex: 1 },
+  buyerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
+  buyerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  timeAgo: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
+  section: { paddingHorizontal: Spacing.base, marginBottom: Spacing.base },
+  sectionTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
+  descText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray, lineHeight: 22 },
+  detailGrid: { marginHorizontal: Spacing.base, gap: Spacing.sm, marginBottom: Spacing.base },
+  detailItem: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
+    backgroundColor: Colors.offWhite, borderRadius: BorderRadius.md,
+    padding: Spacing.md, borderWidth: 1, borderColor: Colors.lightGray,
+  },
+  detailLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, width: 90 },
+  detailValue: { flex: 1, fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  ownBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    marginHorizontal: Spacing.base, padding: Spacing.md,
+    backgroundColor: Colors.primary + '12', borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: Colors.primary + '30', marginBottom: Spacing.base,
+  },
+  ownBannerText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
+  acceptBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.primary, marginHorizontal: Spacing.base,
+    paddingVertical: Spacing.base, borderRadius: BorderRadius.lg, ...Shadows.glow,
+  },
+  acceptBtnDisabled: { opacity: 0.7 },
+  acceptText: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+});
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function CustomRequestsScreen() {
   const user = useAuthStore((s) => s.user);
-  const [requests, setRequests] = useState<CustomRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch] = useState('');
+  const [requests, setRequests]               = useState<CustomRequest[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [refreshing, setRefreshing]           = useState(false);
+  const [search, setSearch]                   = useState('');
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
-
-  // browse = semua permintaan publik | mine = request yang khusus ke traveler ini
-  const [mode, setMode] = useState<'browse' | 'mine'>('browse');
+  const [acceptingId, setAcceptingId]         = useState<string | null>(null);
+  const [mode, setMode]                       = useState<'browse' | 'mine'>('browse');
+  const [selected, setSelected]               = useState<CustomRequest | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -94,22 +285,22 @@ export default function CustomRequestsScreen() {
         raw = await getOpenRequests();
       }
       setRequests(raw.map(mapRequest));
-    } catch {
-      // ignore
+    } catch (e: any) {
+      Alert.alert('Gagal memuat', e?.message ?? 'Terjadi kesalahan. Coba lagi.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [mode, user]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const handleAccept = useCallback(
     async (request: CustomRequest) => {
       if (!user) return;
       Alert.alert(
         'Ambil Permintaan',
-        `Ambil permintaan "${request.productName}" dengan budget maks ${fmtCurrency(request.maxBudget, request.currency)}?\n\nChat dengan pembeli akan dibuka.`,
+        `Ambil permintaan "${request.productName}" dengan budget maks ${fmtCurrency(request.maxBudget, request.currency)}?`,
         [
           { text: 'Batal', style: 'cancel' },
           {
@@ -120,8 +311,9 @@ export default function CustomRequestsScreen() {
               try {
                 await acceptRequest(request.id, user.id);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setSelected(null);
                 load();
-                Alert.alert('Berhasil!', 'Permintaan berhasil diambil. Chat dengan pembeli sudah terbuka.', [{ text: 'OK' }]);
+                Alert.alert('Berhasil!', 'Permintaan berhasil diambil.', [{ text: 'OK' }]);
               } catch {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 Alert.alert('Error', 'Gagal mengambil permintaan. Coba lagi.');
@@ -150,10 +342,13 @@ export default function CustomRequestsScreen() {
   const renderItem = useCallback(
     ({ item }: { item: CustomRequest }) => {
       const isOwn = item.buyerId === user?.id;
-      const isAccepting = acceptingId === item.id;
 
       return (
-        <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.75}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelected(item); }}
+        >
           <View style={styles.cardHeader}>
             {item.imageUrl ? (
               <Image source={{ uri: item.imageUrl }} style={styles.productThumb} contentFit="cover" transition={200} />
@@ -195,24 +390,13 @@ export default function CustomRequestsScreen() {
               <Text style={styles.buyerName}>{item.buyerName}</Text>
             </View>
 
-            <Text style={styles.budget}>Maks {fmtCurrency(item.maxBudget, item.currency)}</Text>
+            <Text style={styles.budget}>{fmtCurrency(item.maxBudget, item.currency)}</Text>
 
-            {!isOwn && item.status === 'open' && mode === 'browse' && (
-              <TouchableOpacity
-                style={styles.acceptBtn}
-                onPress={() => handleAccept(item)}
-                disabled={isAccepting}
-                activeOpacity={0.8}
-              >
-                {isAccepting ? (
-                  <ActivityIndicator size="small" color={Colors.white} />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark-circle" size={15} color={Colors.white} />
-                    <Text style={styles.acceptText}>Ambil</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+            {isOwn && (
+              <View style={styles.ownBadge}>
+                <Ionicons name="person" size={12} color={Colors.primary} />
+                <Text style={styles.ownText}>Milikmu</Text>
+              </View>
             )}
 
             {mode === 'mine' && (
@@ -222,24 +406,12 @@ export default function CustomRequestsScreen() {
               </View>
             )}
 
-            {isOwn && mode === 'browse' && (
-              <View style={styles.ownBadge}>
-                <Ionicons name="person" size={12} color={Colors.primary} />
-                <Text style={styles.ownText}>Milikmu</Text>
-              </View>
-            )}
+            <Ionicons name="chevron-forward" size={16} color={Colors.midGray} />
           </View>
-
-          {item.referenceUrl && (
-            <View style={styles.refUrlRow}>
-              <Ionicons name="link-outline" size={12} color={Colors.primary} />
-              <Text style={styles.refUrlText} numberOfLines={1}>{item.referenceUrl}</Text>
-            </View>
-          )}
-        </View>
+        </TouchableOpacity>
       );
     },
-    [user, acceptingId, handleAccept, mode],
+    [user, mode],
   );
 
   const ListEmpty = () => (
@@ -253,14 +425,6 @@ export default function CustomRequestsScreen() {
           ? 'Permintaan yang kamu ambil dari pembeli akan muncul di sini.'
           : 'Belum ada permintaan yang cocok dengan filter kamu.'}
       </Text>
-      {mode === 'browse' && (
-        <TouchableOpacity
-          style={styles.emptyBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/request/create'); }}
-        >
-          <Text style={styles.emptyBtnText}>Buat Permintaan</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 
@@ -272,12 +436,7 @@ export default function CustomRequestsScreen() {
           <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Permintaan</Text>
-        <TouchableOpacity
-          style={styles.newBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/request/create'); }}
-        >
-          <Ionicons name="add" size={22} color={Colors.nearBlack} />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       {/* Mode toggle */}
@@ -384,6 +543,15 @@ export default function CustomRequestsScreen() {
           }
         />
       )}
+
+      {/* Detail Modal */}
+      <DetailModal
+        item={selected}
+        mode={mode}
+        onClose={() => setSelected(null)}
+        onAccept={handleAccept}
+        accepting={!!acceptingId}
+      />
     </SafeAreaView>
   );
 }
@@ -397,8 +565,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  newBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: {
+    fontFamily: Typography.serifBold.fontFamily,
+    fontSize: Typography.sizes.md,
+    color: Colors.nearBlack,
+  },
 
   modeToggle: {
     flexDirection: 'row', backgroundColor: Colors.lightGray,
@@ -453,10 +624,7 @@ const styles = StyleSheet.create({
   productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, flexShrink: 0 },
   thumbPlaceholder: { backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center' },
   cardHeaderInfo: { flex: 1 },
-  productName: {
-    fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base,
-    color: Colors.nearBlack, marginBottom: 4,
-  },
+  productName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   categoryChip: { backgroundColor: Colors.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full },
   categoryText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primaryDark, textTransform: 'capitalize' },
@@ -466,27 +634,14 @@ const styles = StyleSheet.create({
   statusText: { fontFamily: Typography.semiBold.fontFamily, fontSize: 10, color: Colors.success },
   statusTextMatched: { color: Colors.primary },
 
-  description: {
-    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
-    color: Colors.darkGray, lineHeight: 20, marginBottom: Spacing.sm,
-  },
-  countriesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: Spacing.md },
+  description: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, lineHeight: 20, marginBottom: Spacing.sm },
+  countriesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: Spacing.sm },
   countriesText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, flex: 1 },
 
-  cardFooter: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray,
-  },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray },
   buyerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   buyerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
   budget: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-  acceptBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.primary, paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm, borderRadius: BorderRadius.lg,
-    minWidth: 80, justifyContent: 'center', ...Shadows.sm,
-  },
-  acceptText: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
 
   forMeBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -503,23 +658,9 @@ const styles = StyleSheet.create({
   },
   ownText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary },
 
-  refUrlRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.sm },
-  refUrlText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.primary, flex: 1 },
-
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: Spacing.xl },
-  emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.lg,
-    color: Colors.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm,
-  },
-  emptySubtitle: {
-    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
-    color: Colors.gray, textAlign: 'center', lineHeight: 20, marginBottom: Spacing.xl,
-  },
-  emptyBtn: {
-    backgroundColor: Colors.primary, paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md, borderRadius: BorderRadius.lg,
-  },
-  emptyBtnText: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  emptyTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm },
+  emptySubtitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray, textAlign: 'center', lineHeight: 20 },
 });

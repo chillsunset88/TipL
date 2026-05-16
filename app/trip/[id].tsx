@@ -265,7 +265,7 @@ export default function TripDetailScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.push({
                 pathname: '/request/create',
-                params: { tripId: id, triperId: trip.triper_id },
+                params: { tripId: id, triperId: trip.triper_id, triperName: profile?.full_name ?? 'Traveler' },
               });
             }}
           >

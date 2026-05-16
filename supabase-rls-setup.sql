@@ -20,24 +20,21 @@ DROP POLICY IF EXISTS "Insert own request" ON custom_requests;
 CREATE POLICY "Insert own request"
   ON custom_requests FOR INSERT
   TO authenticated
-  WITH CHECK (tiper_id = auth.uid()::text);
+  WITH CHECK (tiper_id = auth.uid());
 
 -- Travelers can accept (update status/taken_by); buyers can update their own image_urls
 DROP POLICY IF EXISTS "Update request" ON custom_requests;
 CREATE POLICY "Update request"
   ON custom_requests FOR UPDATE
   TO authenticated
-  USING (
-    tiper_id = auth.uid()::text        -- buyer updating their own request
-    OR true                             -- any authenticated user can accept (update taken_by/status)
-  );
+  USING (true);
 
 -- Buyers can delete their own open requests
 DROP POLICY IF EXISTS "Delete own request" ON custom_requests;
 CREATE POLICY "Delete own request"
   ON custom_requests FOR DELETE
   TO authenticated
-  USING (tiper_id = auth.uid()::text);
+  USING (tiper_id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────
 -- trips
@@ -54,19 +51,19 @@ DROP POLICY IF EXISTS "Insert own trip" ON trips;
 CREATE POLICY "Insert own trip"
   ON trips FOR INSERT
   TO authenticated
-  WITH CHECK (triper_id = auth.uid()::text);
+  WITH CHECK (triper_id = auth.uid());
 
 DROP POLICY IF EXISTS "Update own trip" ON trips;
 CREATE POLICY "Update own trip"
   ON trips FOR UPDATE
   TO authenticated
-  USING (triper_id = auth.uid()::text);
+  USING (triper_id = auth.uid());
 
 DROP POLICY IF EXISTS "Delete own trip" ON trips;
 CREATE POLICY "Delete own trip"
   ON trips FOR DELETE
   TO authenticated
-  USING (triper_id = auth.uid()::text);
+  USING (triper_id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────
 -- products
@@ -83,13 +80,13 @@ DROP POLICY IF EXISTS "Insert own product" ON products;
 CREATE POLICY "Insert own product"
   ON products FOR INSERT
   TO authenticated
-  WITH CHECK (triper_id = auth.uid()::text);
+  WITH CHECK (triper_id = auth.uid());
 
 DROP POLICY IF EXISTS "Update own product" ON products;
 CREATE POLICY "Update own product"
   ON products FOR UPDATE
   TO authenticated
-  USING (triper_id = auth.uid()::text);
+  USING (triper_id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────
 -- profiles
@@ -106,13 +103,13 @@ DROP POLICY IF EXISTS "Update own profile" ON profiles;
 CREATE POLICY "Update own profile"
   ON profiles FOR UPDATE
   TO authenticated
-  USING (id = auth.uid()::text);
+  USING (id = auth.uid());
 
 DROP POLICY IF EXISTS "Insert own profile" ON profiles;
 CREATE POLICY "Insert own profile"
   ON profiles FOR INSERT
   TO authenticated
-  WITH CHECK (id = auth.uid()::text);
+  WITH CHECK (id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────
 -- escrow_payments
