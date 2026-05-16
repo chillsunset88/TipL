@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ScrollView, RefreshControl, ActivityIndicator, Dimensions,
@@ -27,12 +27,15 @@ export default function OrderScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const initialized = useRef(false);
 
   const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true); else setLoading(true);
+    if (isRefresh) setRefreshing(true);
+    else if (!initialized.current) setLoading(true);
     try {
       const data = await searchProducts('', undefined, 40);
       setProducts(data);
+      initialized.current = true;
     } catch {
       // silently fail — empty state handles it
     } finally {
@@ -41,10 +44,10 @@ export default function OrderScreen() {
     }
   }, []);
 
-  // Refresh setiap kali tab difokuskan
+  // Refresh setiap kali tab difokuskan — silent setelah load pertama
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Realtime: tambah produk baru langsung muncul tanpa refresh
+  // Realtime: produk baru langsung muncul tanpa spinner
   useEffect(() => {
     const unsub = subscribeToProducts(() => load());
     return () => { unsub(); };

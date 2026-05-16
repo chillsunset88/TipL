@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { getOpenTrips, getTripById, getMyTrips, createTrip as createTripService, getProductsByTrip, createProduct, uploadProductImage, subscribeToTrips, TripWithProfile } from '@/src/services/supabase/trips';
 
 export type { TripWithProfile };
@@ -11,13 +11,15 @@ export function useTrips() {
   const [trips, setTrips] = useState<TripWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const initialized = useRef(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!initialized.current) setLoading(true);
     setError(null);
     try {
       const data = await getOpenTrips();
       setTrips(data);
+      initialized.current = true;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load trips');
     } finally {

@@ -84,22 +84,21 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ── Pesanan Saya ── */}
+        {/* ── Pesanan & Wishlist ── */}
         <View style={s.card}>
-          <View style={s.cardHeaderRow}>
-            <Text style={s.cardTitle}>Pesanan Saya</Text>
-            <TouchableOpacity style={s.seeAllBtn} onPress={() => router.push('/profile/orders')}>
-              <Text style={s.seeAllTxt}>Lihat Semua</Text>
-              <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <View style={s.orderRow}>
-            <OrderShortcut icon="time-outline"             label="Belum Bayar"  color={Colors.warning}  onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="refresh-circle-outline"   label="Diproses"     color={Colors.info}     onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="airplane-outline"         label="Dikirim"      color={Colors.primary}  onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="checkmark-circle-outline" label="Selesai"      color={Colors.success}  onPress={() => router.push('/profile/orders')} />
-            <OrderShortcut icon="star-outline"             label="Ulasan"       color={Colors.charcoal} onPress={() => router.push('/profile/orders')} />
-          </View>
+          <ActionRow
+            icon="receipt-outline"
+            label="Pesanan Saya"
+            color={Colors.primary}
+            onPress={() => router.push('/profile/orders')}
+          />
+          <View style={s.actionDivider} />
+          <ActionRow
+            icon="heart-outline"
+            label="Wishlist"
+            color={Colors.error}
+            onPress={() => router.push('/profile/wishlist')}
+          />
         </View>
 
         {/* ── Jastip menu grid ── */}
@@ -108,7 +107,6 @@ export default function ProfileScreen() {
           <View style={s.gridRow}>
             <GridItem icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips')} />
             <GridItem icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
-            <GridItem icon="heart-outline"      label="Wishlist"   color={Colors.error}   onPress={() => router.push('/profile/wishlist')} />
             <GridItem icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
           </View>
         </View>
@@ -139,18 +137,19 @@ export default function ProfileScreen() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function OrderShortcut({ icon, label, color, onPress }: {
+function ActionRow({ icon, label, color, onPress }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   color: string;
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={s.orderShortcut} activeOpacity={0.7} onPress={onPress}>
-      <View style={[s.orderIconCircle, { backgroundColor: `${color}18` }]}>
-        <Ionicons name={icon} size={24} color={color} />
+    <TouchableOpacity style={s.actionRow} activeOpacity={0.7} onPress={onPress}>
+      <View style={[s.actionIconBox, { backgroundColor: `${color}14` }]}>
+        <Ionicons name={icon} size={20} color={color} />
       </View>
-      <Text style={s.orderIconLabel} numberOfLines={2}>{label}</Text>
+      <Text style={s.actionLabel}>{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color={Colors.gray} />
     </TouchableOpacity>
   );
 }
@@ -241,14 +240,10 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm,
   },
   cardTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.md },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-  seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  seeAllTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-
-  orderRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  orderShortcut: { flex: 1, alignItems: 'center', paddingHorizontal: 2 },
-  orderIconCircle: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
-  orderIconLabel: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.charcoal, textAlign: 'center', lineHeight: 13 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
+  actionIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  actionLabel: { flex: 1, fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  actionDivider: { height: 1, backgroundColor: Colors.lightGray },
 
   gridRow: { flexDirection: 'row', justifyContent: 'space-around' },
   gridItem: { alignItems: 'center', flex: 1, paddingVertical: Spacing.xs },
