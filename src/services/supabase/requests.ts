@@ -45,7 +45,7 @@ export async function getRequestsForTriper(triperId: string): Promise<CustomRequ
 export async function createRequest(payload: CustomRequestInsert): Promise<CustomRequest> {
   const { data, error } = await db
     .from('custom_requests')
-    .insert(payload)
+    .insert({ ...payload, status: 'open' })
     .select()
     .single();
   if (error) throw error;
@@ -61,11 +61,27 @@ export async function acceptRequest(requestId: string, triperId: string): Promis
 }
 
 export async function uploadRequestImage(requestId: string, localUri: string): Promise<string> {
-  const response = await fetch(localUri);
-  const blob = await response.blob();
-  const path = `requests/${requestId}/${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from('item-images').upload(path, blob);
+  const ext = (localUri.split('.').pop() ?? 'jpg').split('?')[0].toLowerCase();
+  const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as ArrayBuffer);
+    xhr.onerror = () => reject(new Error('Failed to read local file'));
+    xhr.responseType = 'arraybuffer';
+    xhr.open('GET', localUri, true);
+    xhr.send();
+  });
+  const path = `requests/${requestId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('item-images').upload(path, arrayBuffer, { upsert: false, contentType });
   if (error) throw error;
   const { data } = supabase.storage.from('item-images').getPublicUrl(path);
   return data.publicUrl;
+}
+
+export async function updateRequestImageUrls(requestId: string, imageUrls: string[]): Promise<void> {
+  const { error } = await db
+    .from('custom_requests')
+    .update({ image_urls: imageUrls })
+    .eq('id', requestId);
+  if (error) throw error;
 }

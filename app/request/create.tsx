@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { createRequest, uploadRequestImage } from '@/src/services/supabase/requests';
+import { createRequest, uploadRequestImage, updateRequestImageUrls } from '@/src/services/supabase/requests';
 import { useAuthStore } from '@/src/store/authStore';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 
@@ -108,13 +108,12 @@ export default function CreateCustomRequestScreen() {
         currency,
       });
 
-      // Upload image after we have the request id
-      const imageUrls: string[] = [];
+      // Upload image and save URL back to the request row
       if (imageUri) {
         try {
           const url = await uploadRequestImage(request.id, imageUri);
-          imageUrls.push(url);
-        } catch { /* skip on upload failure */ }
+          await updateRequestImageUrls(request.id, [url]);
+        } catch { /* skip on upload failure, request is still created */ }
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
