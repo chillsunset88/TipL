@@ -8,7 +8,6 @@ import { JASTIP_PRODUCTS, TRENDING_DESTINATIONS } from "@/src/lib/mockData";
 import { useCartStore } from "@/src/store/cartStore";
 import { useNotificationStore } from "@/src/store/notificationStore";
 import { useSettingsStore } from "@/src/store/settingsStore";
-import { useWalletStore } from "@/src/store/walletStore";
 import { useTrips, TripWithProfile } from "@/src/lib/hooks/useTrips";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -42,7 +41,6 @@ export default function HomeScreen() {
   const { t } = useSettingsStore();
   const notifCount = useNotificationStore((s) => s.count);
   const cartCount = useCartStore((s) => s.count);
-  const { points, balance } = useWalletStore();
   const { trips, loading: tripsLoading, refetch } = useTrips();
 
   useEffect(() => { useSettingsStore.getState().loadSettings(); }, []);
@@ -75,7 +73,7 @@ export default function HomeScreen() {
 
   return (
     <View style={s.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.nearBlack} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Header */}
       <View style={s.header}>
@@ -86,44 +84,23 @@ export default function HomeScreen() {
               <Text style={s.searchPlaceholder}>{t.searchPlaceholder}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/notifications")}>
-              <Ionicons name="notifications-outline" size={22} color={Colors.white} />
+              <Ionicons name="notifications-outline" size={22} color={Colors.nearBlack} />
               {notifCount > 0 && <Badge count={notifCount} />}
             </TouchableOpacity>
             <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/cart")}>
-              <Ionicons name="cart-outline" size={22} color={Colors.white} />
+              <Ionicons name="cart-outline" size={22} color={Colors.nearBlack} />
               {cartCount > 0 && <Badge count={cartCount} />}
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </View>
 
-      {/* Balance / Points */}
-      <View style={s.balWrap}>
-        <View style={s.balCard}>
-          <View style={s.balSec}>
-            <View style={s.balIconBox}>
-              <Ionicons name="wallet-outline" size={20} color={Colors.nearBlack} />
-            </View>
-            <View>
-              <Text style={s.balVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmtIDR(balance)}</Text>
-              <Text style={s.balLbl}>{t.balance}</Text>
-            </View>
-          </View>
-          <View style={s.divider} />
-          <View style={s.balSec}>
-            <View style={[s.balIconBox, s.goldBox]}>
-              <Ionicons name="star" size={20} color={Colors.primary} />
-            </View>
-            <View>
-              <Text style={s.balVal}>{points.toLocaleString()}</Text>
-              <Text style={s.balLbl}>{t.points}</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={s.topUpBtn} onPress={() => router.push('/wallet/topup' as any)}>
-            <Ionicons name="add" size={14} color={Colors.primary} />
-            <Text style={s.topUpTxt}>Top Up</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Quick Actions */}
+      <View style={s.quickRow}>
+        <QuickBtn icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips' as any)} />
+        <QuickBtn icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
+        <QuickBtn icon="heart-outline"      label="Wishlist"   color={Colors.error}   onPress={() => router.push('/profile/wishlist' as any)} />
+        <QuickBtn icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
       </View>
 
       {/* Scrollable */}
@@ -301,6 +278,22 @@ function Badge({ count }: { count: number }) {
   );
 }
 
+function QuickBtn({ icon, label, color, onPress }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  color: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={s.quickBtn} activeOpacity={0.75} onPress={onPress}>
+      <View style={[s.quickIcon, { backgroundColor: `${color}18` }]}>
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+      <Text style={s.quickLabel} numberOfLines={1}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 function TripSkeleton() {
   return (
     <View style={[s.tripCard, { marginBottom: Spacing.md }]}>
@@ -379,25 +372,35 @@ function TravelerCard({ trip }: { trip: TripWithProfile }) {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  header: { backgroundColor: Colors.nearBlack, borderBottomWidth: 2, borderBottomColor: Colors.primary },
+  header: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
   headerSafe: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.base },
   headerRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, paddingTop: Platform.OS === "android" ? Spacing.sm : 0 },
-  searchBar: { flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, borderRadius: BorderRadius.full, paddingHorizontal: Spacing.md, height: 40, gap: Spacing.sm },
+  searchBar: { flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: Colors.offWhite, borderRadius: BorderRadius.full, paddingHorizontal: Spacing.md, height: 40, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.lightGray },
   searchPlaceholder: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  badge: { position: "absolute", top: 2, right: 2, backgroundColor: Colors.error, borderRadius: 10, minWidth: 17, height: 17, alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.nearBlack },
+  badge: { position: "absolute", top: 2, right: 2, backgroundColor: Colors.error, borderRadius: 10, minWidth: 17, height: 17, alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.white },
   badgeText: { fontFamily: Typography.bold.fontFamily, fontSize: 9, color: Colors.white },
 
-  balWrap: { backgroundColor: Colors.nearBlack, paddingHorizontal: Spacing.base, paddingBottom: Spacing.base },
-  balCard: { flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, paddingHorizontal: Spacing.base, ...Shadows.md },
-  balSec: { flex: 1, flexDirection: "row", alignItems: "center", gap: Spacing.sm },
-  balIconBox: { width: 38, height: 38, borderRadius: BorderRadius.md, backgroundColor: Colors.cream, alignItems: "center", justifyContent: "center" },
-  goldBox: { backgroundColor: Colors.primaryPale },
-  balVal: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  balLbl: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
-  divider: { width: 1, height: 34, backgroundColor: Colors.lightGray, marginHorizontal: Spacing.sm },
-  topUpBtn: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary, marginLeft: Spacing.sm },
-  topUpTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 11, color: Colors.primary },
+  quickRow: {
+    flexDirection: "row",
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
+    gap: Spacing.xs,
+  },
+  quickBtn: { flex: 1, alignItems: "center", gap: 5 },
+  quickIcon: {
+    width: 48, height: 48, borderRadius: BorderRadius.lg,
+    alignItems: "center", justifyContent: "center",
+  },
+  quickLabel: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: 11,
+    color: Colors.charcoal,
+    textAlign: "center",
+  },
 
   scroll: { flex: 1, paddingHorizontal: Spacing.xl },
 

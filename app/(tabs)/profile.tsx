@@ -14,15 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
-import { useWalletStore } from '@/src/store/walletStore';
 import { signOut } from '@/src/services/supabase/auth';
-
-const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const { balance, points } = useWalletStore();
 
   const handleSignOut = () => {
     Alert.alert('Keluar Akun', 'Apakah kamu yakin ingin keluar?', [
@@ -86,33 +82,6 @@ export default function ProfileScreen() {
               <Ionicons name="settings-outline" size={22} color={Colors.nearBlack} />
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* ── Wallet card ── */}
-        <View style={s.walletCard}>
-          <View style={s.walletSec}>
-            <View style={s.walletIconBox}>
-              <Ionicons name="wallet-outline" size={18} color={Colors.primary} />
-            </View>
-            <View>
-              <Text style={s.walletVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmtIDR(balance)}</Text>
-              <Text style={s.walletLbl}>Saldo TipL</Text>
-            </View>
-          </View>
-          <View style={s.walletDivider} />
-          <View style={s.walletSec}>
-            <View style={[s.walletIconBox, s.walletIconGold]}>
-              <Ionicons name="star" size={18} color={Colors.primary} />
-            </View>
-            <View>
-              <Text style={s.walletVal}>{points.toLocaleString()}</Text>
-              <Text style={s.walletLbl}>Poin</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={s.topUpPill} onPress={() => router.push('/wallet/topup' as any)}>
-            <Ionicons name="add" size={12} color={Colors.primary} />
-            <Text style={s.topUpTxt}>Top Up</Text>
-          </TouchableOpacity>
         </View>
 
         {/* ── Pesanan Saya ── */}
@@ -265,31 +234,6 @@ const s = StyleSheet.create({
     backgroundColor: Colors.offWhite,
     alignItems: 'center', justifyContent: 'center',
   },
-
-  walletCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white,
-    marginHorizontal: Spacing.xl, marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg, padding: Spacing.base,
-    borderWidth: 1, borderColor: Colors.lightGray,
-    gap: Spacing.md, ...Shadows.sm,
-  },
-  walletSec: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  walletIconBox: {
-    width: 36, height: 36, borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center',
-  },
-  walletIconGold: { backgroundColor: Colors.primaryPale },
-  walletVal: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  walletLbl: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
-  walletDivider: { width: 1, height: 32, backgroundColor: Colors.lightGray },
-  topUpPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.primaryPale,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary,
-  },
-  topUpTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 11, color: Colors.primary },
 
   card: {
     backgroundColor: Colors.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,

@@ -1,9 +1,12 @@
 /**
  * TipL — Cart Page
- * Gold luxury theme. Grouped by traveler, escrow-protected checkout.
+ * Prelove-style grouped cart: horizontal photo cards per seller, edit mode with X buttons.
  */
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Alert, ActivityIndicator,
+} from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,8 +21,10 @@ import { createXenditInvoice } from '@/src/lib/xendit';
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function CartScreen() {
-  const { items, selectedItems, removeItem, toggleSelection, toggleTravelerSelection, toggleAllSelection } = useCartStore();
+  const { items, removeItem } = useCartStore();
   const user = useAuthStore((s) => s.user);
+  const [editMode, setEditMode] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Set<string>>(new Set());
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const groupedArray = useMemo(() => {
@@ -33,45 +38,62 @@ export default function CartScreen() {
     return Object.values(map);
   }, [items]);
 
-  const selectedItemsData = items.filter((i) => selectedItems.includes(i.id));
-  const subtotal = selectedItemsData.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const platformFee = selectedItems.length > 0 ? 15000 : 0;
-  const total = subtotal + platformFee;
-  const allSelected = items.length > 0 && selectedItems.length === items.length;
+  const totalPending = pendingDelete.size;
 
-  const handleCheckout = async () => {
-    if (selectedItems.length === 0) {
-      Alert.alert('No Items Selected', 'Please select at least one item to checkout.');
-      return;
-    }
+  const togglePendingDelete = (id: string) => {
+    setPendingDelete(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteGroup = (groupItems: typeof items, groupPendingIds: string[]) => {
+    if (groupPendingIds.length === 0) return;
+    Alert.alert('Hapus Item', `Hapus ${groupPendingIds.length} item dari keranjang?`, [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Hapus', style: 'destructive', onPress: () => {
+          groupPendingIds.forEach(id => removeItem(id));
+          setPendingDelete(prev => {
+            const next = new Set(prev);
+            groupPendingIds.forEach(id => next.delete(id));
+            return next;
+          });
+        },
+      },
+    ]);
+  };
+
+  const handleBuyGroup = async (groupItems: typeof items) => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to checkout.', [
-        { text: 'Sign In', onPress: () => router.replace('/(auth)/login' as any) },
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert('Login Diperlukan', 'Silakan masuk untuk melanjutkan checkout.', [
+        { text: 'Masuk', onPress: () => router.replace('/(auth)/login' as any) },
+        { text: 'Batal', style: 'cancel' },
       ]);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCheckoutLoading(true);
     try {
+      const subtotal = groupItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      const total = subtotal + 15000;
       const externalId = `tipl-cart-${Date.now()}`;
-      const itemDesc = selectedItemsData.length === 1
-        ? selectedItemsData[0].name
-        : `${selectedItemsData.length} items`;
+      const itemDesc = groupItems.length === 1 ? groupItems[0].name : `${groupItems.length} items`;
       const { invoice_url } = await createXenditInvoice({
         externalId,
         amount: total,
         payerEmail: user.email,
         description: `TipL Order - ${itemDesc}`,
       });
-      selectedItems.forEach((id) => removeItem(id));
+      groupItems.forEach(i => removeItem(i.id));
       router.push({
         pathname: '/payment/xendit-qr',
         params: {
           invoiceUrl: invoice_url,
           orderId: externalId,
           buyerId: user.id,
-          travelerId: selectedItemsData[0]?.travelerId ?? '',
+          travelerId: groupItems[0]?.travelerId ?? '',
           amount: String(total),
           currency: 'IDR',
         },
@@ -90,15 +112,22 @@ export default function CartScreen() {
         <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
           <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
-        <View style={{ flex: 1 }} />
+        <Text style={st.headerTitle}>Keranjang</Text>
         {items.length > 0 && (
-          <TouchableOpacity onPress={() => Alert.alert('Clear Cart', 'Remove all items?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Clear', style: 'destructive', onPress: () => selectedItems.forEach((id) => removeItem(id)) },
-          ])}>
-            <Text style={st.clearTxt}>Clear</Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (editMode) {
+                setEditMode(false);
+                setPendingDelete(new Set());
+              } else {
+                setEditMode(true);
+              }
+            }}
+          >
+            <Text style={st.editTxt}>{editMode ? 'Selesai' : 'Ubah'}</Text>
           </TouchableOpacity>
         )}
+        {!items.length && <View style={{ width: 48 }} />}
       </View>
 
       <ScrollView style={st.body} showsVerticalScrollIndicator={false}>
@@ -107,125 +136,137 @@ export default function CartScreen() {
             <View style={st.emptyIcon}>
               <Ionicons name="cart-outline" size={48} color={Colors.midGray} />
             </View>
-            <Text style={st.emptyTitle}>Your cart is empty</Text>
-            <Text style={st.emptyDesc}>Find unique items from travelers around the world</Text>
+            <Text style={st.emptyTitle}>Keranjang kosong</Text>
+            <Text style={st.emptyDesc}>Temukan produk unik dari para traveler</Text>
             <TouchableOpacity onPress={() => router.push('/')} style={st.shopBtn}>
               <LinearGradient colors={[Colors.primaryLight, Colors.primaryDark]} style={st.shopBtnGrad}>
-                <Text style={st.shopBtnTxt}>Explore Products</Text>
+                <Text style={st.shopBtnTxt}>Jelajahi Produk</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={st.cartList}>
-            {/* Escrow Notice */}
-            <View style={st.escrowBanner}>
-              <Ionicons name="shield-checkmark" size={18} color={Colors.primary} />
-              <Text style={st.escrowTxt}>All payments are held in escrow until delivery confirmed</Text>
-            </View>
-
             {groupedArray.map((group) => {
-              const allGroupSelected = group.items.every((i) => selectedItems.includes(i.id));
-              return (
-                <View key={group.travelerId} style={st.storeCard}>
-                  <View style={st.storeHeader}>
-                    <TouchableOpacity
-                      style={st.checkbox}
-                      onPress={() => toggleTravelerSelection(group.travelerId, !allGroupSelected)}
-                    >
-                      <Ionicons
-                        name={allGroupSelected ? 'checkbox' : 'square-outline'}
-                        size={22}
-                        color={allGroupSelected ? Colors.primary : Colors.midGray}
-                      />
-                    </TouchableOpacity>
-                    <View style={st.travelerBadge}>
-                      <Ionicons name="person-circle-outline" size={16} color={Colors.primary} />
-                      <Text style={st.storeName}>{group.travelerName}</Text>
-                    </View>
-                    <View style={st.verifiedBadge}>
-                      <Ionicons name="shield-checkmark" size={12} color={Colors.success} />
-                      <Text style={st.verifiedTxt}>Verified</Text>
-                    </View>
-                  </View>
+              const groupPendingIds = group.items.filter(i => pendingDelete.has(i.id)).map(i => i.id);
+              const subtotal = group.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+              const initials = group.travelerName.charAt(0).toUpperCase();
 
-                  {group.items.map((item) => {
-                    const isSelected = selectedItems.includes(item.id);
-                    return (
-                      <View key={item.id} style={[st.itemRow, isSelected && st.itemRowSelected]}>
-                        <TouchableOpacity style={st.checkbox} onPress={() => toggleSelection(item.id)}>
-                          <Ionicons
-                            name={isSelected ? 'checkbox' : 'square-outline'}
-                            size={22}
-                            color={isSelected ? Colors.primary : Colors.midGray}
-                          />
-                        </TouchableOpacity>
-                        <Image source={{ uri: item.imageUrl }} style={st.itemImg} contentFit="cover" />
-                        <View style={st.itemInfo}>
-                          <Text style={st.itemName} numberOfLines={2}>{item.name}</Text>
-                          <Text style={st.itemPrice}>{fmtIDR(item.price)}</Text>
-                          <View style={st.qtyRow}>
-                            <TouchableOpacity onPress={() => removeItem(item.id)} style={st.removeBtn}>
-                              <Ionicons name="trash-outline" size={16} color={Colors.error} />
-                            </TouchableOpacity>
-                            <View style={st.qtyCtrl}>
-                              <Text style={st.qtyTxt}>Qty: {item.quantity}</Text>
-                            </View>
-                          </View>
+              return (
+                <View key={group.travelerId} style={st.groupCard}>
+                  {/* Seller header — tappable to their trip page */}
+                  <TouchableOpacity
+                    style={st.sellerRow}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      const tripId = group.items[0]?.tripId;
+                      if (tripId) router.push(`/trip/${tripId}` as any);
+                    }}
+                  >
+                    <View style={st.sellerAvatar}>
+                      <Text style={st.sellerAvatarTxt}>{initials}</Text>
+                    </View>
+                    <View style={st.sellerInfo}>
+                      <View style={st.sellerNameRow}>
+                        <Text style={st.sellerName}>{group.travelerName}</Text>
+                        <View style={st.verifiedBadge}>
+                          <Ionicons name="shield-checkmark" size={10} color={Colors.success} />
+                          <Text style={st.verifiedTxt}>Terverifikasi</Text>
                         </View>
                       </View>
-                    );
-                  })}
+                      <Text style={st.itemCountTxt}>{group.items.length} produk</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.midGray} />
+                  </TouchableOpacity>
+
+                  {/* Horizontal product photos */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={st.photoScroll}
+                    contentContainerStyle={st.photoScrollContent}
+                  >
+                    {group.items.map(item => {
+                      const marked = pendingDelete.has(item.id);
+                      return (
+                        <View key={item.id} style={[st.photoCard, marked && st.photoCardMarked]}>
+                          <Image source={{ uri: item.imageUrl }} style={st.photoImg} contentFit="cover" />
+                          <LinearGradient
+                            colors={['transparent', 'rgba(0,0,0,0.72)']}
+                            style={st.photoOverlay}
+                          >
+                            <Text style={st.photoName} numberOfLines={1}>{item.name}</Text>
+                            <Text style={st.photoPrice}>{fmtIDR(item.price)}</Text>
+                            {item.quantity > 1 && (
+                              <Text style={st.photoQty}>x{item.quantity}</Text>
+                            )}
+                          </LinearGradient>
+                          {editMode && (
+                            <TouchableOpacity
+                              style={[st.deleteX, marked && st.deleteXActive]}
+                              onPress={() => togglePendingDelete(item.id)}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Ionicons name="close" size={12} color={Colors.white} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })}
+
+                  </ScrollView>
+
+                  {/* Group footer */}
+                  <View style={st.groupFooter}>
+                    <View>
+                      <Text style={st.subtotalLbl}>Subtotal</Text>
+                      <Text style={st.subtotalVal}>{fmtIDR(subtotal)}</Text>
+                    </View>
+
+                    {editMode ? (
+                      <TouchableOpacity
+                        style={[st.hapusBtn, groupPendingIds.length === 0 && st.hapusBtnDisabled]}
+                        onPress={() => handleDeleteGroup(group.items, groupPendingIds)}
+                        disabled={groupPendingIds.length === 0}
+                      >
+                        <Text style={[st.hapusBtnTxt, groupPendingIds.length === 0 && st.hapusBtnTxtDisabled]}>
+                          {groupPendingIds.length > 0 ? `Hapus ${groupPendingIds.length} item` : 'Pilih item'}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => handleBuyGroup(group.items)}
+                        disabled={checkoutLoading}
+                        style={st.beliWrap}
+                      >
+                        <LinearGradient
+                          colors={checkoutLoading ? [Colors.midGray, Colors.midGray] : [Colors.primaryLight, Colors.primaryDark]}
+                          style={st.beliBtn}
+                        >
+                          {checkoutLoading
+                            ? <ActivityIndicator color={Colors.white} size="small" />
+                            : <Text style={st.beliBtnTxt}>Beli sekarang</Text>
+                          }
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               );
             })}
+
           </View>
         )}
-        <View style={{ height: 120 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Bottom Bar */}
-      {items.length > 0 && (
-        <View style={st.bottomBar}>
-          <TouchableOpacity style={st.selectAllRow} onPress={() => toggleAllSelection(!allSelected)}>
-            <Ionicons
-              name={allSelected ? 'checkbox' : 'square-outline'}
-              size={22}
-              color={allSelected ? Colors.primary : Colors.midGray}
-            />
-            <Text style={st.selectAllTxt}>All ({items.length})</Text>
-          </TouchableOpacity>
-
-          <View style={st.totalCol}>
-            <Text style={st.totalLbl}>Total Payment</Text>
-            <Text style={st.totalVal}>{fmtIDR(total)}</Text>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleCheckout}
-            disabled={selectedItems.length === 0 || checkoutLoading}
-          >
-            <LinearGradient
-              colors={selectedItems.length === 0 || checkoutLoading
-                ? [Colors.midGray, Colors.midGray]
-                : [Colors.primaryLight, Colors.primaryDark]}
-              style={st.buyBtn}
-            >
-              {checkoutLoading
-                ? <ActivityIndicator color={Colors.white} size="small" />
-                : <Text style={st.buyTxt}>Order ({selectedItems.length})</Text>
-              }
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      )}
-
     </SafeAreaView>
   );
 }
 
+const PHOTO_SIZE = 120;
+
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -237,11 +278,11 @@ const st = StyleSheet.create({
     borderBottomColor: Colors.lightGray,
   },
   backBtn: { width: 36, height: 36, justifyContent: 'center' },
-  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
-  clearTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
+  headerTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  editTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, paddingHorizontal: 4 },
+
   body: { flex: 1 },
 
-  // Empty state
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingHorizontal: Spacing['2xl'], gap: Spacing.md },
   emptyIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
   emptyTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack },
@@ -250,48 +291,97 @@ const st = StyleSheet.create({
   shopBtnGrad: { paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.base },
   shopBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 
-  // Cart List
-  cartList: { paddingTop: Spacing.md },
-  escrowBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryPale, marginHorizontal: Spacing.base, marginBottom: Spacing.md, borderRadius: BorderRadius.md, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.primaryLight },
-  escrowTxt: { flex: 1, fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, lineHeight: 16 },
+  cartList: { paddingTop: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.md },
 
-  storeCard: { backgroundColor: Colors.white, marginHorizontal: Spacing.sm, marginBottom: Spacing.sm, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.lightGray, overflow: 'hidden', ...Shadows.sm },
-  storeHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.base, gap: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.lightGray, backgroundColor: Colors.offWhite },
-  checkbox: { paddingRight: Spacing.xs },
-  travelerBadge: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  storeName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: Colors.successLight, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full },
-  verifiedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.success },
+  groupCard: {
+    backgroundColor: Colors.white,
+    marginHorizontal: Spacing.base,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+    overflow: 'hidden',
+    ...Shadows.sm,
+  },
 
-  itemRow: { flexDirection: 'row', padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
-  itemRowSelected: { backgroundColor: Colors.primaryPale + '50' },
-  itemImg: { width: 76, height: 76, borderRadius: BorderRadius.md, backgroundColor: Colors.cream },
-  itemInfo: { flex: 1, marginLeft: Spacing.md },
-  itemName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack, lineHeight: 18, marginBottom: 4 },
-  itemPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.sm },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  removeBtn: { padding: 4 },
-  qtyCtrl: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.offWhite, borderWidth: 1, borderColor: Colors.lightGray, borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 4 },
-  qtyTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.nearBlack },
-
-  // Bottom Bar
-  bottomBar: {
+  sellerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.base,
-    paddingBottom: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    gap: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
+  },
+  sellerAvatar: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.primaryPale,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: Colors.primaryLight,
+  },
+  sellerAvatarTxt: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  sellerInfo: { flex: 1 },
+  sellerNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  sellerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  verifiedBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.successLight,
+    paddingHorizontal: Spacing.xs, paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  verifiedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.success },
+  itemCountTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
+
+  photoScroll: { paddingVertical: Spacing.md },
+  photoScrollContent: { paddingHorizontal: Spacing.md, gap: Spacing.sm, alignItems: 'flex-start' },
+
+  photoCard: {
+    width: PHOTO_SIZE, height: PHOTO_SIZE + 24,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: Colors.cream,
+  },
+  photoCardMarked: { opacity: 0.55 },
+  photoImg: { width: '100%', height: '100%' },
+  photoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    padding: Spacing.sm,
+  },
+  photoName: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.white, lineHeight: 12 },
+  photoPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.xs, color: Colors.white, marginTop: 1 },
+  photoQty: { fontFamily: Typography.regular.fontFamily, fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
+
+  deleteX: {
+    position: 'absolute', top: 5, right: 5,
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  deleteXActive: { backgroundColor: Colors.error },
+
+  groupFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
-    ...Shadows.md,
   },
-  selectAllRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  selectAllTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  totalCol: { flex: 1, alignItems: 'flex-end', marginRight: Spacing.md },
-  totalLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray },
-  totalVal: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  buyBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
-  buyTxt: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
+  subtotalLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray },
+  subtotalVal: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginTop: 1 },
+
+  beliWrap: { borderRadius: BorderRadius.full, overflow: 'hidden' },
+  beliBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
+  beliBtnTxt: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
+
+  hapusBtn: {
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5, borderColor: Colors.error,
+  },
+  hapusBtnDisabled: { borderColor: Colors.midGray },
+  hapusBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
+  hapusBtnTxtDisabled: { color: Colors.midGray },
 
 });

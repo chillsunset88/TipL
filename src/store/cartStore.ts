@@ -13,6 +13,7 @@ export interface CartItem {
   imageUrl?: string;
   travelerId: string;
   travelerName: string;
+  tripId?: string;
 }
 
 interface CartState {

@@ -1,19 +1,13 @@
 /**
- * TipL — Custom Requests List Screen
- * Buyers browse open requests; Travelers browse & accept requests matching their trip.
+ * TipL — Permintaan
+ * Browse = semua request publik dari pembeli (siapa saja bisa ambil)
+ * Permintaan Saya = request yang sudah diterima / diarahkan ke akun traveler ini
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  TextInput,
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  ActivityIndicator, Alert, RefreshControl, TextInput,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -21,7 +15,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/store/authStore';
-import { getOpenRequests, getMyRequests, acceptRequest, CustomRequestWithProfile } from '@/src/services/supabase/requests';
+import {
+  getOpenRequests,
+  getRequestsForTriper,
+  acceptRequest,
+  CustomRequestWithProfile,
+} from '@/src/services/supabase/requests';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 
 interface CustomRequest {
@@ -67,10 +66,10 @@ const fmtCurrency = (amount: number, currency: string) =>
 const timeAgo = (ms: number): string => {
   const diff = Date.now() - ms;
   const m = Math.floor(diff / 60000);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return `${m}m lalu`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return `${h}j lalu`;
+  return `${Math.floor(h / 24)}h lalu`;
 };
 
 export default function CustomRequestsScreen() {
@@ -82,17 +81,22 @@ export default function CustomRequestsScreen() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
-  // View mode: 'browse' = Triper sees all open requests, 'mine' = Tiper sees own
+  // browse = semua permintaan publik | mine = request yang khusus ke traveler ini
   const [mode, setMode] = useState<'browse' | 'mine'>('browse');
 
   const load = useCallback(async () => {
-    if (!user && mode === 'mine') { setLoading(false); setRefreshing(false); return; }
     try {
-      const raw = mode === 'mine' && user
-        ? await getMyRequests(user.id)
-        : await getOpenRequests();
+      let raw: CustomRequestWithProfile[];
+      if (mode === 'mine') {
+        if (!user) { setRequests([]); setLoading(false); setRefreshing(false); return; }
+        raw = await getRequestsForTriper(user.id);
+      } else {
+        raw = await getOpenRequests();
+      }
       setRequests(raw.map(mapRequest));
-    } catch { /* ignore */ } finally {
+    } catch {
+      // ignore
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
@@ -104,12 +108,12 @@ export default function CustomRequestsScreen() {
     async (request: CustomRequest) => {
       if (!user) return;
       Alert.alert(
-        'Accept Request',
-        `Accept "${request.productName}" for up to ${fmtCurrency(request.maxBudget, request.currency)}?\n\nThis will open a chat with the buyer.`,
+        'Ambil Permintaan',
+        `Ambil permintaan "${request.productName}" dengan budget maks ${fmtCurrency(request.maxBudget, request.currency)}?\n\nChat dengan pembeli akan dibuka.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: 'Batal', style: 'cancel' },
           {
-            text: 'Accept',
+            text: 'Ambil',
             onPress: async () => {
               setAcceptingId(request.id);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -117,14 +121,10 @@ export default function CustomRequestsScreen() {
                 await acceptRequest(request.id, user.id);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 load();
-                Alert.alert(
-                  'Request Accepted!',
-                  'A chat has been opened with the buyer.',
-                  [{ text: 'OK' }],
-                );
+                Alert.alert('Berhasil!', 'Permintaan berhasil diambil. Chat dengan pembeli sudah terbuka.', [{ text: 'OK' }]);
               } catch {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert('Error', 'Failed to accept. Please try again.');
+                Alert.alert('Error', 'Gagal mengambil permintaan. Coba lagi.');
               } finally {
                 setAcceptingId(null);
               }
@@ -141,14 +141,11 @@ export default function CustomRequestsScreen() {
       !search ||
       r.productName.toLowerCase().includes(search.toLowerCase()) ||
       r.description.toLowerCase().includes(search.toLowerCase());
-    const matchesCountry =
-      !selectedCountry || r.targetCountries.includes(selectedCountry);
+    const matchesCountry = !selectedCountry || r.targetCountries.includes(selectedCountry);
     return matchesSearch && matchesCountry;
   });
 
-  const allCountries = Array.from(
-    new Set(requests.flatMap((r) => r.targetCountries)),
-  ).sort();
+  const allCountries = Array.from(new Set(requests.flatMap((r) => r.targetCountries))).sort();
 
   const renderItem = useCallback(
     ({ item }: { item: CustomRequest }) => {
@@ -157,15 +154,9 @@ export default function CustomRequestsScreen() {
 
       return (
         <View style={styles.card}>
-          {/* Header Row */}
           <View style={styles.cardHeader}>
             {item.imageUrl ? (
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.productThumb}
-                contentFit="cover"
-                transition={200}
-              />
+              <Image source={{ uri: item.imageUrl }} style={styles.productThumb} contentFit="cover" transition={200} />
             ) : (
               <View style={[styles.productThumb, styles.thumbPlaceholder]}>
                 <Ionicons name="cube-outline" size={22} color={Colors.gray} />
@@ -173,9 +164,7 @@ export default function CustomRequestsScreen() {
             )}
 
             <View style={styles.cardHeaderInfo}>
-              <Text style={styles.productName} numberOfLines={1}>
-                {item.productName}
-              </Text>
+              <Text style={styles.productName} numberOfLines={1}>{item.productName}</Text>
               <View style={styles.metaRow}>
                 <View style={styles.categoryChip}>
                   <Text style={styles.categoryText}>{item.category}</Text>
@@ -184,42 +173,31 @@ export default function CustomRequestsScreen() {
               </View>
             </View>
 
-            {/* Status badge */}
             <View style={[styles.statusBadge, item.status === 'matched' && styles.statusMatched]}>
-              <Text style={styles.statusText}>
-                {item.status === 'open' ? 'Open' : item.status === 'matched' ? 'Matched' : 'Closed'}
+              <Text style={[styles.statusText, item.status === 'matched' && styles.statusTextMatched]}>
+                {item.status === 'open' ? 'Terbuka' : item.status === 'matched' ? 'Diambil' : 'Ditutup'}
               </Text>
             </View>
           </View>
 
-          {/* Description */}
-          <Text style={styles.description} numberOfLines={2}>
-            {item.description}
-          </Text>
+          <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
 
-          {/* Countries */}
-          <View style={styles.countriesRow}>
-            <Ionicons name="location-outline" size={13} color={Colors.gray} />
-            <Text style={styles.countriesText} numberOfLines={1}>
-              {item.targetCountries.join(' · ')}
-            </Text>
-          </View>
+          {item.targetCountries.length > 0 && (
+            <View style={styles.countriesRow}>
+              <Ionicons name="location-outline" size={13} color={Colors.gray} />
+              <Text style={styles.countriesText} numberOfLines={1}>{item.targetCountries.join(' · ')}</Text>
+            </View>
+          )}
 
-          {/* Footer */}
           <View style={styles.cardFooter}>
-            {/* Buyer */}
             <View style={styles.buyerRow}>
               <Ionicons name="person-circle-outline" size={16} color={Colors.gray} />
               <Text style={styles.buyerName}>{item.buyerName}</Text>
             </View>
 
-            {/* Budget */}
-            <Text style={styles.budget}>
-              Max {fmtCurrency(item.maxBudget, item.currency)}
-            </Text>
+            <Text style={styles.budget}>Maks {fmtCurrency(item.maxBudget, item.currency)}</Text>
 
-            {/* Action */}
-            {!isOwn && item.status === 'open' && (
+            {!isOwn && item.status === 'open' && mode === 'browse' && (
               <TouchableOpacity
                 style={styles.acceptBtn}
                 onPress={() => handleAccept(item)}
@@ -231,15 +209,23 @@ export default function CustomRequestsScreen() {
                 ) : (
                   <>
                     <Ionicons name="checkmark-circle" size={15} color={Colors.white} />
-                    <Text style={styles.acceptText}>Accept</Text>
+                    <Text style={styles.acceptText}>Ambil</Text>
                   </>
                 )}
               </TouchableOpacity>
             )}
-            {isOwn && (
+
+            {mode === 'mine' && (
+              <View style={styles.forMeBadge}>
+                <Ionicons name="airplane" size={12} color={Colors.primary} />
+                <Text style={styles.forMeText}>Untuk saya</Text>
+              </View>
+            )}
+
+            {isOwn && mode === 'browse' && (
               <View style={styles.ownBadge}>
                 <Ionicons name="person" size={12} color={Colors.primary} />
-                <Text style={styles.ownText}>Your request</Text>
+                <Text style={styles.ownText}>Milikmu</Text>
               </View>
             )}
           </View>
@@ -247,32 +233,32 @@ export default function CustomRequestsScreen() {
           {item.referenceUrl && (
             <View style={styles.refUrlRow}>
               <Ionicons name="link-outline" size={12} color={Colors.primary} />
-              <Text style={styles.refUrlText} numberOfLines={1}>
-                {item.referenceUrl}
-              </Text>
+              <Text style={styles.refUrlText} numberOfLines={1}>{item.referenceUrl}</Text>
             </View>
           )}
         </View>
       );
     },
-    [user, acceptingId, handleAccept],
+    [user, acceptingId, handleAccept, mode],
   );
 
   const ListEmpty = () => (
     <View style={styles.empty}>
       <Ionicons name="bag-outline" size={64} color={Colors.midGray} />
-      <Text style={styles.emptyTitle}>No requests yet</Text>
+      <Text style={styles.emptyTitle}>
+        {mode === 'mine' ? 'Belum ada permintaan untukmu' : 'Belum ada permintaan'}
+      </Text>
       <Text style={styles.emptySubtitle}>
         {mode === 'mine'
-          ? 'Post your first request and let travelers bring it for you.'
-          : 'No open requests match your filter.'}
+          ? 'Permintaan yang kamu ambil dari pembeli akan muncul di sini.'
+          : 'Belum ada permintaan yang cocok dengan filter kamu.'}
       </Text>
-      {mode === 'mine' && (
+      {mode === 'browse' && (
         <TouchableOpacity
           style={styles.emptyBtn}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/request/create'); }}
         >
-          <Text style={styles.emptyBtnText}>Post a Request</Text>
+          <Text style={styles.emptyBtnText}>Buat Permintaan</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -300,7 +286,7 @@ export default function CustomRequestsScreen() {
           style={[styles.modeBtn, mode === 'browse' && styles.modeBtnActive]}
           onPress={() => { setMode('browse'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
-          <Ionicons name="search-outline" size={14} color={mode === 'browse' ? Colors.white : Colors.gray} />
+          <Ionicons name="earth-outline" size={14} color={mode === 'browse' ? Colors.white : Colors.gray} />
           <Text style={[styles.modeBtnText, mode === 'browse' && styles.modeBtnTextActive]}>Browse</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -308,8 +294,22 @@ export default function CustomRequestsScreen() {
           onPress={() => { setMode('mine'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <Ionicons name="person-outline" size={14} color={mode === 'mine' ? Colors.white : Colors.gray} />
-          <Text style={[styles.modeBtnText, mode === 'mine' && styles.modeBtnTextActive]}>My Requests</Text>
+          <Text style={[styles.modeBtnText, mode === 'mine' && styles.modeBtnTextActive]}>Permintaan Saya</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Tab description */}
+      <View style={styles.tabDesc}>
+        <Ionicons
+          name={mode === 'browse' ? 'information-circle-outline' : 'airplane-outline'}
+          size={13}
+          color={Colors.darkGray}
+        />
+        <Text style={styles.tabDescText}>
+          {mode === 'browse'
+            ? 'Semua permintaan publik dari pembeli — ambil dan bawakan untuk mereka'
+            : 'Permintaan yang secara khusus ditujukan atau kamu ambil'}
+        </Text>
       </View>
 
       {/* Search */}
@@ -317,7 +317,7 @@ export default function CustomRequestsScreen() {
         <Ionicons name="search-outline" size={16} color={Colors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search requests..."
+          placeholder="Cari permintaan..."
           placeholderTextColor={Colors.gray}
           value={search}
           onChangeText={setSearch}
@@ -333,7 +333,7 @@ export default function CustomRequestsScreen() {
       {/* Country filter chips */}
       {allCountries.length > 0 && (
         <FlatList
-          data={['All', ...allCountries]}
+          data={['Semua', ...allCountries]}
           horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item}
@@ -343,17 +343,17 @@ export default function CustomRequestsScreen() {
             <TouchableOpacity
               style={[
                 styles.filterChip,
-                (item === 'All' ? selectedCountry === null : selectedCountry === item) && styles.filterChipActive,
+                (item === 'Semua' ? selectedCountry === null : selectedCountry === item) && styles.filterChipActive,
               ]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setSelectedCountry(item === 'All' ? null : item);
+                setSelectedCountry(item === 'Semua' ? null : item);
               }}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                  (item === 'All' ? selectedCountry === null : selectedCountry === item) && styles.filterChipTextActive,
+                  (item === 'Semua' ? selectedCountry === null : selectedCountry === item) && styles.filterChipTextActive,
                 ]}
               >
                 {item}
@@ -392,281 +392,134 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base, paddingVertical: Spacing.md,
+    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-  },
-  newBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  newBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
 
   modeToggle: {
-    flexDirection: 'row',
-    backgroundColor: Colors.lightGray,
-    margin: Spacing.base,
-    borderRadius: BorderRadius.lg,
-    padding: 3,
+    flexDirection: 'row', backgroundColor: Colors.lightGray,
+    margin: Spacing.base, borderRadius: BorderRadius.lg, padding: 3,
   },
   modeBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 5, paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
   },
   modeBtnActive: { backgroundColor: Colors.primary },
-  modeBtnText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.gray,
-  },
+  modeBtnText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
   modeBtnTextActive: { color: Colors.white },
 
+  tabDesc: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.xs,
+    marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
+  },
+  tabDescText: {
+    flex: 1, fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs, color: Colors.darkGray, lineHeight: 16,
+  },
+
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    marginHorizontal: Spacing.base,
-    marginBottom: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.midGray,
-    ...Shadows.sm,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
+    marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md,
+    gap: Spacing.sm, borderWidth: 1, borderColor: Colors.midGray, ...Shadows.sm,
   },
   searchInput: {
-    flex: 1,
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-    paddingVertical: Spacing.md,
+    flex: 1, fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.sm, color: Colors.nearBlack, paddingVertical: Spacing.md,
   },
 
   filterList: { maxHeight: 44 },
-  filterContent: {
-    paddingHorizontal: Spacing.base,
-    gap: Spacing.sm,
-    paddingBottom: Spacing.sm,
-  },
+  filterContent: { paddingHorizontal: Spacing.base, gap: Spacing.sm, paddingBottom: Spacing.sm },
   filterChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.midGray,
+    paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full,
+    backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.midGray,
   },
   filterChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  filterChipText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-  },
+  filterChipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
   filterChipTextActive: { color: Colors.white },
 
   listContent: { padding: Spacing.base, paddingTop: Spacing.sm, paddingBottom: 40 },
 
   card: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
-    marginBottom: Spacing.md,
-    ...Shadows.md,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
+    backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
+    padding: Spacing.base, marginBottom: Spacing.md,
+    ...Shadows.md, borderWidth: 1, borderColor: Colors.lightGray,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  productThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.md,
-    flexShrink: 0,
-  },
-  thumbPlaceholder: {
-    backgroundColor: Colors.lightGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, marginBottom: Spacing.sm },
+  productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, flexShrink: 0 },
+  thumbPlaceholder: { backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center' },
   cardHeaderInfo: { flex: 1 },
   productName: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    marginBottom: 4,
+    fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base,
+    color: Colors.nearBlack, marginBottom: 4,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  categoryChip: {
-    backgroundColor: Colors.primary + '18',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  categoryText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 10,
-    color: Colors.primaryDark,
-    textTransform: 'capitalize',
-  },
-  timeText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 10,
-    color: Colors.gray,
-  },
-  statusBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.successLight,
-  },
-  statusMatched: { backgroundColor: Colors.infoLight },
-  statusText: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: 10,
-    color: Colors.success,
-  },
+  categoryChip: { backgroundColor: Colors.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full },
+  categoryText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primaryDark, textTransform: 'capitalize' },
+  timeText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.gray },
+  statusBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, backgroundColor: Colors.successLight },
+  statusMatched: { backgroundColor: Colors.primaryPale },
+  statusText: { fontFamily: Typography.semiBold.fontFamily, fontSize: 10, color: Colors.success },
+  statusTextMatched: { color: Colors.primary },
 
   description: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    lineHeight: 20,
-    marginBottom: Spacing.sm,
+    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+    color: Colors.darkGray, lineHeight: 20, marginBottom: Spacing.sm,
   },
-  countriesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: Spacing.md,
-  },
-  countriesText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.gray,
-    flex: 1,
-  },
+  countriesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: Spacing.md },
+  countriesText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, flex: 1 },
 
   cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray,
   },
   buyerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  buyerName: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-  },
-  budget: {
-    fontFamily: Typography.bold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.primary,
-  },
+  buyerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
+  budget: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
   acceptBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    minWidth: 80,
-    justifyContent: 'center',
-    ...Shadows.sm,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.primary, paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm, borderRadius: BorderRadius.lg,
+    minWidth: 80, justifyContent: 'center', ...Shadows.sm,
   },
-  acceptText: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.white,
-  },
-  ownBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary + '15',
-  },
-  ownText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 10,
-    color: Colors.primary,
-  },
+  acceptText: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
 
-  refUrlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: Spacing.sm,
+  forMeBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: Spacing.sm, paddingVertical: 4,
+    borderRadius: BorderRadius.full, backgroundColor: Colors.primaryPale,
+    borderWidth: 1, borderColor: Colors.primaryLight,
   },
-  refUrlText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 10,
-    color: Colors.primary,
-    flex: 1,
+  forMeText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary },
+
+  ownBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: Spacing.sm, paddingVertical: 4,
+    borderRadius: BorderRadius.full, backgroundColor: Colors.primary + '15',
   },
+  ownText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary },
+
+  refUrlRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.sm },
+  refUrlText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.primary, flex: 1 },
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: Spacing.xl },
   emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.lg,
-    color: Colors.charcoal,
-    marginTop: Spacing.base,
-    marginBottom: Spacing.sm,
+    fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.lg,
+    color: Colors.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm,
   },
   emptySubtitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.gray,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: Spacing.xl,
+    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+    color: Colors.gray, textAlign: 'center', lineHeight: 20, marginBottom: Spacing.xl,
   },
   emptyBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.primary, paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md, borderRadius: BorderRadius.lg,
   },
-  emptyBtnText: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.white,
-  },
+  emptyBtnText: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 });

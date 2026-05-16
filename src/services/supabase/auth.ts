@@ -6,12 +6,12 @@ export async function signIn(email: string, password: string) {
   return data;
 }
 
-export async function signUp(email: string, password: string, fullName: string, role: 'tiper' | 'triper') {
+export async function signUp(email: string, password: string, fullName: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName, role },
+      data: { full_name: fullName },
       emailRedirectTo: 'tiplapp://',
     },
   });

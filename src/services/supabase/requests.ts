@@ -31,6 +31,17 @@ export async function getMyRequests(tiperId: string): Promise<CustomRequestWithP
   return (data ?? []) as CustomRequestWithProfile[];
 }
 
+// Requests specifically directed at / accepted by this traveler
+export async function getRequestsForTriper(triperId: string): Promise<CustomRequestWithProfile[]> {
+  const { data, error } = await db
+    .from('custom_requests')
+    .select('*, profiles(id, full_name, avatar_url)')
+    .eq('taken_by', triperId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as CustomRequestWithProfile[];
+}
+
 export async function createRequest(payload: CustomRequestInsert): Promise<CustomRequest> {
   const { data, error } = await db
     .from('custom_requests')

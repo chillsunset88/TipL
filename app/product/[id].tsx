@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
-import { JASTIP_PRODUCTS } from '@/src/lib/mockData';
+import { JASTIP_PRODUCTS, MOCK_TRIPS } from '@/src/lib/mockData';
 import { getProductWithTripInfo } from '@/src/services/supabase/trips';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useCartStore } from '@/src/store/cartStore';
@@ -36,6 +36,7 @@ type ProductDisplay = {
   travelerRating: number;
   travelerVerified: boolean;
   travelerId: string;
+  tripId?: string;
 };
 
 export default function ProductDetailScreen() {
@@ -67,6 +68,7 @@ export default function ProductDetailScreen() {
           travelerRating: mock.travelerRating,
           travelerVerified: mock.travelerVerified,
           travelerId: mock.travelerId,
+          tripId: MOCK_TRIPS.find((t) => t.travelerId === mock.travelerId)?.id,
         });
       }
       setLoading(false);
@@ -90,6 +92,7 @@ export default function ProductDetailScreen() {
               travelerRating: data.profiles?.rating ?? 0,
               travelerVerified: !!data.profiles,
               travelerId: data.triper_id,
+              tripId: (data as any).trip_id ?? undefined,
             });
           }
         })
@@ -129,6 +132,7 @@ export default function ProductDetailScreen() {
       imageUrl: product.imageUrl,
       travelerId: product.travelerId,
       travelerName: product.travelerName,
+      tripId: product.tripId,
     });
     Alert.alert('Added to Cart', `${product.name} has been added to your cart.`);
   };
