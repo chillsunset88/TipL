@@ -18,7 +18,7 @@ import {
   Dimensions, FlatList, Platform, RefreshControl, ScrollView,
   StatusBar, StyleSheet, Text, TouchableOpacity, View, type GestureResponderEvent,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Carousel from "react-native-reanimated-carousel";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
@@ -36,6 +36,7 @@ const DESTINATION_BANNERS = [
 const fmtIDR = (v: number) => "Rp " + v.toLocaleString("id-ID");
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [carouselIdx, setCarouselIdx] = useState(0);
   const { t } = useSettingsStore();
@@ -95,18 +96,11 @@ export default function HomeScreen() {
         </SafeAreaView>
       </View>
 
-      {/* Quick Actions */}
-      <View style={s.quickRow}>
-        <QuickBtn icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips' as any)} />
-        <QuickBtn icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
-        <QuickBtn icon="heart-outline"      label="Wishlist"   color={Colors.error}   onPress={() => router.push('/profile/wishlist' as any)} />
-        <QuickBtn icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
-      </View>
-
       {/* Scrollable */}
       <ScrollView
         style={s.scroll}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.primary} />
         }
@@ -264,7 +258,6 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -275,22 +268,6 @@ function Badge({ count }: { count: number }) {
     <View style={s.badge}>
       <Text style={s.badgeText}>{count > 9 ? "9+" : count}</Text>
     </View>
-  );
-}
-
-function QuickBtn({ icon, label, color, onPress }: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  color: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity style={s.quickBtn} activeOpacity={0.75} onPress={onPress}>
-      <View style={[s.quickIcon, { backgroundColor: `${color}18` }]}>
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <Text style={s.quickLabel} numberOfLines={1}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -380,27 +357,6 @@ const s = StyleSheet.create({
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   badge: { position: "absolute", top: 2, right: 2, backgroundColor: Colors.error, borderRadius: 10, minWidth: 17, height: 17, alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.white },
   badgeText: { fontFamily: Typography.bold.fontFamily, fontSize: 9, color: Colors.white },
-
-  quickRow: {
-    flexDirection: "row",
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.xs,
-  },
-  quickBtn: { flex: 1, alignItems: "center", gap: 5 },
-  quickIcon: {
-    width: 48, height: 48, borderRadius: BorderRadius.lg,
-    alignItems: "center", justifyContent: "center",
-  },
-  quickLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 11,
-    color: Colors.charcoal,
-    textAlign: "center",
-  },
 
   scroll: { flex: 1, paddingHorizontal: Spacing.xl },
 

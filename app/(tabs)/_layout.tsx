@@ -9,11 +9,16 @@ import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography, Shadows } from '@/src/lib/constants';
 import { useChatStore } from '@/src/store/chatStore';
 
 export default function TabLayout() {
   const totalUnread = useChatStore((s) => s.totalUnread);
+  const insets = useSafeAreaInsets();
+
+  const TAB_CONTENT_HEIGHT = Platform.OS === 'ios' ? 50 : 54;
+  const tabBarHeight = TAB_CONTENT_HEIGHT + insets.bottom;
 
   return (
     <Tabs
@@ -34,9 +39,9 @@ export default function TabLayout() {
           backgroundColor: Colors.offWhite,
           borderTopWidth: 1,
           borderTopColor: Colors.lightGray,
-          height: Platform.OS === 'ios' ? 88 : 65,
+          height: tabBarHeight,
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          paddingBottom: insets.bottom + (Platform.OS === 'ios' ? 0 : 6),
           ...Shadows.sm,
         },
       }}
@@ -61,6 +66,19 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'cube' : 'cube-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trips"
+        options={{
+          title: 'Trips',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'airplane' : 'airplane-outline'}
               size={24}
               color={color}
             />

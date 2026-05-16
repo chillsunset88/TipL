@@ -174,7 +174,7 @@ export async function getProductWithTripInfo(id: string): Promise<(ProductWithTr
 
 export function subscribeToTrips(onChange: (trips: TripWithProfile[]) => void) {
   const channel = supabase
-    .channel('trips-feed')
+    .channel(`trips-feed-${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, async () => {
       const fresh = await getOpenTrips();
       onChange(fresh);
