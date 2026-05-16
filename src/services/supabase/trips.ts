@@ -100,6 +100,39 @@ export async function uploadProductImage(tripId: string, localUri: string): Prom
   return data.publicUrl;
 }
 
+export type TripWithProducts = TripWithProfile & { products: Product[] };
+
+export async function getTripsByDestinationWithProducts(destination: string): Promise<TripWithProducts[]> {
+  const { data: raw, error } = await supabase
+    .from('trips')
+    .select('*, profiles(id, full_name, avatar_url, rating, total_trips, total_reviews)')
+    .eq('status', 'open')
+    .or(`destination_country.ilike.%${destination}%,destination_city.ilike.%${destination}%`)
+    .order('departure_date', { ascending: true })
+    .limit(30);
+  if (error) throw error;
+  const trips = (raw ?? []) as TripWithProfile[];
+  if (trips.length === 0) return [];
+
+  const tripIds = trips.map((t) => t.id);
+  const { data: rawProducts, error: pErr } = await supabase
+    .from('products')
+    .select('*')
+    .in('trip_id', tripIds)
+    .eq('is_available', true)
+    .order('created_at', { ascending: false });
+  if (pErr) throw pErr;
+  const products = (rawProducts ?? []) as Product[];
+
+  const byTrip: Record<string, Product[]> = {};
+  for (const p of products) {
+    if (!byTrip[p.trip_id]) byTrip[p.trip_id] = [];
+    byTrip[p.trip_id].push(p);
+  }
+
+  return trips.map((trip) => ({ ...trip, products: byTrip[trip.id] ?? [] }));
+}
+
 export type ProductWithTripInfo = Product & {
   trips: Pick<Trip, 'destination_country' | 'destination_city'> | null;
 };

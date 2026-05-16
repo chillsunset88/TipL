@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -38,16 +38,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ChatRoomScreen() {
   const { id, orderId } = useLocalSearchParams<{ id: string; orderId?: string }>();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id ?? '';
 
-  const { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage } = useChat(id);
-  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
-
-  // The receiver is the other party — for a given orderId context we'd resolve
-  // it from the order, but for the chat screen we accept it as a param or fall back.
   const { receiverId } = useLocalSearchParams<{ receiverId?: string }>();
   const otherUserId = receiverId ?? '';
+
+  const { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage } = useChat(currentUserId, otherUserId);
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
 
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -77,47 +76,48 @@ export default function ChatRoomScreen() {
 
   // Mark messages as read when screen mounts / new messages arrive
   useEffect(() => {
-    if (!id || messages.length === 0 || !currentUserId) return;
-    markMessagesRead(currentUserId).catch(() => {});
-  }, [messages.length, id, currentUserId, markMessagesRead]);
+    if (!currentUserId || !otherUserId || messages.length === 0) return;
+    markMessagesRead().catch(() => {});
+  }, [messages.length, currentUserId, otherUserId, markMessagesRead]);
 
   // ─── Send text ──────────────────────────────────────────────────────────
   const handleSend = useCallback(async () => {
     const text = inputText.trim();
-    if (!text || sending || !id || !currentUserId) return;
+    if (!text || sending || !currentUserId || !otherUserId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setInputText('');
     setSending(true);
     try {
-      await sendMessage(currentUserId, otherUserId, text, id);
-    } catch {
-      Alert.alert('Error', 'Failed to send message.');
+      await sendMessage(text);
+    } catch (e: any) {
+      Alert.alert('Gagal kirim pesan', e?.message ?? 'Terjadi kesalahan.');
     } finally {
       setSending(false);
     }
-  }, [inputText, sending, sendMessage, currentUserId, otherUserId, id]);
+  }, [inputText, sending, sendMessage, currentUserId, otherUserId]);
 
   // ─── Send image ──────────────────────────────────────────────────────────
   const handlePickImage = useCallback(async () => {
+    if (!currentUserId || !otherUserId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.85,
     });
-    if (result.canceled || !result.assets[0] || !id || !currentUserId) return;
+    if (result.canceled || !result.assets[0]) return;
 
     setUploadingImage(true);
     try {
       const url = await uploadChatImage(result.assets[0].uri);
-      await sendImage(currentUserId, otherUserId, url, id);
+      await sendImage(url);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {
-      Alert.alert('Error', 'Failed to send image.');
+    } catch (e: any) {
+      Alert.alert('Gagal kirim gambar', e?.message ?? 'Terjadi kesalahan.');
     } finally {
       setUploadingImage(false);
     }
-  }, [uploadChatImage, sendImage, currentUserId, otherUserId, id]);
+  }, [uploadChatImage, sendImage, currentUserId, otherUserId]);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const formatTime = (iso: string | null) => {
@@ -192,7 +192,7 @@ export default function ChatRoomScreen() {
 
       {/* Messages */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
         keyboardVerticalOffset={0}
       >
@@ -212,7 +212,7 @@ export default function ChatRoomScreen() {
         />
 
         {/* Input bar */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
           <TouchableOpacity
             style={styles.attachButton}
             onPress={handlePickImage}
@@ -379,7 +379,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Colors.darkBorder,
     backgroundColor: Colors.darkBg,

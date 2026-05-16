@@ -5,6 +5,7 @@
 import { Avatar } from "@/src/components/ui/Avatar";
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from "@/src/lib/constants";
 import { JASTIP_PRODUCTS, TRENDING_DESTINATIONS } from "@/src/lib/mockData";
+import { useAuthStore } from "@/src/store/authStore";
 import { useCartStore } from "@/src/store/cartStore";
 import { useNotificationStore } from "@/src/store/notificationStore";
 import { useSettingsStore } from "@/src/store/settingsStore";
@@ -214,7 +215,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={s.destCard}
                 activeOpacity={0.85}
-                onPress={() => router.push(`/search?destination=${item.name}`)}
+                onPress={() => router.push({ pathname: '/destination/[name]', params: { name: item.name, imageUrl: item.imageUrl } } as any)}
               >
                 <Image source={{ uri: item.imageUrl }} style={s.destImg} contentFit="cover" transition={300} />
                 <LinearGradient colors={["transparent", "rgba(20,10,2,0.9)"]} style={s.destOverlay}>
@@ -288,10 +289,17 @@ function TripSkeleton() {
 
 function TravelerCard({ trip }: { trip: TripWithProfile }) {
   const { t } = useSettingsStore();
+  const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const name = trip.profiles?.full_name ?? "Traveler";
   const avatar = trip.profiles?.avatar_url ?? null;
   const rating = trip.profiles?.rating ?? 0;
   const totalTrips = trip.profiles?.total_trips ?? 0;
+  const isOwnTrip = currentUserId === trip.triper_id;
+
+  const handleChat = () => {
+    if (!trip.triper_id) return;
+    router.push({ pathname: '/chat/[id]', params: { id: trip.triper_id, receiverId: trip.triper_id } } as any);
+  };
 
   return (
     <TouchableOpacity style={s.tripCard} activeOpacity={0.7} onPress={() => router.push(`/trip/${trip.id}`)}>
@@ -338,9 +346,20 @@ function TravelerCard({ trip }: { trip: TripWithProfile }) {
           <Ionicons name="calendar-outline" size={13} color={Colors.darkGray} />
           <Text style={s.dateTxt}>{trip.departure_date}</Text>
         </View>
-        <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
-          <Text style={s.reqBtnTxt}>{t.requestItem}</Text>
-        </TouchableOpacity>
+        {isOwnTrip ? (
+          <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
+            <Text style={s.reqBtnTxt}>Lihat Trip</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={s.footActions}>
+            <TouchableOpacity style={s.chatBtn} onPress={handleChat}>
+              <Ionicons name="chatbubble-outline" size={17} color={Colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
+              <Text style={s.reqBtnTxt}>{t.requestItem}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -430,6 +449,8 @@ const s = StyleSheet.create({
   tripFoot: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: Colors.lightGray, paddingTop: Spacing.md },
   dateRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   dateTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
+  footActions: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  chatBtn: { width: 36, height: 36, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary, backgroundColor: Colors.primaryPale, alignItems: "center", justifyContent: "center" },
   reqBtn: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full },
   reqBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
 });

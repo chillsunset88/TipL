@@ -1,6 +1,6 @@
 /**
  * TipL — Chat List Screen
- * Real conversations from Supabase messages, grouped by order/counterpart.
+ * Conversations grouped by partner user ID (direct messages, no order_id dependency).
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
@@ -24,11 +24,9 @@ import { getConversations, getUnreadCount } from '@/src/services/supabase/messag
 import { getProfilesByIds } from '@/src/services/supabase/profiles';
 
 interface ConversationItem {
-  orderId: string;
-  orderItemName: string;
-  otherUserId: string;
-  otherUserName: string;
-  otherUserAvatar: string | null;
+  partnerId: string;
+  partnerName: string;
+  partnerAvatar: string | null;
   lastMessage: string;
   lastMessageAt: string;
   unread: boolean;
@@ -39,12 +37,13 @@ function formatTime(iso: string) {
   const diff = Date.now() - d.getTime();
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
 }
 
 export default function ChatsScreen() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
+  const insets = useSafeAreaInsets();
 
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,35 +60,30 @@ export default function ChatsScreen() {
       ]);
       setTotalUnread(unreadCount);
 
-      // Group by order_id — keep only latest message per order
-      const byOrder = new Map<string, typeof msgs[0]>();
+      // Group by partner ID — keep only latest message per conversation partner
+      // Messages are already ordered DESC by created_at so first occurrence = latest
+      const byPartner = new Map<string, typeof msgs[0]>();
       for (const msg of msgs) {
-        const key = (msg.order_id as string) ?? 'no-order';
-        if (!byOrder.has(key)) byOrder.set(key, msg);
+        const partnerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
+        if (!partnerId) continue;
+        if (!byPartner.has(partnerId)) byPartner.set(partnerId, msg);
       }
 
-      // Resolve counterpart profiles
-      const counterpartIds = [...byOrder.values()].map((m) =>
-        (m.sender_id as string) === userId ? (m.receiver_id as string) : (m.sender_id as string)
-      );
-      const uniqueIds = [...new Set(counterpartIds)].filter(Boolean);
-      const profiles = uniqueIds.length > 0 ? await getProfilesByIds(uniqueIds) : [];
+      // Resolve partner profiles
+      const partnerIds = [...byPartner.keys()].filter(Boolean);
+      const profiles = partnerIds.length > 0 ? await getProfilesByIds(partnerIds) : [];
       const profileMap = new Map((profiles as any[]).map((p) => [p.id, p]));
 
       const items: ConversationItem[] = [];
-      for (const [, msg] of byOrder) {
-        const otherId = (msg.sender_id as string) === userId ? (msg.receiver_id as string) : (msg.sender_id as string);
-        const profile = profileMap.get(otherId) as any;
-        const order = (msg as any).orders;
+      for (const [partnerId, msg] of byPartner) {
+        const profile = profileMap.get(partnerId) as any;
         items.push({
-          orderId: (msg.order_id as string) ?? '',
-          orderItemName: order?.item_name ?? 'Item',
-          otherUserId: otherId,
-          otherUserName: profile?.full_name ?? 'User',
-          otherUserAvatar: profile?.avatar_url ?? null,
-          lastMessage: (msg.content as string) ?? ((msg as any).image_url ? '📷 Image' : ''),
+          partnerId,
+          partnerName: profile?.full_name ?? 'User',
+          partnerAvatar: profile?.avatar_url ?? null,
+          lastMessage: (msg.content as string) ?? ((msg as any).image_url ? '📷 Gambar' : ''),
           lastMessageAt: msg.created_at as string,
-          unread: !(msg as any).read_at && (msg.receiver_id as string) === userId,
+          unread: !(msg as any).read_at && msg.receiver_id === userId,
         });
       }
       setConversations(items.sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)));
@@ -107,28 +101,37 @@ export default function ChatsScreen() {
 
   const filtered = search
     ? conversations.filter((c) =>
-        c.otherUserName.toLowerCase().includes(search.toLowerCase()) ||
-        c.orderItemName.toLowerCase().includes(search.toLowerCase())
+        c.partnerName.toLowerCase().includes(search.toLowerCase())
       )
     : conversations;
+
+  const openChat = (item: ConversationItem) => {
+    router.push({
+      pathname: '/chat/[id]',
+      params: { id: item.partnerId, receiverId: item.partnerId },
+    } as any);
+  };
 
   const renderItem = ({ item }: { item: ConversationItem }) => (
     <TouchableOpacity
       style={styles.chatItem}
       activeOpacity={0.7}
-      onPress={() => router.push({ pathname: `/chat/${item.orderId}` as any, params: { receiverId: item.otherUserId } })}
+      onPress={() => openChat(item)}
     >
-      <Avatar uri={item.otherUserAvatar} name={item.otherUserName} size="lg" />
+      <Avatar uri={item.partnerAvatar} name={item.partnerName} size="lg" />
       <View style={styles.chatInfo}>
         <View style={styles.chatTopRow}>
           <Text style={[styles.chatName, item.unread && styles.chatNameUnread]} numberOfLines={1}>
-            {item.otherUserName}
+            {item.partnerName}
           </Text>
           <Text style={styles.chatTime}>{formatTime(item.lastMessageAt)}</Text>
         </View>
         <View style={styles.chatBottomRow}>
-          <Text style={[styles.chatPreview, item.unread && styles.chatPreviewUnread]} numberOfLines={1}>
-            {item.orderItemName} · {item.lastMessage}
+          <Text
+            style={[styles.chatPreview, item.unread && styles.chatPreviewUnread]}
+            numberOfLines={1}
+          >
+            {item.lastMessage}
           </Text>
           {item.unread && <View style={styles.unreadDot} />}
         </View>
@@ -140,10 +143,10 @@ export default function ChatsScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.centered}>
-          <Ionicons name="chatbubbles-outline" size={48} color={Colors.gray} />
-          <Text style={styles.emptyTitle}>Sign in to see messages</Text>
+          <Ionicons name="chatbubbles-outline" size={48} color={Colors.midGray} />
+          <Text style={styles.emptyTitle}>Masuk untuk melihat pesan</Text>
           <TouchableOpacity style={styles.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
-            <Text style={styles.signInText}>Sign In</Text>
+            <Text style={styles.signInText}>Masuk</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -154,7 +157,7 @@ export default function ChatsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerTitle}>Pesan</Text>
         {totalUnread > 0 && (
           <View style={styles.unreadBadge}>
             <Text style={styles.unreadBadgeText}>{totalUnread}</Text>
@@ -165,17 +168,17 @@ export default function ChatsScreen() {
       {/* Search */}
       <View style={styles.searchWrap}>
         <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={16} color={Colors.gray} />
+          <Ionicons name="search-outline" size={16} color={Colors.darkGray} />
           <TextInput
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Search conversations…"
-            placeholderTextColor={Colors.gray}
+            placeholder="Cari percakapan…"
+            placeholderTextColor={Colors.darkGray}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={Colors.gray} />
+              <Ionicons name="close-circle" size={16} color={Colors.darkGray} />
             </TouchableOpacity>
           )}
         </View>
@@ -188,18 +191,23 @@ export default function ChatsScreen() {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(item) => item.orderId || item.otherUserId}
+          keyExtractor={(item) => item.partnerId}
           renderItem={renderItem}
-          contentContainerStyle={filtered.length === 0 ? styles.centered : styles.list}
+          contentContainerStyle={[
+            filtered.length === 0 ? styles.centered : styles.list,
+            { paddingBottom: insets.bottom + Spacing.xl },
+          ]}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubbles-outline" size={56} color={Colors.midGray} />
-              <Text style={styles.emptyTitle}>No conversations yet</Text>
+              <Text style={styles.emptyTitle}>Belum ada percakapan</Text>
               <Text style={styles.emptySubtext}>
-                Order from a traveler to start chatting about your jastip items.
+                Mulai chat dengan jastiper dari halaman trip atau produk.
               </Text>
             </View>
           }
@@ -308,7 +316,11 @@ const styles = StyleSheet.create({
   },
   separator: { height: 1, backgroundColor: Colors.lightGray },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  emptyContainer: { alignItems: 'center', paddingTop: Spacing['5xl'], paddingHorizontal: Spacing['2xl'] },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingTop: Spacing['5xl'],
+    paddingHorizontal: Spacing['2xl'],
+  },
   emptyTitle: {
     fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.md,

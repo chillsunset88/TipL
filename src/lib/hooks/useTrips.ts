@@ -121,6 +121,7 @@ export async function createTrip(payload: CreateTripPayload): Promise<string> {
         price_max: p.priceMax,
         currency: payload.currency ?? 'IDR',
         image_urls: imageUrls,
+        is_available: true,
       });
     }
   }

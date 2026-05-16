@@ -16,6 +16,7 @@ import { JASTIP_PRODUCTS, MOCK_TRIPS } from '@/src/lib/mockData';
 import { getProductWithTripInfo } from '@/src/services/supabase/trips';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useCartStore } from '@/src/store/cartStore';
+import { useAuthStore } from '@/src/store/authStore';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 const isMockId = (id: string) => /^p\d+$/.test(id);
@@ -43,6 +44,7 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useSettingsStore();
   const addItem = useCartStore((s) => s.addItem);
+  const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const [product, setProduct] = useState<ProductDisplay | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -122,6 +124,21 @@ export default function ProductDetailScreen() {
       </SafeAreaView>
     );
   }
+
+  const handleChat = () => {
+    if (!product || !product.tripId || !product.travelerId) {
+      Alert.alert('Chat', 'Info triper tidak tersedia.');
+      return;
+    }
+    if (currentUserId === product.travelerId) {
+      Alert.alert('Chat', 'Ini adalah item milikmu sendiri.');
+      return;
+    }
+    router.push({
+      pathname: '/chat/[id]',
+      params: { id: product.tripId, receiverId: product.travelerId },
+    } as any);
+  };
 
   const handleAddToCart = () => {
     addItem({
@@ -266,7 +283,7 @@ export default function ProductDetailScreen() {
 
       {/* Bottom CTA */}
       <View style={st.bottomBar}>
-        <TouchableOpacity style={st.iconCta} onPress={() => Alert.alert('Chat', 'Coming Soon')}>
+        <TouchableOpacity style={st.iconCta} onPress={handleChat}>
           <Ionicons name="chatbubble-outline" size={22} color={Colors.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={st.iconCta} onPress={handleAddToCart}>
