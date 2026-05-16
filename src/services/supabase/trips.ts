@@ -215,3 +215,14 @@ export function subscribeToTrips(onChange: (trips: TripWithProfile[]) => void) {
     .subscribe();
   return () => supabase.removeChannel(channel);
 }
+
+// Fires callback on any INSERT to products — caller decides what to do (e.g. refetch)
+export function subscribeToProducts(onInsert: () => void) {
+  const channel = supabase
+    .channel(`products-feed-${Date.now()}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'products' }, () => {
+      onInsert();
+    })
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}

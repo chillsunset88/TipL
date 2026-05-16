@@ -4,11 +4,11 @@ import {
   ScrollView, RefreshControl, ActivityIndicator, Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
-import { searchProducts, ProductWithTripInfo } from '@/src/services/supabase/trips';
+import { searchProducts, subscribeToProducts, ProductWithTripInfo } from '@/src/services/supabase/trips';
 
 const { width: SW } = Dimensions.get('window');
 const CARD_W = (SW - Spacing.xl * 2 - Spacing.md) / 2;
@@ -22,6 +22,7 @@ const ALL_CATEGORIES = [
 ];
 
 export default function OrderScreen() {
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<ProductWithTripInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,7 +41,14 @@ export default function OrderScreen() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  // Refresh setiap kali tab difokuskan
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Realtime: tambah produk baru langsung muncul tanpa refresh
+  useEffect(() => {
+    const unsub = subscribeToProducts(() => load());
+    return () => { unsub(); };
+  }, [load]);
 
   const filtered = selectedCategory
     ? products.filter((p) => p.category === selectedCategory)
@@ -86,7 +94,7 @@ export default function OrderScreen() {
           keyExtractor={(item) => item.id}
           numColumns={2}
           columnWrapperStyle={s.row}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

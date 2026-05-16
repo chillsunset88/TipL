@@ -13,7 +13,7 @@ import { useTrips, TripWithProfile } from "@/src/lib/hooks/useTrips";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions, FlatList, Platform, RefreshControl, ScrollView,
@@ -46,6 +46,8 @@ export default function HomeScreen() {
   const { trips, loading: tripsLoading, refetch } = useTrips();
 
   useEffect(() => { useSettingsStore.getState().loadSettings(); }, []);
+
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   const activeDest = DESTINATION_BANNERS[carouselIdx]?.destination ?? "";
   const products = useMemo(() => JASTIP_PRODUCTS.filter((p) => p.destination === activeDest), [activeDest]);

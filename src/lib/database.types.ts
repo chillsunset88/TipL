@@ -112,6 +112,7 @@ export type Database = {
           price_max?: number | null
           currency?: string | null
           image_urls?: string[] | null
+          is_available?: boolean | null
         }
         Update: {
           is_available?: boolean | null
