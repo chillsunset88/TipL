@@ -7,6 +7,7 @@ import { JASTIP_PRODUCTS } from "@/src/lib/mockData";
 import { useCartStore } from "@/src/store/cartStore";
 import { useNotificationStore } from "@/src/store/notificationStore";
 import { useSettingsStore } from "@/src/store/settingsStore";
+import { SkeletonProductGrid } from "@/src/components/ui/Skeleton";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -145,36 +146,40 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <Animated.View
-            key={activeDest}
-            entering={FadeIn.duration(350).delay(80)}
-            exiting={FadeOut.duration(250)}
-            style={s.prodGrid}
-          >
-            {products.map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={s.prodCard}
-                activeOpacity={0.85}
-                onPress={() => router.push(`/product/${p.id}`)}
-              >
-                <View style={s.prodImgWrap}>
-                  <Image source={{ uri: p.imageUrl }} style={s.prodImg} contentFit="cover" transition={200} />
-                  <View style={s.prodCatBadge}>
-                    <Text style={s.prodCatTxt}>{p.category}</Text>
+          {products.length === 0 ? (
+            <SkeletonProductGrid count={4} />
+          ) : (
+            <Animated.View
+              key={activeDest}
+              entering={FadeIn.duration(350).delay(80)}
+              exiting={FadeOut.duration(250)}
+              style={s.prodGrid}
+            >
+              {products.map((p) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={s.prodCard}
+                  activeOpacity={0.85}
+                  onPress={() => router.push(`/product/${p.id}`)}
+                >
+                  <View style={s.prodImgWrap}>
+                    <Image source={{ uri: p.imageUrl }} style={s.prodImg} contentFit="cover" transition={200} />
+                    <View style={s.prodCatBadge}>
+                      <Text style={s.prodCatTxt}>{p.category}</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={s.prodBody}>
-                  <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
-                  <Text style={s.prodPrice}>{fmtIDR(p.priceIDR)}</Text>
-                  <View style={s.prodTravelerRow}>
-                    <Ionicons name="person-circle-outline" size={12} color={Colors.darkGray} />
-                    <Text style={s.prodTravelerTxt} numberOfLines={1}>{p.travelerName}</Text>
+                  <View style={s.prodBody}>
+                    <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
+                    <Text style={s.prodPrice}>{fmtIDR(p.priceIDR)}</Text>
+                    <View style={s.prodTravelerRow}>
+                      <Ionicons name="person-circle-outline" size={12} color={Colors.darkGray} />
+                      <Text style={s.prodTravelerTxt} numberOfLines={1}>{p.travelerName}</Text>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
+          )}
         </View>
 
       </ScrollView>

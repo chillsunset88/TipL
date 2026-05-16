@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, BorderRadius } from '@/src/lib/constants';
+import { View, Animated, StyleSheet, ViewStyle, Dimensions } from 'react-native';
+import { Colors, BorderRadius, Spacing } from '@/src/lib/constants';
 
 interface SkeletonProps {
   width?: number | string;
@@ -101,6 +101,33 @@ export function SkeletonProfile() {
   );
 }
 
+export function SkeletonProductCard() {
+  return (
+    <View style={sk.productCard}>
+      <Skeleton width="100%" height={130} borderRadius={BorderRadius.md} style={{ marginBottom: 8 }} />
+      <Skeleton height={14} width="85%" style={{ marginBottom: 6 }} />
+      <Skeleton height={14} width="70%" style={{ marginBottom: 8 }} />
+      <Skeleton height={18} width="60%" style={{ marginBottom: 8 }} />
+      <View style={sk.headerRow}>
+        <Skeleton width={12} height={12} borderRadius={6} />
+        <Skeleton height={10} width="60%" />
+      </View>
+    </View>
+  );
+}
+
+export function SkeletonProductGrid({ count = 4 }: { count?: number }) {
+  return (
+    <View style={sk.prodGrid}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={sk.prodGridItem}>
+          <SkeletonProductCard />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const sk = StyleSheet.create({
   card: {
     backgroundColor: Colors.white,
@@ -111,4 +138,20 @@ const sk = StyleSheet.create({
     borderColor: Colors.lightGray,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  productCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+    padding: 8,
+  },
+  prodGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+  },
+  prodGridItem: {
+    width: (Dimensions.get('window').width - Spacing.xl * 2 - Spacing.md) / 2,
+  },
 });

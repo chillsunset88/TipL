@@ -226,10 +226,7 @@ export default function CreateTripScreen() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.offWhite }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={{ flex: 1, backgroundColor: Colors.offWhite }}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
@@ -241,8 +238,9 @@ export default function CreateTripScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
         {/* Origin */}
@@ -395,10 +393,8 @@ export default function CreateTripScreen() {
             t={t}
           />
         ))}
-      </ScrollView>
 
-      {/* Submit button */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+        {/* Submit button */}
         <TouchableOpacity
           style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
           onPress={handleSubmit}
@@ -411,7 +407,7 @@ export default function CreateTripScreen() {
             <Text style={styles.submitText}>{t.submitTrip}</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
       {/* City picker modal */}
       <Modal visible={cityModal} animationType="slide" presentationStyle="pageSheet">
@@ -534,33 +530,31 @@ export default function CreateTripScreen() {
         </View>
       </Modal>
 
-      {/* Date picker modal (no external dependency) */}
-      <Modal visible={!!showDatePicker} animationType="slide" presentationStyle="pageSheet" transparent>
-        <View style={styles.dateModalOverlay}>
-          <View style={styles.dateModalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {showDatePicker === 'depart' ? t.departureDate : t.returnDate}
-              </Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(null)}>
-                <Ionicons name="close" size={24} color={Colors.nearBlack} />
-              </TouchableOpacity>
-            </View>
+      {/* Date picker modal */}
+      <Modal visible={!!showDatePicker} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {showDatePicker === 'depart' ? t.departureDate : t.returnDate}
+            </Text>
+            <TouchableOpacity onPress={() => setShowDatePicker(null)}>
+              <Ionicons name="close" size={24} color={Colors.nearBlack} />
+            </TouchableOpacity>
+          </View>
 
-            <DateWheelPicker
-              value={pickerTempDate}
-              minDate={showDatePicker === 'return' ? departDate : new Date()}
-              onChange={setPickerTempDate}
-            />
+          <Calendar
+            value={pickerTempDate}
+            minDate={showDatePicker === 'return' ? departDate : new Date()}
+            onChange={setPickerTempDate}
+          />
 
-            <View style={styles.dateModalActions}>
-              <TouchableOpacity style={styles.dateModalCancel} onPress={() => setShowDatePicker(null)}>
-                <Text style={styles.dateModalCancelText}>{t.cancel}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.dateModalConfirm} onPress={confirmDate}>
-                <Text style={styles.dateModalConfirmText}>OK</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.dateModalActions}>
+            <TouchableOpacity style={styles.dateModalCancel} onPress={() => setShowDatePicker(null)}>
+              <Text style={styles.dateModalCancelText}>{t.cancel}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateModalConfirm} onPress={confirmDate}>
+              <Text style={styles.dateModalConfirmText}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -590,100 +584,186 @@ export default function CreateTripScreen() {
           ))}
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-// ─── Date Wheel Picker (no external dep) ─────────────────────────────────────
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function daysInMonth(year: number, month: number) {
+// ─── Calendar Component ───────────────────────────────────────────────────────
+function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
 
-interface DateWheelPickerProps {
+function getFirstDayOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getDay();
+}
+
+interface CalendarProps {
   value: Date;
   minDate: Date;
   onChange: (d: Date) => void;
 }
 
-function DateWheelPicker({ value, minDate, onChange }: DateWheelPickerProps) {
-  const year = value.getFullYear();
-  const month = value.getMonth();
-  const day = value.getDate();
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear + i);
-  const days = Array.from({ length: daysInMonth(year, month) }, (_, i) => i + 1);
+function Calendar({ value, minDate, onChange }: CalendarProps) {
+  const [displayMonth, setDisplayMonth] = useState(value.getMonth());
+  const [displayYear, setDisplayYear] = useState(value.getFullYear());
 
-  const set = (patch: Partial<{ y: number; m: number; d: number }>) => {
-    const ny = patch.y ?? year;
-    const nm = patch.m ?? month;
-    const nd = Math.min(patch.d ?? day, daysInMonth(ny, nm));
-    const next = new Date(ny, nm, nd);
-    if (next < minDate) {
-      onChange(new Date(minDate));
-    } else {
-      onChange(next);
+  const daysInMonth = getDaysInMonth(displayYear, displayMonth);
+  const firstDay = getFirstDayOfMonth(displayYear, displayMonth);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const emptyDays = Array.from({ length: firstDay }, (_, i) => null);
+  const allDays = [...emptyDays, ...days];
+
+  const handleDayPress = (day: number | null) => {
+    if (!day) return;
+    const newDate = new Date(displayYear, displayMonth, day);
+    if (newDate >= minDate) {
+      onChange(newDate);
     }
   };
 
+  const goToPreviousMonth = () => {
+    if (displayMonth === 0) {
+      setDisplayMonth(11);
+      setDisplayYear(displayYear - 1);
+    } else {
+      setDisplayMonth(displayMonth - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (displayMonth === 11) {
+      setDisplayMonth(0);
+      setDisplayYear(displayYear + 1);
+    } else {
+      setDisplayMonth(displayMonth + 1);
+    }
+  };
+
+  const monthName = new Date(displayYear, displayMonth).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const isSelected = (day: number | null) =>
+    day &&
+    day === value.getDate() &&
+    displayMonth === value.getMonth() &&
+    displayYear === value.getFullYear();
+
+  const isDisabled = (day: number | null) => {
+    if (!day) return true;
+    const date = new Date(displayYear, displayMonth, day);
+    return date < minDate;
+  };
+
   return (
-    <View style={dwStyles.container}>
-      {/* Day */}
-      <ScrollView style={dwStyles.col} showsVerticalScrollIndicator={false}>
-        {days.map((d) => (
-          <TouchableOpacity key={d} style={dwStyles.item} onPress={() => set({ d })}>
-            <Text style={[dwStyles.itemText, day === d && dwStyles.selected]}>
-              {String(d).padStart(2, '0')}
+    <View style={calStyles.container}>
+      <View style={calStyles.header}>
+        <TouchableOpacity onPress={goToPreviousMonth} hitSlop={8}>
+          <Ionicons name="chevron-back" size={20} color={Colors.primary} />
+        </TouchableOpacity>
+        <Text style={calStyles.monthYear}>{monthName}</Text>
+        <TouchableOpacity onPress={goToNextMonth} hitSlop={8}>
+          <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={calStyles.weekdays}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+          <Text key={day} style={calStyles.weekdayText}>
+            {day}
+          </Text>
+        ))}
+      </View>
+
+      <View style={calStyles.grid}>
+        {allDays.map((day, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={[
+              calStyles.dayCell,
+              isSelected(day) && calStyles.daySelected,
+              isDisabled(day) && calStyles.dayDisabled,
+            ]}
+            onPress={() => handleDayPress(day)}
+            disabled={isDisabled(day)}
+          >
+            <Text
+              style={[
+                calStyles.dayText,
+                isSelected(day) && calStyles.dayTextSelected,
+                isDisabled(day) && calStyles.dayTextDisabled,
+              ]}
+            >
+              {day}
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
-      {/* Month */}
-      <ScrollView style={dwStyles.col} showsVerticalScrollIndicator={false}>
-        {MONTHS.map((m, i) => (
-          <TouchableOpacity key={m} style={dwStyles.item} onPress={() => set({ m: i })}>
-            <Text style={[dwStyles.itemText, month === i && dwStyles.selected]}>{m}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      {/* Year */}
-      <ScrollView style={dwStyles.col} showsVerticalScrollIndicator={false}>
-        {years.map((y) => (
-          <TouchableOpacity key={y} style={dwStyles.item} onPress={() => set({ y })}>
-            <Text style={[dwStyles.itemText, year === y && dwStyles.selected]}>{y}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
-const dwStyles = StyleSheet.create({
+const calStyles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    height: 200,
-    paddingHorizontal: Spacing.base,
-  },
-  col: {
+    padding: Spacing.base,
+    backgroundColor: Colors.white,
     flex: 1,
   },
-  item: {
-    height: 44,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: Spacing.lg,
   },
-  itemText: {
+  monthYear: {
+    ...Typography.semiBold,
+    fontSize: Typography.sizes.base,
+    color: Colors.nearBlack,
+  },
+  weekdays: {
+    flexDirection: 'row',
+    marginBottom: Spacing.md,
+  },
+  weekdayText: {
+    flex: 1,
+    textAlign: 'center',
+    ...Typography.medium,
+    fontSize: Typography.sizes.sm,
+    color: Colors.gray,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  daySelected: {
+    backgroundColor: Colors.primary,
+  },
+  dayDisabled: {
+    opacity: 0.3,
+  },
+  dayText: {
     ...Typography.regular,
     fontSize: Typography.sizes.base,
-    color: Colors.darkGray,
+    color: Colors.nearBlack,
   },
-  selected: {
-    ...Typography.bold,
-    color: Colors.primary,
-    fontSize: Typography.sizes.md,
+  dayTextSelected: {
+    color: Colors.white,
+    ...Typography.semiBold,
+  },
+  dayTextDisabled: {
+    color: Colors.gray,
   },
 });
+
 
 // ─── Product sub-card ─────────────────────────────────────────────────────────
 interface ProductCardProps {
@@ -1028,16 +1108,6 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: Colors.white,
   },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: Spacing.base,
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-  },
   submitBtn: {
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.lg,
@@ -1045,6 +1115,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.glow,
+    marginTop: Spacing.lg,
   },
   submitBtnDisabled: {
     opacity: 0.6,
@@ -1054,18 +1125,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.base,
     color: Colors.white,
     letterSpacing: 0.5,
-  },
-  dateModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  dateModalCard: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: BorderRadius['2xl'],
-    borderTopRightRadius: BorderRadius['2xl'],
-    paddingBottom: Spacing['2xl'],
-    ...Shadows.lg,
   },
   dateModalActions: {
     flexDirection: 'row',
