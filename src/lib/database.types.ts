@@ -23,6 +23,7 @@ export type Database = {
           total_orders: number | null
           push_token: string | null
           language: string | null
+          verification_status: string | null
           created_at: string | null
           updated_at: string | null
         }
@@ -35,6 +36,7 @@ export type Database = {
           phone?: string | null
           push_token?: string | null
           language?: string | null
+          verification_status?: string | null
         }
         Update: {
           role?: string
@@ -44,7 +46,31 @@ export type Database = {
           phone?: string | null
           push_token?: string | null
           language?: string | null
+          verification_status?: string | null
           updated_at?: string | null
+        }
+      }
+      verifications: {
+        Row: {
+          id: string
+          user_id: string
+          selfie_url: string
+          ktp_url: string
+          status: string
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          selfie_url: string
+          ktp_url: string
+          status?: string
+        }
+        Update: {
+          status?: string
+          rejection_reason?: string | null
+          updated_at?: string
         }
       }
       trips: {

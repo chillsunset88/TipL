@@ -17,7 +17,8 @@ export interface User {
   verified: boolean;
   createdAt: number;
   bio?: string;
-  role?: 'tiper' | 'triper';
+  role: 'tiper' | 'triper' | 'admin';
+  verificationStatus: 'none' | 'pending' | 'approved' | 'rejected';
 }
 
 // ─── Jastip Product ─────────────────────────────────────────────────

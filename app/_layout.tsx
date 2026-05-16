@@ -187,6 +187,8 @@ function RootLayoutNav() {
           <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
           <Stack.Screen name="wallet/topup" options={{ presentation: 'card' }} />
           <Stack.Screen name="destination/[name]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="verification" options={{ presentation: 'card', headerShown: false }} />
+          <Stack.Screen name="admin/verifications" options={{ presentation: 'card', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

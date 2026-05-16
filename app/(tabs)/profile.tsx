@@ -6,7 +6,7 @@
 
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -101,15 +101,34 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* ── Jastip menu grid ── */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Jastip</Text>
-          <View style={s.gridRow}>
-            <GridItem icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips')} />
-            <GridItem icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
-            <GridItem icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
+        {/* ── Jastip card (hanya jika sudah terverifikasi) ── */}
+        {(user.verificationStatus === 'approved' || user.role === 'admin') ? (
+          <View style={s.card}>
+            <Text style={s.cardTitle}>Jastip</Text>
+            <View style={s.gridRow}>
+              <GridItem icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips')} />
+              <GridItem icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
+              <GridItem icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
+            </View>
           </View>
-        </View>
+        ) : user.verificationStatus === 'pending' ? (
+          <VerificationPendingCard />
+        ) : (
+          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} />
+        )}
+
+        {/* ── Admin panel (hanya untuk role admin) ── */}
+        {user.role === 'admin' && (
+          <View style={s.card}>
+            <Text style={s.cardTitle}>Admin</Text>
+            <ActionRow
+              icon="shield-checkmark-outline"
+              label="Kelola Verifikasi"
+              color={Colors.info}
+              onPress={() => router.push('/admin/verifications' as any)}
+            />
+          </View>
+        )}
 
         {/* ── Help & Support ── */}
         <View style={s.card}>
@@ -136,6 +155,66 @@ export default function ProfileScreen() {
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
+
+function VerificationPromoCard({ rejected }: { rejected: boolean }) {
+  return (
+    <View style={s.verifyCard}>
+      <View style={s.verifyTop}>
+        <View style={s.verifyIconWrap}>
+          <Ionicons name="shield-checkmark-outline" size={28} color={Colors.primary} />
+        </View>
+        <View style={s.verifyTextWrap}>
+          <Text style={s.verifyTitle}>Jadilah Jastiper</Text>
+          <Text style={s.verifySub}>
+            {rejected
+              ? 'Verifikasi kamu ditolak. Coba ajukan kembali.'
+              : 'Verifikasi identitasmu untuk mulai berjastip dan terima pesanan.'}
+          </Text>
+        </View>
+      </View>
+      {rejected && (
+        <View style={s.rejectedPill}>
+          <Ionicons name="close-circle" size={13} color={Colors.error} />
+          <Text style={s.rejectedTxt}>Ditolak — ajukan ulang</Text>
+        </View>
+      )}
+      <View style={s.verifyBenefits}>
+        {['Buat & kelola trip sendiri', 'Terima pesanan dari tiper', 'Dapatkan penghasilan tambahan'].map((b) => (
+          <View key={b} style={s.benefitRow}>
+            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+            <Text style={s.benefitTxt}>{b}</Text>
+          </View>
+        ))}
+      </View>
+      <TouchableOpacity style={s.verifyBtn} onPress={() => router.push('/verification' as any)}>
+        <Ionicons name="shield-checkmark" size={16} color={Colors.white} />
+        <Text style={s.verifyBtnTxt}>{rejected ? 'Ajukan Ulang' : 'Mulai Verifikasi'}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function VerificationPendingCard() {
+  return (
+    <View style={[s.verifyCard, s.pendingCard]}>
+      <View style={s.verifyTop}>
+        <View style={[s.verifyIconWrap, { backgroundColor: `${Colors.warning}18` }]}>
+          <Ionicons name="time-outline" size={28} color={Colors.warning} />
+        </View>
+        <View style={s.verifyTextWrap}>
+          <Text style={s.verifyTitle}>Menunggu Verifikasi</Text>
+          <Text style={s.verifySub}>
+            Dokumenmu sedang ditinjau tim TipL. Proses membutuhkan 1–2 hari kerja.
+          </Text>
+        </View>
+      </View>
+      <View style={s.pendingPill}>
+        <ActivityIndicator size="small" color={Colors.warning} style={{ transform: [{ scale: 0.7 }] }} />
+        <Text style={s.pendingPillTxt}>Sedang ditinjau...</Text>
+      </View>
+    </View>
+  );
+}
 
 function ActionRow({ icon, label, color, onPress }: {
   icon: keyof typeof Ionicons.glyphMap;
@@ -256,6 +335,42 @@ const s = StyleSheet.create({
   settingInfo: { flex: 1 },
   settingLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
   settingSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 2 },
+
+  verifyCard: {
+    backgroundColor: Colors.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,
+    borderRadius: BorderRadius.lg, padding: Spacing.base,
+    borderWidth: 1.5, borderColor: Colors.primaryLight, ...Shadows.sm, gap: Spacing.md,
+  },
+  pendingCard: { borderColor: `${Colors.warning}60` },
+  verifyTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
+  verifyIconWrap: {
+    width: 52, height: 52, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primaryPale, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  verifyTextWrap: { flex: 1, gap: 3 },
+  verifyTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  verifySub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, lineHeight: 17 },
+  rejectedPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
+    backgroundColor: `${Colors.error}12`, paddingHorizontal: Spacing.sm, paddingVertical: 4,
+    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${Colors.error}30`,
+  },
+  rejectedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 11, color: Colors.error },
+  verifyBenefits: { gap: 5 },
+  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  benefitTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal },
+  verifyBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.primary, paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+  },
+  verifyBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  pendingPill: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, alignSelf: 'flex-start',
+    backgroundColor: `${Colors.warning}14`, paddingHorizontal: Spacing.md, paddingVertical: 6,
+    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${Colors.warning}40`,
+  },
+  pendingPillTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.warning },
 
   signOutWrap: { alignItems: 'center', marginHorizontal: Spacing.xl, marginTop: Spacing.md, gap: Spacing.md },
   signOutRow: {
