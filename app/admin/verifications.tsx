@@ -224,7 +224,7 @@ const st = StyleSheet.create({
   denied: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   deniedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
 
-  list: { padding: Spacing.xl, paddingBottom: 80 },
+  list: { padding: Spacing.xl, paddingTop: 56, paddingBottom: 80 },
   empty: { alignItems: 'center', paddingTop: 80, gap: Spacing.md },
   emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
   emptyTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },

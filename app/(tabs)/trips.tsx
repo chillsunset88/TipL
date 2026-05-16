@@ -43,11 +43,6 @@ export default function TripsScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <TouchableOpacity style={s.floatingCreate} onPress={() => router.push('/trip/create')}>
-        <Ionicons name="add" size={18} color={Colors.white} />
-        <Text style={s.createBtnTxt}>Buat Trip</Text>
-      </TouchableOpacity>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -241,19 +236,6 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-
-  floatingCreate: {
-    position: 'absolute', top: 12, right: 20, zIndex: 10,
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md, paddingVertical: 8,
-    borderRadius: BorderRadius.full,
-  },
-  createBtnTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.white,
-  },
 
   section: { marginBottom: Spacing.xl, paddingHorizontal: Spacing.xl },
   sectionHead: {

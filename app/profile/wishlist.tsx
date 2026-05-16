@@ -54,7 +54,7 @@ export default function WishlistScreen() {
         <FlatList
           data={items}
           keyExtractor={(i) => i.product_id}
-          contentContainerStyle={{ padding: Spacing.xl, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: Spacing.xl, paddingTop: 56, paddingBottom: 40 }}
           numColumns={2}
           columnWrapperStyle={{ gap: Spacing.md }}
           showsVerticalScrollIndicator={false}

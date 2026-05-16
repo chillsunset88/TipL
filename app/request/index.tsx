@@ -340,14 +340,6 @@ export default function CustomRequestsScreen() {
         <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
       </TouchableOpacity>
 
-      {/* Info banner */}
-      <View style={styles.tabDesc}>
-        <Ionicons name="airplane-outline" size={13} color={Colors.darkGray} />
-        <Text style={styles.tabDescText}>
-          Permintaan yang secara khusus ditujukan ke kamu sebagai jastiper
-        </Text>
-      </View>
-
       {/* Search */}
       <View style={styles.searchBar}>
         <Ionicons name="search-outline" size={16} color={Colors.gray} />
@@ -433,30 +425,17 @@ export default function CustomRequestsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base, paddingVertical: Spacing.md,
-    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-  },
-
-  tabDesc: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.xs,
-    marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
-  },
-  tabDescText: {
-    flex: 1, fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.darkGray, lineHeight: 16,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
 
   searchBar: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
     marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
+    marginTop: 56,
     borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md,
     gap: Spacing.sm, borderWidth: 1, borderColor: Colors.midGray, ...Shadows.sm,
   },

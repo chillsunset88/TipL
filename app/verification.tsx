@@ -372,7 +372,7 @@ const s = StyleSheet.create({
 
   stepper: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing['2xl'], paddingTop: 56, paddingBottom: Spacing.base,
     backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
   },
   stepItem: { alignItems: 'center', gap: 4 },
