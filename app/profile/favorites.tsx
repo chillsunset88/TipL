@@ -198,7 +198,7 @@ const s = StyleSheet.create({
   },
   triperInfo: { flex: 1, gap: 3 },
   triperName: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base, color: Colors.nearBlack,
   },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
@@ -235,7 +235,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 3,
   },
   viewProfileTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm, color: Colors.primary,
   },
 
@@ -252,7 +252,7 @@ const s = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.lg, color: Colors.charcoal,
   },
   emptyDesc: {
@@ -269,7 +269,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primaryPale,
   },
   emptyBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm, color: Colors.primary,
   },
 });

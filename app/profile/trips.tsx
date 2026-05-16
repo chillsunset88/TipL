@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   tripRoute: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.white,
     flex: 1,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
   },
   emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
     marginTop: Spacing.base,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   createBtnText: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.white,
   },

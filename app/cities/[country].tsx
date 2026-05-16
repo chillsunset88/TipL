@@ -272,7 +272,7 @@ const s = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
   countryFlag: { fontSize: 20 },
   headerTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.lg,
     color: Colors.nearBlack,
   },
@@ -311,7 +311,7 @@ const s = StyleSheet.create({
   },
 
   citiesLabel: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 10,
     color: Colors.darkGray,
     letterSpacing: 1,
@@ -350,7 +350,7 @@ const s = StyleSheet.create({
     borderColor: Colors.primary,
   },
   cityPillTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 9,
     color: Colors.primary,
   },

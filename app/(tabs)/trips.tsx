@@ -43,17 +43,10 @@ export default function TripsScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* Header */}
-      <View style={s.header}>
-        <View>
-          <Text style={s.headerTitle}>Jelajahi</Text>
-          <Text style={s.headerSub}>Pilih negara tujuanmu</Text>
-        </View>
-        <TouchableOpacity style={s.createBtn} onPress={() => router.push('/trip/create')}>
-          <Ionicons name="add" size={18} color={Colors.white} />
-          <Text style={s.createBtnTxt}>Buat Trip</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={s.floatingCreate} onPress={() => router.push('/trip/create')}>
+        <Ionicons name="add" size={18} color={Colors.white} />
+        <Text style={s.createBtnTxt}>Buat Trip</Text>
+      </TouchableOpacity>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -249,39 +242,15 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  headerTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.xl,
-    color: Colors.nearBlack,
-  },
-  headerSub: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginTop: 2,
-  },
-  createBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  floatingCreate: {
+    position: 'absolute', top: 12, right: 20, zIndex: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
+    paddingHorizontal: Spacing.md, paddingVertical: 8,
     borderRadius: BorderRadius.full,
   },
   createBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.white,
   },
@@ -340,7 +309,7 @@ const s = StyleSheet.create({
     borderColor: Colors.primary,
   },
   countryPillTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 9,
     color: Colors.primary,
   },
@@ -367,7 +336,7 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.primaryLight,
   },
   ownBannerTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.xs,
     color: Colors.primary,
   },
@@ -383,7 +352,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primaryPale,
   },
   manageBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 11,
     color: Colors.primary,
   },
@@ -391,7 +360,7 @@ const s = StyleSheet.create({
   cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.base },
   tripInfo: { marginLeft: Spacing.md, flex: 1 },
   tripName: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
@@ -416,7 +385,7 @@ const s = StyleSheet.create({
   },
   capBadgeOwn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   capTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 11,
     color: Colors.primary,
   },
@@ -433,14 +402,14 @@ const s = StyleSheet.create({
   routeRowOwn: { backgroundColor: '#FFF8EC' },
   routeCity: { flex: 1, paddingHorizontal: Spacing.sm },
   routeLbl: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 10,
     color: Colors.charcoal,
     letterSpacing: 1.2,
     marginBottom: 3,
   },
   routeNm: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
@@ -496,7 +465,7 @@ const s = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   reqBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.white,
   },
@@ -516,7 +485,7 @@ const s = StyleSheet.create({
     borderColor: Colors.primary,
   },
   postBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.primary,
   },

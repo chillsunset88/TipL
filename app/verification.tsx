@@ -381,7 +381,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center',
   },
   stepCircleActive: { backgroundColor: Colors.primary },
-  stepNum: { fontFamily: Typography.semiBold.fontFamily, fontSize: 12, color: Colors.gray },
+  stepNum: { fontFamily: Typography.regular.fontFamily, fontSize: 12, color: Colors.gray },
   stepNumActive: { color: Colors.white },
   stepLabel: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.gray },
   stepLabelActive: { color: Colors.primary, fontFamily: Typography.medium.fontFamily },
@@ -433,20 +433,20 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primary, paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
   },
-  cameraBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  cameraBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
   galleryBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     backgroundColor: Colors.white, paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: Colors.primary,
   },
-  galleryBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  galleryBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
 
   nextBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     backgroundColor: Colors.primary, paddingVertical: Spacing.md + 2,
     borderRadius: BorderRadius.full,
   },
-  nextBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  nextBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 
   reviewCard: {
     backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
@@ -456,7 +456,7 @@ const s = StyleSheet.create({
   reviewSelfie: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: Colors.primaryLight },
   reviewKtp: { width: 90, height: 56, borderRadius: BorderRadius.sm, borderWidth: 2, borderColor: Colors.primaryLight },
   reviewInfo: { flex: 1, gap: 3 },
-  reviewLabel: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  reviewLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
   reviewSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2, alignSelf: 'flex-start' },
   editBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
@@ -475,5 +475,5 @@ const s = StyleSheet.create({
     borderRadius: BorderRadius.full, ...Shadows.md,
   },
   submitBtnDisabled: { opacity: 0.6 },
-  submitBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  submitBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 });

@@ -107,7 +107,7 @@ export default function TripDetailScreen() {
         <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
         <Text
           style={{
-            fontFamily: Typography.semiBold.fontFamily,
+            fontFamily: Typography.regular.fontFamily,
             fontSize: Typography.sizes.md,
             color: Colors.nearBlack,
             marginTop: Spacing.md,
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.base },
   profileInfo: { flex: 1 },
   profileName: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   productPrice: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.primary,
     marginTop: 2,
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   ctaText: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.white,
     letterSpacing: 0.3,

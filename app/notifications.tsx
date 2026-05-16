@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     color: Colors.nearBlack,
     marginBottom: 2,
   },
-  itemTitleUnread: { fontFamily: Typography.semiBold.fontFamily },
+  itemTitleUnread: { fontFamily: Typography.regular.fontFamily },
   itemBody: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
   },
   emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
     marginTop: Spacing.base,

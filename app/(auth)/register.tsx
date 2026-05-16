@@ -213,14 +213,14 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
+  headerTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
   content: { paddingHorizontal: Spacing.base },
   subtitle: {
     fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
     color: Colors.gray, marginBottom: Spacing.xl,
   },
   fieldWrap: { marginBottom: Spacing.base },
-  label: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: 6 },
+  label: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: 6 },
   inputRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     backgroundColor: Colors.white, borderRadius: BorderRadius.md,
@@ -241,8 +241,8 @@ const styles = StyleSheet.create({
   termsLink: { color: Colors.primary, fontFamily: Typography.medium.fontFamily },
   submitBtn: { borderRadius: BorderRadius.lg, overflow: 'hidden', ...Shadows.glow, marginTop: Spacing.sm, marginBottom: Spacing.xl },
   submitGradient: { height: 54, alignItems: 'center', justifyContent: 'center' },
-  submitText: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  submitText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
   loginRow: { flexDirection: 'row', justifyContent: 'center' },
   loginPrompt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
-  loginLink: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
+  loginLink: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 });

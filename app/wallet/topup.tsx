@@ -261,13 +261,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.6)',
   },
   balanceAfterVal: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.primary,
   },
 
   sectionTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.charcoal,
     letterSpacing: 0.5,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     color: Colors.charcoal,
   },
   presetTxtActive: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     color: Colors.primary,
   },
 
@@ -320,13 +320,13 @@ const styles = StyleSheet.create({
     ...Shadows.sm,
   },
   currencyPfx: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.darkGray,
   },
   customInput: {
     flex: 1,
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.lg,
     color: Colors.nearBlack,
     paddingVertical: 0,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   },
   summaryDivider: { height: 1, backgroundColor: Colors.lightGray, marginVertical: Spacing.xs },
   summaryTotal: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   topUpTxt: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.white,
   },

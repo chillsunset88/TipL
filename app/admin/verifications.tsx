@@ -226,7 +226,7 @@ const st = StyleSheet.create({
 
   list: { padding: Spacing.xl, paddingBottom: 80 },
   empty: { alignItems: 'center', paddingTop: 80, gap: Spacing.md },
-  emptyTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
+  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
   emptyTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
 
   card: {
@@ -238,13 +238,13 @@ const st = StyleSheet.create({
   userRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   avatar: { width: 42, height: 42, borderRadius: 21 },
   avatarFallback: { backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
-  userName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  userName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
   submitDate: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 2 },
   pendingBadge: {
     backgroundColor: `${Colors.warning}18`, paddingHorizontal: Spacing.sm, paddingVertical: 4,
     borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${Colors.warning}40`,
   },
-  pendingBadgeTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 10, color: Colors.warning },
+  pendingBadgeTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.warning },
 
   photosRow: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
   photoWrap: { gap: 6 },
@@ -259,10 +259,10 @@ const st = StyleSheet.create({
     paddingVertical: Spacing.md, borderRadius: BorderRadius.md,
     borderWidth: 1.5, borderColor: Colors.error, backgroundColor: `${Colors.error}08`,
   },
-  rejectTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.error },
+  rejectTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.error },
   approveBtn: {
     flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: Colors.success,
   },
-  approveTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  approveTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 });

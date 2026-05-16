@@ -220,7 +220,7 @@ const s = StyleSheet.create({
 
   scroll: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: 56 },
   section: { marginTop: Spacing.xl },
-  label: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
+  label: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
   required: { color: Colors.error },
 
   imgRow: { flexDirection: 'row' },
@@ -276,5 +276,5 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     backgroundColor: Colors.primary, borderRadius: BorderRadius.xl, paddingVertical: Spacing.base,
   },
-  saveTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white, letterSpacing: 0.3 },
+  saveTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white, letterSpacing: 0.3 },
 });

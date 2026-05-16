@@ -285,7 +285,7 @@ const s = StyleSheet.create({
   authTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack, marginTop: Spacing.md },
   authSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
   signInBtn: { marginTop: Spacing.xl, backgroundColor: Colors.primary, paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.md, borderRadius: BorderRadius.full },
-  signInTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  signInTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 
   profileStrip: {
     flexDirection: 'row',
@@ -298,7 +298,7 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.lightGray,
   },
   profileInfo: { flex: 1 },
-  profileName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  profileName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
   profileEmail: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginTop: 2 },
   editBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
@@ -319,7 +319,7 @@ const s = StyleSheet.create({
     borderRadius: BorderRadius.lg, padding: Spacing.base,
     borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm,
   },
-  cardTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.md },
+  cardTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.md },
   actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
   actionIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   actionLabel: { flex: 1, fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
@@ -349,7 +349,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primaryPale, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   verifyTextWrap: { flex: 1, gap: 3 },
-  verifyTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  verifyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
   verifySub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, lineHeight: 17 },
   rejectedPill: {
     flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
@@ -365,7 +365,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primary, paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
   },
-  verifyBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  verifyBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
   pendingPill: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, alignSelf: 'flex-start',
     backgroundColor: `${Colors.warning}14`, paddingHorizontal: Spacing.md, paddingVertical: 6,
@@ -381,6 +381,6 @@ const s = StyleSheet.create({
     borderColor: Colors.errorLight, backgroundColor: Colors.errorLight,
     alignSelf: 'stretch', justifyContent: 'center',
   },
-  signOutTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.error },
+  signOutTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.error },
   versionTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
 });

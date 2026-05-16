@@ -301,9 +301,9 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center',
   },
-  triperInitial: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  triperInitial: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
   triperBannerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
-  triperBannerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  triperBannerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
 
   pageDescription: {
     fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg, padding: Spacing['2xl'], alignItems: 'center', backgroundColor: Colors.offWhite,
   },
   uploadIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
-  uploadTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.xs },
+  uploadTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.xs },
   uploadSubtext: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
   imageRow: { marginTop: Spacing.md },
   previewContainer: { marginRight: Spacing.sm, position: 'relative' },

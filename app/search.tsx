@@ -333,7 +333,7 @@ const st = StyleSheet.create({
   resultsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.base },
   resultsCount: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
   activeDestBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: Colors.primaryPale, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primaryLight },
-  activeDestTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 11, color: Colors.primary },
+  activeDestTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.primary },
 
   // Result Cards
   resultCard: {
@@ -347,17 +347,17 @@ const st = StyleSheet.create({
   resultCat: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary, letterSpacing: 0.3 },
   resultDestBadge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   resultDestTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray },
-  resultName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack, marginBottom: 4, lineHeight: 18 },
-  resultPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 3 },
+  resultName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack, marginBottom: 4, lineHeight: 18 },
+  resultPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 3 },
   resultTravelerRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   resultTravelerTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.darkGray },
   resultChevron: { paddingRight: Spacing.sm },
 
   // History
   histHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, paddingBottom: Spacing.md },
-  histTitle: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  histTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
   clearAllBtn: { padding: Spacing.xs },
-  clearTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
+  clearTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
   histList: { paddingHorizontal: Spacing.xl },
   histItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.base, borderBottomWidth: 1, borderBottomColor: Colors.lightGray, gap: Spacing.md },
   histIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },

@@ -351,7 +351,7 @@ const st = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   emptyTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
   backLink: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primaryLight },
-  backLinkTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
+  backLinkTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 
   // Hero
   heroWrap: { width: '100%', height: 340, position: 'relative' },
@@ -362,14 +362,14 @@ const st = StyleSheet.create({
   navBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
   navBtnActive: { backgroundColor: 'rgba(248,113,113,0.25)' },
   destBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: 'rgba(197,162,103,0.25)', paddingHorizontal: Spacing.md, paddingVertical: 5, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary },
-  destBadgeTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
+  destBadgeTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
 
   // Body
   body: { flex: 1, backgroundColor: Colors.white },
   nameSection: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, paddingBottom: Spacing.base },
-  cat: { fontFamily: Typography.semiBold.fontFamily, fontSize: 11, color: Colors.primary, letterSpacing: 1.5, marginBottom: Spacing.xs },
+  cat: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.primary, letterSpacing: 1.5, marginBottom: Spacing.xs },
   name: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes['2xl'], color: Colors.nearBlack, marginBottom: Spacing.md, lineHeight: 34 },
-  price: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack, marginBottom: Spacing.md },
+  price: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack, marginBottom: Spacing.md },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   metaPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.primaryPale, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primaryLight },
   metaTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
@@ -384,10 +384,10 @@ const st = StyleSheet.create({
   travelerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.offWhite, borderRadius: BorderRadius.lg, padding: Spacing.base, borderWidth: 1, borderColor: Colors.lightGray, gap: Spacing.md },
   travelerAvatar: { width: 52, height: 52, borderRadius: 26 },
   travelerAvatarFallback: { backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.primaryLight },
-  avatarInitials: { fontFamily: Typography.semiBold.fontFamily, fontSize: 20, color: Colors.primary },
+  avatarInitials: { fontFamily: Typography.regular.fontFamily, fontSize: 20, color: Colors.primary },
   travelerInfo: { flex: 1 },
   travelerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  travelerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  travelerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
   verifiedBadge: { width: 16, height: 16, borderRadius: 8, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
   ratingTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
@@ -395,7 +395,7 @@ const st = StyleSheet.create({
 
   // How it works
   howItWorksCard: { marginHorizontal: Spacing.xl, marginBottom: Spacing.xl, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.lg, padding: Spacing.base, borderWidth: 1, borderColor: Colors.primaryLight },
-  howTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack, marginBottom: Spacing.md },
+  howTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack, marginBottom: Spacing.md },
   howStep: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md },
   howIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.primaryLight },
   howTxt: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, lineHeight: 17 },
@@ -411,6 +411,6 @@ const st = StyleSheet.create({
   iconCta: { width: 48, height: 48, borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: Colors.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primaryPale },
   buyBtn: { flex: 1, height: 48, borderRadius: BorderRadius.md, overflow: 'hidden' },
   buyGrad: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-  buyTxt: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-  buyPrice: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.85)' },
+  buyTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  buyPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.85)' },
 });

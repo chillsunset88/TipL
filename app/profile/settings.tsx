@@ -224,7 +224,7 @@ const st = StyleSheet.create({
     backgroundColor: Colors.offWhite,
   },
   sectionLabel: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.charcoal,
     letterSpacing: 0.3,
@@ -293,7 +293,7 @@ const st = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   signOutTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.error,
   },

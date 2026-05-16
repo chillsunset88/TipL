@@ -330,7 +330,7 @@ const s = StyleSheet.create({
   triperInfo: { flex: 1, marginLeft: Spacing.md },
   cardHeadRight: { alignItems: 'flex-end', gap: Spacing.sm },
   triperName: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
@@ -360,7 +360,7 @@ const s = StyleSheet.create({
     borderColor: Colors.primaryLight,
   },
   capTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 11,
     color: Colors.primary,
   },
@@ -372,7 +372,7 @@ const s = StyleSheet.create({
     paddingBottom: Spacing.md,
   },
   productsLabel: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 10,
     color: Colors.darkGray,
     letterSpacing: 1,
@@ -444,7 +444,7 @@ const s = StyleSheet.create({
     borderColor: Colors.primary,
   },
   outlineBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.primary,
   },
@@ -458,7 +458,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   primaryBtnTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.white,
   },
@@ -486,7 +486,7 @@ const s = StyleSheet.create({
     marginBottom: 3,
   },
   prodPrice: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.xs,
     color: Colors.nearBlack,
     marginBottom: 5,
@@ -504,7 +504,7 @@ const s = StyleSheet.create({
     borderColor: Colors.primaryLight,
   },
   orderPillTxt: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 9,
     color: Colors.primary,
   },
@@ -516,7 +516,7 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
   },
   emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.lg,
     color: Colors.charcoal,
   },

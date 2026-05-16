@@ -323,7 +323,7 @@ const s = StyleSheet.create({
   loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.offWhite },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   centerTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
-  centerLink: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
+  centerLink: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 
   // ── Hero
   hero: { paddingBottom: Spacing['3xl'] },
@@ -346,7 +346,7 @@ const s = StyleSheet.create({
     letterSpacing: 0.3,
   },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  ratingTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.9)', marginLeft: 5 },
+  ratingTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.9)', marginLeft: 5 },
   noRatingTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: 'rgba(255,255,255,0.55)' },
 
   statsCard: {
@@ -361,7 +361,7 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)',
   },
   statItem: { alignItems: 'center', minWidth: 44 },
-  statNum: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.white },
+  statNum: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xl, color: Colors.white },
   statLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
   statSep: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.18)' },
 
@@ -376,14 +376,14 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(248,113,113,0.6)',
   },
-  followTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-  followTxtDone: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: '#F87171' },
+  followTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  followTxtDone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#F87171' },
 
   // ── Sections
   section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
   sectionLabel: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 11, letterSpacing: 1.2,
     color: Colors.darkGray,
   },
@@ -392,7 +392,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 2,
     borderWidth: 1, borderColor: Colors.primaryLight,
   },
-  pillTxt: { fontFamily: Typography.bold.fontFamily, fontSize: 11, color: Colors.primary },
+  pillTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.primary },
 
   // ── Trip cards
   tripCard: {
@@ -412,7 +412,7 @@ const s = StyleSheet.create({
   tripInfo: { flex: 1, gap: 5 },
   tripRouteRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexWrap: 'wrap' },
   tripOrigin: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
-  tripDest: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  tripDest: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
   tripDate: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
   tripRight: { alignItems: 'flex-end', gap: 6 },
   tripCapBadge: {
@@ -420,7 +420,7 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing.sm, paddingVertical: 3,
     borderWidth: 1, borderColor: Colors.primaryLight,
   },
-  tripCapTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: 10, color: Colors.primary },
+  tripCapTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.primary },
 
   // ── Product grid
   prodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
@@ -439,7 +439,7 @@ const s = StyleSheet.create({
   catBadgeTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.white, letterSpacing: 0.3 },
   prodBody: { padding: Spacing.sm },
   prodName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, lineHeight: 18, marginBottom: 4 },
-  prodPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  prodPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
   prodPriceMuted: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, fontStyle: 'italic' },
 
   emptyProd: { alignItems: 'center', paddingVertical: Spacing['2xl'], gap: Spacing.sm },

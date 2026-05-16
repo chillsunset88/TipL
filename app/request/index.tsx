@@ -82,17 +82,9 @@ function DetailModal({ item, onClose }: {
   return (
     <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={d.safe} edges={['top']}>
-        {/* Header */}
-        <View style={d.header}>
-          <TouchableOpacity onPress={onClose} style={d.closeBtn}>
-            <Ionicons name="close" size={22} color={Colors.nearBlack} />
-          </TouchableOpacity>
-          <Text style={d.headerTitle}>Detail Permintaan</Text>
-          <View style={d.statusPill}>
-            <View style={[d.statusDot, { backgroundColor: statusColor }]} />
-            <Text style={[d.statusLabel, { color: statusColor }]}>{statusLabel}</Text>
-          </View>
-        </View>
+        <TouchableOpacity onPress={onClose} style={d.floatingClose}>
+          <Ionicons name="close" size={22} color={Colors.nearBlack} />
+        </TouchableOpacity>
 
         <ScrollView style={d.scroll} contentContainerStyle={d.content} showsVerticalScrollIndicator={false}>
           {/* Product Image */}
@@ -175,16 +167,15 @@ function DetailModal({ item, onClose }: {
 
 const d = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base, paddingVertical: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
+  floatingClose: {
+    position: 'absolute', top: 12, left: 16, zIndex: 10,
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.offWhite, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
-  statusLabel: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.xs },
+  statusLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs },
   scroll: { flex: 1 },
   content: { paddingBottom: 48 },
   heroImage: { width: '100%', height: 260 },
@@ -198,13 +189,13 @@ const d = StyleSheet.create({
     marginBottom: Spacing.base,
   },
   buyerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center' },
-  buyerInitial: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  buyerInitial: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
   buyerInfo: { flex: 1 },
   buyerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
-  buyerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  buyerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
   timeAgo: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
   section: { paddingHorizontal: Spacing.base, marginBottom: Spacing.base },
-  sectionTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
+  sectionTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
   descText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray, lineHeight: 22 },
   detailGrid: { marginHorizontal: Spacing.base, gap: Spacing.sm, marginBottom: Spacing.base },
   detailItem: {
@@ -213,7 +204,7 @@ const d = StyleSheet.create({
     padding: Spacing.md, borderWidth: 1, borderColor: Colors.lightGray,
   },
   detailLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, width: 90 },
-  detailValue: { flex: 1, fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  detailValue: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
   ownBanner: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.base, padding: Spacing.md,
@@ -345,14 +336,9 @@ export default function CustomRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Permintaan</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       {/* Info banner */}
       <View style={styles.tabDesc}>
@@ -454,7 +440,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
   headerTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
@@ -500,14 +486,14 @@ const styles = StyleSheet.create({
   productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, flexShrink: 0 },
   thumbPlaceholder: { backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center' },
   cardHeaderInfo: { flex: 1 },
-  productName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 4 },
+  productName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   categoryChip: { backgroundColor: Colors.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full },
   categoryText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primaryDark, textTransform: 'capitalize' },
   timeText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.gray },
   statusBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, backgroundColor: Colors.successLight },
   statusMatched: { backgroundColor: Colors.primaryPale },
-  statusText: { fontFamily: Typography.semiBold.fontFamily, fontSize: 10, color: Colors.success },
+  statusText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.success },
   statusTextMatched: { color: Colors.primary },
 
   description: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, lineHeight: 20, marginBottom: Spacing.sm },
@@ -517,7 +503,7 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray },
   buyerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   buyerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
-  budget: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
+  budget: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 
   forMeBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -537,6 +523,6 @@ const styles = StyleSheet.create({
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: Spacing.xl },
-  emptyTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm },
+  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm },
   emptySubtitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray, textAlign: 'center', lineHeight: 20 },
 });

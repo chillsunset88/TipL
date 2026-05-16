@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   },
   headerCenter: { alignItems: 'center' },
   headerTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   },
   itemInfo: { flex: 1, marginLeft: Spacing.md },
   itemName: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base, color: Colors.nearBlack,
   },
   itemDesc: {
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.xs, color: Colors.gray, marginTop: 4,
   },
   itemPrice: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm, color: Colors.nearBlack,
   },
 
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.sm, color: Colors.nearBlack,
   },
   summaryBold: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base, color: Colors.nearBlack,
   },
   summaryDivider: {

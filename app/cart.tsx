@@ -107,28 +107,24 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      {/* Header */}
-      <View style={st.header}>
-        <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
+      <TouchableOpacity onPress={() => router.back()} style={st.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
+      {items.length > 0 && (
+        <TouchableOpacity
+          style={st.floatingEdit}
+          onPress={() => {
+            if (editMode) {
+              setEditMode(false);
+              setPendingDelete(new Set());
+            } else {
+              setEditMode(true);
+            }
+          }}
+        >
+          <Text style={st.editTxt}>{editMode ? 'Selesai' : 'Ubah'}</Text>
         </TouchableOpacity>
-        <Text style={st.headerTitle}>Keranjang</Text>
-        {items.length > 0 && (
-          <TouchableOpacity
-            onPress={() => {
-              if (editMode) {
-                setEditMode(false);
-                setPendingDelete(new Set());
-              } else {
-                setEditMode(true);
-              }
-            }}
-          >
-            <Text style={st.editTxt}>{editMode ? 'Selesai' : 'Ubah'}</Text>
-          </TouchableOpacity>
-        )}
-        {!items.length && <View style={{ width: 48 }} />}
-      </View>
+      )}
 
       <ScrollView style={st.body} showsVerticalScrollIndicator={false}>
         {items.length === 0 ? (
@@ -267,19 +263,16 @@ const PHOTO_SIZE = 120;
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backBtn: { width: 36, height: 36, justifyContent: 'center' },
-  headerTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  editTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, paddingHorizontal: 4 },
+  floatingEdit: {
+    position: 'absolute', top: 18, right: 20, zIndex: 10,
+  },
+  editTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, paddingHorizontal: 4 },
 
   body: { flex: 1 },
 
@@ -289,7 +282,7 @@ const st = StyleSheet.create({
   emptyDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray, textAlign: 'center', lineHeight: 22 },
   shopBtn: { marginTop: Spacing.md, borderRadius: BorderRadius.full, overflow: 'hidden' },
   shopBtnGrad: { paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.base },
-  shopBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
+  shopBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 
   cartList: { paddingTop: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.md },
 
@@ -318,10 +311,10 @@ const st = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: Colors.primaryLight,
   },
-  sellerAvatarTxt: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  sellerAvatarTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
   sellerInfo: { flex: 1 },
   sellerNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  sellerName: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  sellerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
   verifiedBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
     backgroundColor: Colors.successLight,
@@ -348,7 +341,7 @@ const st = StyleSheet.create({
     padding: Spacing.sm,
   },
   photoName: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.white, lineHeight: 12 },
-  photoPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.xs, color: Colors.white, marginTop: 1 },
+  photoPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.white, marginTop: 1 },
   photoQty: { fontFamily: Typography.regular.fontFamily, fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
 
   deleteX: {
@@ -369,11 +362,11 @@ const st = StyleSheet.create({
     borderTopColor: Colors.lightGray,
   },
   subtotalLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray },
-  subtotalVal: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginTop: 1 },
+  subtotalVal: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginTop: 1 },
 
   beliWrap: { borderRadius: BorderRadius.full, overflow: 'hidden' },
   beliBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
-  beliBtnTxt: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
+  beliBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
 
   hapusBtn: {
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
@@ -381,7 +374,7 @@ const st = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.error,
   },
   hapusBtnDisabled: { borderColor: Colors.midGray },
-  hapusBtnTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
+  hapusBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
   hapusBtnTxtDisabled: { color: Colors.midGray },
 
 });

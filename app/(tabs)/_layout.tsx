@@ -93,7 +93,7 @@ export default function TabLayout() {
           tabBarBadgeStyle: {
             backgroundColor: Colors.primary,
             fontSize: 10,
-            fontFamily: Typography.bold.fontFamily,
+            fontFamily: Typography.regular.fontFamily,
             minWidth: 18,
             height: 18,
             lineHeight: 18,

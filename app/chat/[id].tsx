@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.xs,
   },
   headerName: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },

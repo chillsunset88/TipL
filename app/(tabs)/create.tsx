@@ -71,10 +71,6 @@ export default function OrderScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Jastip Items</Text>
-        <Text style={s.headerSub}>Items available from tripers</Text>
-      </View>
 
       <ScrollView
         horizontal
@@ -187,19 +183,6 @@ function ProductCard({ item }: { item: ProductWithTripInfo }) {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-  header: {
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  headerTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.xl,
-    color: Colors.nearBlack,
-  },
   headerSub: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.xs,
@@ -276,7 +259,7 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   cardPrice: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.nearBlack,
     marginBottom: 3,

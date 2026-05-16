@@ -125,9 +125,9 @@ const s = StyleSheet.create({
   image: { width: '100%', height: 120 },
   imageFallback: { backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
   info: { padding: Spacing.sm },
-  name: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  name: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
   from: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.darkGray, marginTop: 2 },
-  price: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, marginTop: 4 },
+  price: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, marginTop: 4 },
   heartBtn: {
     position: 'absolute', top: 8, right: 8,
     width: 30, height: 30, borderRadius: 15,
@@ -135,6 +135,6 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.lightGray,
   },
   empty: { alignItems: 'center', paddingTop: 80, gap: Spacing.md, paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal },
+  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal },
   emptyDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, textAlign: 'center', lineHeight: 20 },
 });

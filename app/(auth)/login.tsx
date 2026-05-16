@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     ...Shadows.lg,
   },
   formTitle: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes['2xl'],
     color: Colors.nearBlack,
     marginBottom: 4,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
 
   fieldWrap: { marginBottom: Spacing.base },
   label: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.charcoal,
     marginBottom: 6,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     color: Colors.darkGray,
   },
   registerLink: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.primary,
   },

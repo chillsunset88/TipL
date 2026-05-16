@@ -227,18 +227,17 @@ export default function CreateTripScreen() {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: Colors.offWhite }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.createTrip}</Text>
-        <View style={{ width: 38 }} />
-      </View>
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={[styles.floatingBack, { top: insets.top + 8 }]}
+        hitSlop={8}
+      >
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 68, paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
@@ -717,7 +716,7 @@ const calStyles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   monthYear: {
-    ...Typography.semiBold,
+    ...Typography.regular,
     fontSize: Typography.sizes.base,
     color: Colors.nearBlack,
   },
@@ -757,7 +756,7 @@ const calStyles = StyleSheet.create({
   },
   dayTextSelected: {
     color: Colors.white,
-    ...Typography.semiBold,
+    ...Typography.regular,
   },
   dayTextDisabled: {
     color: Colors.gray,
@@ -853,34 +852,17 @@ function ProductCard({ product, onUpdate, onRemove, onPickImage, t }: ProductCar
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    ...Typography.semiBold,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
+  floatingBack: {
+    position: 'absolute', left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
   content: {
     padding: Spacing.base,
   },
   label: {
-    ...Typography.semiBold,
+    ...Typography.regular,
     fontSize: Typography.sizes.sm,
     color: Colors.charcoal,
     marginTop: Spacing.base,
@@ -920,7 +902,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   cityManualBtnTxt: {
-    ...Typography.semiBold,
+    ...Typography.regular,
     fontSize: Typography.sizes.base,
     color: Colors.white,
   },
@@ -976,7 +958,7 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.xs,
   },
   rangeSep: {
-    ...Typography.bold,
+    ...Typography.regular,
     fontSize: Typography.sizes.md,
     color: Colors.gray,
     marginHorizontal: Spacing.xs,
@@ -1030,7 +1012,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   productCardTitle: {
-    ...Typography.semiBold,
+    ...Typography.regular,
     fontSize: Typography.sizes.sm,
     color: Colors.charcoal,
   },
@@ -1121,7 +1103,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitText: {
-    ...Typography.semiBold,
+    ...Typography.regular,
     fontSize: Typography.sizes.base,
     color: Colors.white,
     letterSpacing: 0.5,
@@ -1155,7 +1137,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dateModalConfirmText: {
-    ...Typography.semiBold,
+    ...Typography.regular,
     fontSize: Typography.sizes.base,
     color: Colors.white,
   },

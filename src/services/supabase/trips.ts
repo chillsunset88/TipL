@@ -13,11 +13,14 @@ export type TripWithProfile = Trip & {
 };
 
 export async function getOpenTrips(limit = 20, offset = 0): Promise<TripWithProfile[]> {
+  const today = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from('trips')
     .select('*, profiles(id, full_name, avatar_url, rating, total_trips, total_reviews)')
     .eq('status', 'open')
-    .order('created_at', { ascending: false })
+    // hide trips whose return date has fully passed; keep trips with no return date
+    .or(`return_date.is.null,return_date.gte.${today}`)
+    .order('departure_date', { ascending: true })
     .range(offset, offset + limit - 1);
   if (error) throw error;
   return (data ?? []) as TripWithProfile[];
@@ -57,6 +60,25 @@ export async function updateTripStatus(tripId: string, status: 'open' | 'closed'
   const { error } = await db
     .from('trips')
     .update({ status })
+    .eq('id', tripId);
+  if (error) throw error;
+}
+
+export async function getProductsByTriper(triperId: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('triper_id', triperId)
+    .eq('is_available', true)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Product[];
+}
+
+export async function deleteTrip(tripId: string): Promise<void> {
+  const { error } = await db
+    .from('trips')
+    .delete()
     .eq('id', tripId);
   if (error) throw error;
 }
@@ -217,6 +239,40 @@ export function subscribeToTrips(onChange: (trips: TripWithProfile[]) => void) {
 }
 
 // Fires callback on any INSERT to products — caller decides what to do (e.g. refetch)
+export async function getCountriesWithTripCount(): Promise<{ country: string; count: number }[]> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('destination_country')
+    .eq('status', 'open');
+  if (error) throw error;
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? [])) {
+    const c = row.destination_country as string;
+    if (c) counts[c] = (counts[c] ?? 0) + 1;
+  }
+  return Object.entries(counts)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function getCitiesByCountry(country: string): Promise<{ city: string; count: number }[]> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('destination_city')
+    .ilike('destination_country', `%${country}%`)
+    .eq('status', 'open')
+    .not('destination_city', 'is', null);
+  if (error) throw error;
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? [])) {
+    const c = row.destination_city as string;
+    if (c) counts[c] = (counts[c] ?? 0) + 1;
+  }
+  return Object.entries(counts)
+    .map(([city, count]) => ({ city, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 export function subscribeToProducts(onInsert: () => void) {
   const channel = supabase
     .channel(`products-feed-${Date.now()}`)

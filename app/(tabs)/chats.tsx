@@ -155,15 +155,6 @@ export default function ChatsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pesan</Text>
-        {totalUnread > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>{totalUnread}</Text>
-          </View>
-        )}
-      </View>
 
       {/* Search */}
       <View style={styles.searchWrap}>
@@ -219,19 +210,6 @@ export default function ChatsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    gap: Spacing.sm,
-  },
-  headerTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.xl,
-    color: Colors.nearBlack,
-    flex: 1,
-  },
   unreadBadge: {
     backgroundColor: Colors.primary,
     borderRadius: 12,
@@ -242,7 +220,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   unreadBadgeText: {
-    fontFamily: Typography.bold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: 12,
     color: Colors.white,
   },
@@ -286,7 +264,7 @@ const styles = StyleSheet.create({
     color: Colors.nearBlack,
     marginRight: Spacing.sm,
   },
-  chatNameUnread: { fontFamily: Typography.semiBold.fontFamily },
+  chatNameUnread: { fontFamily: Typography.regular.fontFamily },
   chatTime: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.xs,
@@ -322,7 +300,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
   },
   emptyTitle: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
     marginTop: Spacing.base,
@@ -343,7 +321,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   signInText: {
-    fontFamily: Typography.semiBold.fontFamily,
+    fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
     color: Colors.white,
   },
