@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Create Request (tripper-specific)
  * Opened from trip detail page with tripId + triperId params.
  * Same UI style as the Order tab form.
@@ -19,6 +19,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
@@ -123,9 +124,7 @@ export default function CreateRequestScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
-          <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-        </TouchableOpacity>
+        <FloatingBackButton onPress={() => router.back()} />
 
         <ScrollView
           style={styles.scroll}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Alert, RefreshControl, TextInput,
@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/store/authStore';
 import {
@@ -336,9 +337,7 @@ export default function CustomRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
 
       {/* Search */}
       <View style={styles.searchBar}>

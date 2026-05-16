@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — My Trips Screen (Triper)
  * Shows the authenticated user's created trips from Supabase.
  */
@@ -14,8 +14,9 @@ import {
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Badge } from '@/src/components/ui/Badge';
@@ -37,15 +38,14 @@ function statusVariant(status: string): 'success' | 'info' | 'warning' | 'error'
 }
 
 export default function MyTripsScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const { trips, loading } = useMyTrips(user?.id);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.floatingAdd} onPress={() => router.push('/trip/create')}>
+      <FloatingBackButton onPress={() => router.back()} />
+      <TouchableOpacity style={[styles.floatingAdd, { top: insets.top + 12 }]} onPress={() => router.push('/trip/create')}>
         <Ionicons name="add" size={22} color={Colors.primary} />
       </TouchableOpacity>
 

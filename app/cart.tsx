@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Cart Page
  * Prelove-style grouped cart: horizontal photo cards per seller, edit mode with X buttons.
  */
@@ -8,8 +8,9 @@ import {
   Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +22,7 @@ import { createXenditInvoice } from '@/src/lib/xendit';
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function CartScreen() {
+  const insets = useSafeAreaInsets();
   const { items, removeItem } = useCartStore();
   const user = useAuthStore((s) => s.user);
   const [editMode, setEditMode] = useState(false);
@@ -107,12 +109,10 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={st.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
       {items.length > 0 && (
         <TouchableOpacity
-          style={st.floatingEdit}
+          style={[st.floatingEdit, { top: insets.top + 18 }]}
           onPress={() => {
             if (editMode) {
               setEditMode(false);

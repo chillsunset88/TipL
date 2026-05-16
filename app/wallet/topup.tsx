@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Wallet Top-Up Screen
  * Preset amounts, custom input, payment method selection.
  */
@@ -17,6 +17,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
@@ -89,9 +90,7 @@ export default function TopUpScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Current Balance */}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Edit Profile Screen
  * Change avatar, display name, and email.
  */
@@ -15,6 +15,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
@@ -79,9 +80,7 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Avatar */}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Notifications Center
  * Real-time notifications from Supabase with read/unread state, mark-all-read, and deep links.
  */
@@ -14,8 +14,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
@@ -56,6 +57,7 @@ function notifIcon(type: string): { name: string; color: string } {
 }
 
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -139,11 +141,9 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
       {unreadCount > 0 && (
-        <TouchableOpacity onPress={handleMarkAllRead} style={styles.floatingMarkAll}>
+        <TouchableOpacity onPress={handleMarkAllRead} style={[styles.floatingMarkAll, { top: insets.top + 18 }]}>
           <Text style={styles.markAllText}>Mark all read</Text>
         </TouchableOpacity>
       )}
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   floatingMarkAll: {
-    position: 'absolute', top: 18, right: 20, zIndex: 10,
+    position: 'absolute', right: 20, zIndex: 10,
   },
   markAllText: {
     fontFamily: Typography.medium.fontFamily,

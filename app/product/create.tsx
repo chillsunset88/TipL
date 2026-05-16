@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
   TouchableOpacity, Alert, ActivityIndicator,
@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
@@ -84,9 +85,7 @@ export default function AddProductScreen() {
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <TouchableOpacity onPress={() => router.back()} style={s.floatingBack}>
-          <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-        </TouchableOpacity>
+        <FloatingBackButton onPress={() => router.back()} />
 
         <ScrollView style={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Images */}

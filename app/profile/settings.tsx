@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Settings Screen
  * Shopee-inspired flat list: gray section headers, plain dividers, no card boxes.
  */
@@ -16,6 +16,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
@@ -51,9 +52,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={st.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
 
       <ScrollView style={st.scroll} showsVerticalScrollIndicator={false}>
 

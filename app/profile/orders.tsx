@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView,
   TouchableOpacity,
@@ -6,6 +6,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useOrderStore } from '@/src/store/orderStore';
 import { OrderStatus } from '@/src/lib/constants';
@@ -68,9 +69,7 @@ export default function OrdersScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={st.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
 
       <ScrollView
         horizontal

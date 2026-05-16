@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Payments Screen
  */
 import React from 'react';
@@ -6,6 +6,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 
 const HISTORY = [
@@ -17,9 +18,7 @@ const HISTORY = [
 export default function PaymentsScreen() {
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <TouchableOpacity onPress={() => router.back()} style={s.floatingBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={() => router.back()} />
       <View style={s.card}>
         <Text style={s.cardLabel}>Escrow Balance</Text>
         <Text style={s.cardAmount}>Rp 5,200,000</Text>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert,
@@ -7,6 +7,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
@@ -102,9 +103,7 @@ export default function VerificationScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <TouchableOpacity style={s.floatingBack} onPress={goBack}>
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+      <FloatingBackButton onPress={goBack} />
 
       {/* Step indicator */}
       <View style={s.stepper}>
