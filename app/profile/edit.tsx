@@ -79,14 +79,9 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Avatar */}
@@ -121,19 +116,13 @@ export default function EditProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backButton: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack,
-  },
-  container: { flex: 1, paddingHorizontal: Spacing.xl },
+  container: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: 56 },
   avatarSection: {
     alignItems: 'center', paddingVertical: Spacing['2xl'],
   },

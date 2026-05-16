@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ScrollView, ActivityIndicator,
+  ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,6 +12,8 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/co
 import { Avatar } from '@/src/components/ui/Avatar';
 import { getTripsByDestinationWithProducts, TripWithProducts } from '@/src/services/supabase/trips';
 import { useAuthStore } from '@/src/store/authStore';
+import { isFavoriteTriper, toggleFavoriteTriper } from '@/src/services/supabase/favorites';
+import * as Haptics from 'expo-haptics';
 import type { Database } from '@/src/lib/database.types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -46,10 +48,15 @@ export default function DestinationScreen() {
             contentFit="cover"
           />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.nearBlack }]} />
+          <LinearGradient
+            colors={[Colors.primaryDark, Colors.charcoal]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
         )}
         <LinearGradient
-          colors={['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.78)']}
+          colors={['rgba(0,0,0,0.15)', 'rgba(20,14,6,0.72)']}
           style={StyleSheet.absoluteFill}
         />
         <SafeAreaView edges={['top']} style={s.heroInner}>
@@ -100,8 +107,29 @@ function TriperCard({ trip }: { trip: TripWithProducts }) {
   const avatar = trip.profiles?.avatar_url ?? null;
   const rating = trip.profiles?.rating ?? 0;
   const totalTrips = trip.profiles?.total_trips ?? 0;
-  const currentUserId = useAuthStore((s) => s.user?.id ?? '');
+  const currentUser = useAuthStore((s) => s.user);
+  const currentUserId = currentUser?.id ?? '';
   const isOwnTrip = currentUserId === trip.triper_id;
+
+  const [favorited, setFavorited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+
+  useEffect(() => {
+    if (!currentUserId || isOwnTrip || !trip.triper_id) return;
+    isFavoriteTriper(currentUserId, trip.triper_id).then(setFavorited).catch(() => {});
+  }, [currentUserId, trip.triper_id, isOwnTrip]);
+
+  const handleToggleFavorite = async () => {
+    if (!currentUserId || !trip.triper_id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFavLoading(true);
+    try {
+      const now = await toggleFavoriteTriper(currentUserId, trip.triper_id);
+      setFavorited(now);
+    } finally {
+      setFavLoading(false);
+    }
+  };
 
   const handleChat = () => {
     if (!trip.triper_id) return;
@@ -114,7 +142,11 @@ function TriperCard({ trip }: { trip: TripWithProducts }) {
   return (
     <View style={s.card}>
       {/* Triper info row */}
-      <View style={s.cardHead}>
+      <TouchableOpacity
+        style={s.cardHead}
+        activeOpacity={0.7}
+        onPress={() => trip.triper_id && router.push(`/triper/${trip.triper_id}` as any)}
+      >
         <Avatar uri={avatar} name={name} size="md" />
         <View style={s.triperInfo}>
           <Text style={s.triperName}>{name}</Text>
@@ -130,12 +162,31 @@ function TriperCard({ trip }: { trip: TripWithProducts }) {
             </View>
           ) : null}
         </View>
-        {trip.capacity_kg != null && (
-          <View style={s.capBadge}>
-            <Text style={s.capTxt}>{trip.capacity_kg} kg</Text>
-          </View>
-        )}
-      </View>
+        <View style={s.cardHeadRight}>
+          {trip.capacity_kg != null && (
+            <View style={s.capBadge}>
+              <Text style={s.capTxt}>{trip.capacity_kg} kg</Text>
+            </View>
+          )}
+          {!isOwnTrip && (
+            <TouchableOpacity
+              style={[s.favBtn, favorited && s.favBtnActive]}
+              onPress={handleToggleFavorite}
+              disabled={favLoading}
+            >
+              {favLoading ? (
+                <ActivityIndicator size="small" color={favorited ? Colors.error : Colors.midGray} />
+              ) : (
+                <Ionicons
+                  name={favorited ? 'heart' : 'heart-outline'}
+                  size={18}
+                  color={favorited ? Colors.error : Colors.midGray}
+                />
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
 
       {/* Products */}
       {trip.products.length > 0 ? (
@@ -277,6 +328,7 @@ const s = StyleSheet.create({
     paddingBottom: Spacing.md,
   },
   triperInfo: { flex: 1, marginLeft: Spacing.md },
+  cardHeadRight: { alignItems: 'flex-end', gap: Spacing.sm },
   triperName: {
     fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.base,
@@ -366,6 +418,20 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primaryPale,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  favBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.offWhite,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+  },
+  favBtnActive: {
+    backgroundColor: Colors.errorLight,
+    borderColor: '#F5C6C6',
   },
   outlineBtn: {
     flexDirection: 'row',

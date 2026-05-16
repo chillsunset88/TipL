@@ -51,14 +51,9 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      {/* Header */}
-      <View style={st.header}>
-        <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={st.headerTitle}>{t.settings}</Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={st.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       <ScrollView style={st.scroll} showsVerticalScrollIndicator={false}>
 
@@ -213,28 +208,14 @@ function ToggleRow({
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.offWhite,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-  },
 
-  scroll: { flex: 1 },
+  scroll: { flex: 1, paddingTop: 56 },
 
   sectionHeader: {
     paddingHorizontal: Spacing.xl,

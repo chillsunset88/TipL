@@ -139,18 +139,14 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
+      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
+      {unreadCount > 0 && (
+        <TouchableOpacity onPress={handleMarkAllRead} style={styles.floatingMarkAll}>
+          <Text style={styles.markAllText}>Mark all read</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllBtn}>
-            <Text style={styles.markAllText}>Mark all read</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      )}
 
       {loading ? (
         <View style={styles.centered}>
@@ -188,32 +184,14 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.md,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.xl,
-    color: Colors.nearBlack,
-  },
-  markAllBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+  floatingMarkAll: {
+    position: 'absolute', top: 18, right: 20, zIndex: 10,
   },
   markAllText: {
     fontFamily: Typography.medium.fontFamily,

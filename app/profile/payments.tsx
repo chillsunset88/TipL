@@ -17,13 +17,9 @@ const HISTORY = [
 export default function PaymentsScreen() {
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.back}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={s.title}>Payments</Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={s.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
       <View style={s.card}>
         <Text style={s.cardLabel}>Escrow Balance</Text>
         <Text style={s.cardAmount}>Rp 5,200,000</Text>
@@ -56,10 +52,13 @@ export default function PaymentsScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
-  back: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  card: { margin: Spacing.xl, padding: Spacing.xl, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.primaryLight, alignItems: 'center' },
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  card: { margin: Spacing.xl, marginTop: 68, padding: Spacing.xl, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.primaryLight, alignItems: 'center' },
   cardLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
   cardAmount: { fontFamily: Typography.bold.fontFamily, fontSize: 28, color: Colors.nearBlack, marginTop: 4 },
   cardNote: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 4 },

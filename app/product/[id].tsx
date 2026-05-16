@@ -17,6 +17,8 @@ import { getProductWithTripInfo } from '@/src/services/supabase/trips';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useCartStore } from '@/src/store/cartStore';
 import { useAuthStore } from '@/src/store/authStore';
+import { isWishlisted, toggleWishlist } from '@/src/services/supabase/wishlist';
+import * as Haptics from 'expo-haptics';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 const isMockId = (id: string) => /^p\d+$/.test(id);
@@ -47,6 +49,28 @@ export default function ProductDetailScreen() {
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const [product, setProduct] = useState<ProductDisplay | null>(null);
   const [loading, setLoading] = useState(true);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  // Load wishlist state once product is known and user is logged in
+  useEffect(() => {
+    if (!currentUserId || !id || isMockId(id)) return;
+    isWishlisted(currentUserId, id).then(setWishlisted).catch(() => {});
+  }, [currentUserId, id]);
+
+  const handleToggleWishlist = async () => {
+    if (!currentUserId || !id || isMockId(id)) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setWishlistLoading(true);
+    try {
+      const nowWishlisted = await toggleWishlist(currentUserId, id);
+      setWishlisted(nowWishlisted);
+    } catch {
+      Alert.alert('Gagal', 'Tidak bisa update wishlist. Coba lagi.');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -168,8 +192,20 @@ export default function ProductDetailScreen() {
           <TouchableOpacity style={st.navBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={Colors.white} />
           </TouchableOpacity>
-          <TouchableOpacity style={st.navBtn} onPress={() => Alert.alert('Coming Soon')}>
-            <Ionicons name="share-outline" size={22} color={Colors.white} />
+          <TouchableOpacity
+            style={[st.navBtn, wishlisted && st.navBtnActive]}
+            onPress={handleToggleWishlist}
+            disabled={wishlistLoading || isMockId(id ?? '')}
+          >
+            {wishlistLoading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Ionicons
+                name={wishlisted ? 'heart' : 'heart-outline'}
+                size={22}
+                color={wishlisted ? '#F87171' : Colors.white}
+              />
+            )}
           </TouchableOpacity>
         </SafeAreaView>
         <LinearGradient colors={['transparent', 'rgba(20,10,2,0.75)']} style={st.heroBottom}>
@@ -324,6 +360,7 @@ const st = StyleSheet.create({
   heroBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, justifyContent: 'flex-end', paddingHorizontal: Spacing.xl, paddingBottom: Spacing.base },
   heroNav: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.base },
   navBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
+  navBtnActive: { backgroundColor: 'rgba(248,113,113,0.25)' },
   destBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: 'rgba(197,162,103,0.25)', paddingHorizontal: Spacing.md, paddingVertical: 5, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary },
   destBadgeTxt: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
 

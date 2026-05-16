@@ -1,37 +1,29 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, ScrollView, Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useTrips, TripWithProfile } from '@/src/lib/hooks/useTrips';
 import { useAuthStore } from '@/src/store/authStore';
+import { COUNTRIES_DATA } from '@/src/lib/countryData';
 
-type SortKey = 'date_asc' | 'date_desc' | 'newest';
-
-type ListItem =
-  | { _type: 'trip'; data: TripWithProfile; isOwn: boolean }
-  | { _type: 'divider'; otherCount: number };
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'date_asc', label: 'Terdekat' },
-  { key: 'date_desc', label: 'Terjauh' },
-  { key: 'newest', label: 'Terbaru' },
-];
+const { width: SW } = Dimensions.get('window');
+const COUNTRY_CARD_W = SW * 0.40;
+const COUNTRY_CARD_H = COUNTRY_CARD_W * 1.35;
 
 export default function TripsScreen() {
-  const { trips, loading, refetch } = useTrips();
+  const { trips, loading: tripsLoading, refetch } = useTrips();
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const [refreshing, setRefreshing] = useState(false);
-  const [sort, setSort] = useState<SortKey>('date_asc');
 
-  useFocusEffect(
-    useCallback(() => { refetch(); }, [refetch])
-  );
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -39,109 +31,126 @@ export default function TripsScreen() {
     setRefreshing(false);
   };
 
-  const { myTrips, otherTrips } = useMemo(() => {
-    const compare = (a: TripWithProfile, b: TripWithProfile) => {
-      const da = a.departure_date ?? '';
-      const db = b.departure_date ?? '';
-      if (sort === 'date_asc') return da.localeCompare(db);
-      if (sort === 'date_desc') return db.localeCompare(da);
-      return 0;
-    };
-    const all = [...trips].sort(compare);
-    return {
-      myTrips: all.filter((t) => t.triper_id === currentUserId),
-      otherTrips: all.filter((t) => t.triper_id !== currentUserId),
-    };
-  }, [trips, sort, currentUserId]);
+  const today = new Date().toISOString().split('T')[0];
 
-  const listData = useMemo((): ListItem[] => {
-    const items: ListItem[] = myTrips.map((t) => ({
-      _type: 'trip',
-      data: t,
-      isOwn: true,
-    }));
-    if (myTrips.length > 0 && otherTrips.length > 0) {
-      items.push({ _type: 'divider', otherCount: otherTrips.length });
-    }
-    otherTrips.forEach((t) => items.push({ _type: 'trip', data: t, isOwn: false }));
-    return items;
-  }, [myTrips, otherTrips]);
-
-  const totalOther = otherTrips.length;
+  const myTrips = trips.filter((t) => t.triper_id === currentUserId);
+  const upcomingTrips = trips
+    .filter((t) => t.triper_id !== currentUserId)
+    // only show trips that haven't departed yet (or have no departure date set)
+    .filter((t) => !t.departure_date || t.departure_date >= today)
+    .sort((a, b) => (a.departure_date ?? '').localeCompare(b.departure_date ?? ''))
+    .slice(0, 8);
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
+      {/* Header */}
       <View style={s.header}>
-        <Text style={s.headerTitle}>Trips</Text>
-        <Text style={s.headerSub}>Jastiper yang sedang aktif</Text>
+        <View>
+          <Text style={s.headerTitle}>Jelajahi</Text>
+          <Text style={s.headerSub}>Pilih negara tujuanmu</Text>
+        </View>
+        <TouchableOpacity style={s.createBtn} onPress={() => router.push('/trip/create')}>
+          <Ionicons name="add" size={18} color={Colors.white} />
+          <Text style={s.createBtnTxt}>Buat Trip</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={s.sortBar}>
-        {SORT_OPTIONS.map((opt) => (
-          <TouchableOpacity
-            key={opt.key}
-            style={[s.sortChip, sort === opt.key && s.sortChipActive]}
-            onPress={() => setSort(opt.key)}
-          >
-            <Text style={[s.sortLabel, sort === opt.key && s.sortLabelActive]}>
-              {opt.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        <View style={{ flex: 1 }} />
-        <Text style={s.countTxt}>{totalOther} trips</Text>
-      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.primary} />
+        }
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* ── Negara Tujuan ── */}
+        <View style={s.section}>
+          <View style={s.sectionHead}>
+            <Text style={s.sectionTitle}>Negara Tujuan</Text>
+            <Text style={s.sectionSub}>{COUNTRIES_DATA.length} negara</Text>
+          </View>
 
-      {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing['2xl'] }} />
-      ) : (
-        <FlatList
-          data={listData}
-          keyExtractor={(item, idx) =>
-            item._type === 'trip' ? item.data.id : `divider-${idx}`
-          }
-          contentContainerStyle={s.list}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={Colors.primary}
-            />
-          }
-          ListEmptyComponent={
+          <FlatList
+            horizontal
+            data={COUNTRIES_DATA}
+            keyExtractor={(item) => item.name}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.countryList}
+            renderItem={({ item }) => (
+              <CountryCard
+                country={item}
+                onPress={() =>
+                  router.push({
+                    pathname: '/cities/[country]',
+                    params: { country: item.name },
+                  } as any)
+                }
+              />
+            )}
+          />
+        </View>
+
+        {/* ── Trip Saya ── */}
+        {myTrips.length > 0 && (
+          <View style={s.section}>
+            <View style={s.sectionHead}>
+              <Text style={s.sectionTitle}>Trip Saya</Text>
+              <Text style={s.sectionSub}>{myTrips.length} aktif</Text>
+            </View>
+            {myTrips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} isOwn />
+            ))}
+          </View>
+        )}
+
+        {/* ── Upcoming Journeys ── */}
+        <View style={s.section}>
+          <View style={s.sectionHead}>
+            <Text style={s.sectionTitle}>Upcoming Journeys</Text>
+            <Text style={s.sectionSub}>Berangkat paling dekat</Text>
+          </View>
+
+          {tripsLoading ? (
+            <ActivityIndicator color={Colors.primary} style={{ marginVertical: Spacing.base }} />
+          ) : upcomingTrips.length === 0 ? (
             <View style={s.empty}>
-              <Ionicons name="airplane-outline" size={48} color={Colors.midGray} />
-              <Text style={s.emptyTxt}>Belum ada trip aktif</Text>
+              <Ionicons name="airplane-outline" size={40} color={Colors.midGray} />
+              <Text style={s.emptyTxt}>Belum ada jastiper aktif</Text>
               <TouchableOpacity style={s.postBtn} onPress={() => router.push('/trip/create')}>
-                <Text style={s.postBtnTxt}>Buat Trip</Text>
+                <Text style={s.postBtnTxt}>Jadi Jastiper Pertama</Text>
               </TouchableOpacity>
             </View>
-          }
-          renderItem={({ item }) => {
-            if (item._type === 'divider') {
-              return <SectionDivider count={item.otherCount} />;
-            }
-            return <TripCard trip={item.data} isOwn={item.isOwn} />;
-          }}
-        />
-      )}
+          ) : (
+            upcomingTrips.map((trip) => <TripCard key={trip.id} trip={trip} isOwn={false} />)
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Section divider ─────────────────────────────────────────────────────────
-function SectionDivider({ count }: { count: number }) {
+// ─── Country Card ─────────────────────────────────────────────────────────────
+function CountryCard({ country, onPress }: {
+  country: typeof COUNTRIES_DATA[0];
+  onPress: () => void;
+}) {
   return (
-    <View style={s.divider}>
-      <View style={s.dividerLine} />
-      <Text style={s.dividerLabel}>Jastiper Lainnya ({count})</Text>
-      <View style={s.dividerLine} />
-    </View>
+    <TouchableOpacity style={s.countryCard} activeOpacity={0.85} onPress={onPress}>
+      <Image source={{ uri: country.imageUrl }} style={s.countryImg} contentFit="cover" transition={300} />
+      <LinearGradient colors={['transparent', 'rgba(20,10,2,0.88)']} style={StyleSheet.absoluteFill}>
+        <View style={s.countryInfo}>
+          <Text style={s.countryFlag}>{country.flag}</Text>
+          <Text style={s.countryName}>{country.name}</Text>
+          <View style={s.countryPill}>
+            <Ionicons name="location-outline" size={9} color={Colors.primary} />
+            <Text style={s.countryPillTxt}>{country.cities.length} kota</Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 }
 
-// ─── Trip card ────────────────────────────────────────────────────────────────
+// ─── Trip Card ─────────────────────────────────────────────────────────────────
 function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
   const name = trip.profiles?.full_name ?? 'Traveler';
   const avatar = trip.profiles?.avatar_url ?? null;
@@ -162,16 +171,12 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
       activeOpacity={0.7}
       onPress={() => router.push(`/trip/${trip.id}`)}
     >
-      {/* Own trip badge */}
       {isOwn && (
         <View style={s.ownBanner}>
           <Ionicons name="person-circle" size={13} color={Colors.primary} />
           <Text style={s.ownBannerTxt}>Trip Saya</Text>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity
-            style={s.manageBtn}
-            onPress={() => router.push(`/trip/${trip.id}`)}
-          >
+          <TouchableOpacity style={s.manageBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
             <Text style={s.manageBtnTxt}>Kelola</Text>
             <Ionicons name="settings-outline" size={12} color={Colors.primary} />
           </TouchableOpacity>
@@ -190,7 +195,7 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
         </View>
         {trip.capacity_kg != null && (
           <View style={[s.capBadge, isOwn && s.capBadgeOwn]}>
-            <Text style={s.capTxt}>{trip.capacity_kg} kg</Text>
+            <Text style={[s.capTxt, isOwn && { color: Colors.white }]}>{trip.capacity_kg} kg</Text>
           </View>
         )}
       </View>
@@ -223,10 +228,7 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
         </View>
 
         {isOwn ? (
-          <TouchableOpacity
-            style={s.reqBtn}
-            onPress={() => router.push(`/trip/${trip.id}`)}
-          >
+          <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
             <Text style={s.reqBtnTxt}>Lihat Trip</Text>
           </TouchableOpacity>
         ) : (
@@ -234,11 +236,8 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
             <TouchableOpacity style={s.chatBtn} onPress={handleChat}>
               <Ionicons name="chatbubble-outline" size={17} color={Colors.primary} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={s.reqBtn}
-              onPress={() => router.push(`/trip/${trip.id}`)}
-            >
-              <Text style={s.reqBtnTxt}>Request Item</Text>
+            <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
+              <Text style={s.reqBtnTxt}>Lihat Katalog</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -247,10 +246,13 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
+
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: Colors.white,
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.md,
@@ -259,7 +261,7 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.lightGray,
   },
   headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
+    fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.xl,
     color: Colors.nearBlack,
   },
@@ -269,54 +271,81 @@ const s = StyleSheet.create({
     color: Colors.darkGray,
     marginTop: 2,
   },
-  sortBar: {
+  createBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.sm,
-  },
-  sortChip: {
+    gap: 5,
+    backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 5,
+    paddingVertical: 8,
     borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.midGray,
   },
-  sortChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  sortLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
+  createBtnTxt: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.white,
   },
-  sortLabelActive: { color: Colors.white },
-  countTxt: {
+
+  section: { marginBottom: Spacing.xl, paddingHorizontal: Spacing.xl },
+  sectionHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    fontFamily: Typography.serifBold.fontFamily,
+    fontSize: Typography.sizes.lg,
+    color: Colors.nearBlack,
+  },
+  sectionSub: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.xs,
     color: Colors.darkGray,
   },
 
-  list: { padding: Spacing.xl, paddingBottom: 100 },
-
-  // ── Divider between own trips & others ──
-  divider: {
+  // Country cards
+  countryList: { gap: Spacing.sm, paddingRight: Spacing.xl },
+  countryCard: {
+    width: COUNTRY_CARD_W,
+    height: COUNTRY_CARD_H,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    ...Shadows.md,
+  },
+  countryImg: { width: '100%', height: '100%' },
+  countryInfo: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: Spacing.md,
+    gap: 4,
+  },
+  countryFlag: { fontSize: 22 },
+  countryName: {
+    fontFamily: Typography.serifBold.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.white,
+  },
+  countryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.lg,
-    gap: Spacing.sm,
+    gap: 3,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(197,162,103,0.22)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.midGray },
-  dividerLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    letterSpacing: 0.3,
+  countryPillTxt: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: 9,
+    color: Colors.primary,
   },
 
-  // ── Cards ──
+  // Trip cards
   card: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
@@ -326,13 +355,8 @@ const s = StyleSheet.create({
     borderColor: Colors.lightGray,
     ...Shadows.sm,
   },
-  cardOwn: {
-    borderColor: Colors.primary,
-    borderWidth: 2,
-    backgroundColor: '#FFFDF7',
-  },
+  cardOwn: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: '#FFFDF7' },
 
-  // Own trip top banner
   ownBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -390,10 +414,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primaryLight,
   },
-  capBadgeOwn: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
+  capBadgeOwn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   capTxt: {
     fontFamily: Typography.semiBold.fontFamily,
     fontSize: 11,
@@ -451,11 +472,7 @@ const s = StyleSheet.create({
     borderTopColor: Colors.lightGray,
     paddingTop: Spacing.md,
   },
-  footActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
+  footActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   chatBtn: {
     width: 36,
     height: 36,
@@ -484,7 +501,7 @@ const s = StyleSheet.create({
     color: Colors.white,
   },
 
-  empty: { alignItems: 'center', paddingTop: Spacing['5xl'], gap: Spacing.base },
+  empty: { alignItems: 'center', paddingVertical: Spacing['2xl'], gap: Spacing.md },
   emptyTxt: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.base,

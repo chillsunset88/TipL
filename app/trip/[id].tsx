@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -24,6 +25,7 @@ import { Avatar } from '@/src/components/ui/Avatar';
 import { Badge } from '@/src/components/ui/Badge';
 import { Skeleton } from '@/src/components/ui/Skeleton';
 import { useTrip } from '@/src/lib/hooks/useTrips';
+import { deleteTrip } from '@/src/services/supabase/trips';
 import { useAuthStore } from '@/src/store/authStore';
 import * as Haptics from 'expo-haptics';
 
@@ -52,7 +54,32 @@ export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { trip, products, loading } = useTrip(id);
   const user = useAuthStore((s) => s.user);
-  const [wishlisted, setWishlisted] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'Hapus Trip',
+      'Trip ini akan dihapus permanen beserta semua datanya. Yakin?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await deleteTrip(id);
+              router.back();
+            } catch {
+              setDeleting(false);
+              Alert.alert('Gagal', 'Gagal menghapus trip. Coba lagi.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -128,19 +155,19 @@ export default function TripDetailScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.heroBtn}>
                   <Ionicons name="arrow-back" size={22} color={Colors.white} />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.heroBtn}
-                  onPress={() => {
-                    setWishlisted((w) => !w);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                >
-                  <Ionicons
-                    name={wishlisted ? 'heart' : 'heart-outline'}
-                    size={22}
-                    color={wishlisted ? '#F87171' : Colors.white}
-                  />
-                </TouchableOpacity>
+                {isSelf && (
+                  <TouchableOpacity
+                    style={styles.heroBtn}
+                    onPress={handleDelete}
+                    disabled={deleting}
+                  >
+                    {deleting ? (
+                      <ActivityIndicator size="small" color={Colors.white} />
+                    ) : (
+                      <Ionicons name="trash-outline" size={22} color="#F87171" />
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
             </SafeAreaView>
             <View style={styles.heroContent}>
@@ -184,7 +211,11 @@ export default function TripDetailScreen() {
         {/* Triper profile */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Your Traveler</Text>
-          <View style={styles.profileRow}>
+          <TouchableOpacity
+            style={styles.profileRow}
+            activeOpacity={0.75}
+            onPress={() => router.push(`/triper/${trip.triper_id}` as any)}
+          >
             <Avatar
               uri={profile?.avatar_url ?? null}
               name={profile?.full_name ?? 'Traveler'}
@@ -208,7 +239,8 @@ export default function TripDetailScreen() {
               )}
               <Text style={styles.profileStat}>{profile?.total_trips ?? 0} trips completed</Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.midGray} />
+          </TouchableOpacity>
         </View>
 
         {/* Notes */}
@@ -256,7 +288,28 @@ export default function TripDetailScreen() {
       </ScrollView>
 
       {/* CTA */}
-      {!isSelf && (
+      {isSelf ? (
+        <View style={styles.cta}>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            activeOpacity={0.85}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push({ pathname: '/product/create', params: { tripId: id } });
+            }}
+          >
+            <LinearGradient
+              colors={[Colors.primaryLight, Colors.primaryDark]}
+              style={styles.ctaGrad}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="add-circle-outline" size={22} color={Colors.white} />
+              <Text style={styles.ctaText}>Tambah Produk ke Trip</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      ) : (
         <View style={styles.cta}>
           <TouchableOpacity
             style={styles.ctaBtn}

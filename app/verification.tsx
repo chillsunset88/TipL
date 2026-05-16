@@ -102,14 +102,9 @@ export default function VerificationScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={goBack}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Verifikasi Jastiper</Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <TouchableOpacity style={s.floatingBack} onPress={goBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       {/* Step indicator */}
       <View style={s.stepper}>
@@ -368,19 +363,11 @@ function ReviewStep({ selfieUri, ktpUri, submitting, onSubmit, onEditSelfie, onE
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
-  },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
 
   stepper: {

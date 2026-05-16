@@ -1,9 +1,3 @@
-/**
- * TipL — Permintaan
- * Browse = semua request publik dari pembeli (siapa saja bisa ambil)
- * Permintaan Saya = request yang sudah diterima / diarahkan ke akun traveler ini
- */
-
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
@@ -17,9 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/store/authStore';
 import {
-  getOpenRequests,
   getRequestsForTriper,
-  acceptRequest,
   CustomRequestWithProfile,
 } from '@/src/services/supabase/requests';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
@@ -75,22 +67,16 @@ const timeAgo = (ms: number): string => {
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 
-function DetailModal({ item, mode, onClose, onAccept, accepting }: {
+function DetailModal({ item, onClose }: {
   item: CustomRequest | null;
-  mode: 'browse' | 'mine';
   onClose: () => void;
-  onAccept: (item: CustomRequest) => void;
-  accepting: boolean;
 }) {
   const user = useAuthStore((s) => s.user);
   if (!item) return null;
 
   const isOwn = item.buyerId === user?.id;
-  const canAccept = !isOwn && item.status === 'open' && mode === 'browse';
 
-  const statusColor = item.status === 'open'
-    ? Colors.success
-    : item.status === 'matched' ? Colors.primary : Colors.gray;
+  const statusColor = item.status === 'open' ? Colors.success : item.status === 'matched' ? Colors.primary : Colors.gray;
   const statusLabel = item.status === 'open' ? 'Terbuka' : item.status === 'matched' ? 'Diambil' : 'Ditutup';
 
   return (
@@ -181,24 +167,6 @@ function DetailModal({ item, mode, onClose, onAccept, accepting }: {
             </View>
           )}
 
-          {/* Accept button */}
-          {canAccept && (
-            <TouchableOpacity
-              style={[d.acceptBtn, accepting && d.acceptBtnDisabled]}
-              onPress={() => onAccept(item)}
-              disabled={accepting}
-              activeOpacity={0.85}
-            >
-              {accepting ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
-                  <Text style={d.acceptText}>Ambil Permintaan</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -213,7 +181,7 @@ const d = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
   },
   closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
+  headerTitle: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.offWhite, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusLabel: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.xs },
@@ -253,13 +221,6 @@ const d = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.primary + '30', marginBottom: Spacing.base,
   },
   ownBannerText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-  acceptBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.primary, marginHorizontal: Spacing.base,
-    paddingVertical: Spacing.base, borderRadius: BorderRadius.lg, ...Shadows.glow,
-  },
-  acceptBtnDisabled: { opacity: 0.7 },
-  acceptText: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -271,19 +232,12 @@ export default function CustomRequestsScreen() {
   const [refreshing, setRefreshing]           = useState(false);
   const [search, setSearch]                   = useState('');
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [acceptingId, setAcceptingId]         = useState<string | null>(null);
-  const [mode, setMode]                       = useState<'browse' | 'mine'>('browse');
   const [selected, setSelected]               = useState<CustomRequest | null>(null);
 
   const load = useCallback(async () => {
     try {
-      let raw: CustomRequestWithProfile[];
-      if (mode === 'mine') {
-        if (!user) { setRequests([]); setLoading(false); setRefreshing(false); return; }
-        raw = await getRequestsForTriper(user.id);
-      } else {
-        raw = await getOpenRequests();
-      }
+      if (!user) { setRequests([]); setLoading(false); setRefreshing(false); return; }
+      const raw = await getRequestsForTriper(user.id);
       setRequests(raw.map(mapRequest));
     } catch (e: any) {
       Alert.alert('Gagal memuat', e?.message ?? 'Terjadi kesalahan. Coba lagi.');
@@ -291,42 +245,9 @@ export default function CustomRequestsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [mode, user]);
+  }, [user]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const handleAccept = useCallback(
-    async (request: CustomRequest) => {
-      if (!user) return;
-      Alert.alert(
-        'Ambil Permintaan',
-        `Ambil permintaan "${request.productName}" dengan budget maks ${fmtCurrency(request.maxBudget, request.currency)}?`,
-        [
-          { text: 'Batal', style: 'cancel' },
-          {
-            text: 'Ambil',
-            onPress: async () => {
-              setAcceptingId(request.id);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              try {
-                await acceptRequest(request.id, user.id);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setSelected(null);
-                load();
-                Alert.alert('Berhasil!', 'Permintaan berhasil diambil.', [{ text: 'OK' }]);
-              } catch {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert('Error', 'Gagal mengambil permintaan. Coba lagi.');
-              } finally {
-                setAcceptingId(null);
-              }
-            },
-          },
-        ],
-      );
-    },
-    [user, load],
-  );
 
   const filtered = requests.filter((r) => {
     const matchesSearch =
@@ -399,31 +320,25 @@ export default function CustomRequestsScreen() {
               </View>
             )}
 
-            {mode === 'mine' && (
-              <View style={styles.forMeBadge}>
-                <Ionicons name="airplane" size={12} color={Colors.primary} />
-                <Text style={styles.forMeText}>Untuk saya</Text>
-              </View>
-            )}
+            <View style={styles.forMeBadge}>
+              <Ionicons name="airplane" size={12} color={Colors.primary} />
+              <Text style={styles.forMeText}>Untuk saya</Text>
+            </View>
 
             <Ionicons name="chevron-forward" size={16} color={Colors.midGray} />
           </View>
         </TouchableOpacity>
       );
     },
-    [user, mode],
+    [user],
   );
 
   const ListEmpty = () => (
     <View style={styles.empty}>
       <Ionicons name="bag-outline" size={64} color={Colors.midGray} />
-      <Text style={styles.emptyTitle}>
-        {mode === 'mine' ? 'Belum ada permintaan untukmu' : 'Belum ada permintaan'}
-      </Text>
+      <Text style={styles.emptyTitle}>Belum ada permintaan untukmu</Text>
       <Text style={styles.emptySubtitle}>
-        {mode === 'mine'
-          ? 'Permintaan yang kamu ambil dari pembeli akan muncul di sini.'
-          : 'Belum ada permintaan yang cocok dengan filter kamu.'}
+        Permintaan yang dikirim khusus ke kamu akan muncul di sini.
       </Text>
     </View>
   );
@@ -439,35 +354,11 @@ export default function CustomRequestsScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Mode toggle */}
-      <View style={styles.modeToggle}>
-        <TouchableOpacity
-          style={[styles.modeBtn, mode === 'browse' && styles.modeBtnActive]}
-          onPress={() => { setMode('browse'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-        >
-          <Ionicons name="earth-outline" size={14} color={mode === 'browse' ? Colors.white : Colors.gray} />
-          <Text style={[styles.modeBtnText, mode === 'browse' && styles.modeBtnTextActive]}>Browse</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modeBtn, mode === 'mine' && styles.modeBtnActive]}
-          onPress={() => { setMode('mine'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-        >
-          <Ionicons name="person-outline" size={14} color={mode === 'mine' ? Colors.white : Colors.gray} />
-          <Text style={[styles.modeBtnText, mode === 'mine' && styles.modeBtnTextActive]}>Permintaan Saya</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Tab description */}
+      {/* Info banner */}
       <View style={styles.tabDesc}>
-        <Ionicons
-          name={mode === 'browse' ? 'information-circle-outline' : 'airplane-outline'}
-          size={13}
-          color={Colors.darkGray}
-        />
+        <Ionicons name="airplane-outline" size={13} color={Colors.darkGray} />
         <Text style={styles.tabDescText}>
-          {mode === 'browse'
-            ? 'Semua permintaan publik dari pembeli — ambil dan bawakan untuk mereka'
-            : 'Permintaan yang secara khusus ditujukan atau kamu ambil'}
+          Permintaan yang secara khusus ditujukan ke kamu sebagai jastiper
         </Text>
       </View>
 
@@ -547,10 +438,7 @@ export default function CustomRequestsScreen() {
       {/* Detail Modal */}
       <DetailModal
         item={selected}
-        mode={mode}
         onClose={() => setSelected(null)}
-        onAccept={handleAccept}
-        accepting={!!acceptingId}
       />
     </SafeAreaView>
   );
@@ -566,22 +454,10 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
   headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
+    fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
-
-  modeToggle: {
-    flexDirection: 'row', backgroundColor: Colors.lightGray,
-    margin: Spacing.base, borderRadius: BorderRadius.lg, padding: 3,
-  },
-  modeBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 5, paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
-  },
-  modeBtnActive: { backgroundColor: Colors.primary },
-  modeBtnText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
-  modeBtnTextActive: { color: Colors.white },
 
   tabDesc: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.xs,

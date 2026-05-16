@@ -68,13 +68,9 @@ export default function OrdersScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      <View style={st.header}>
-        <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={st.headerTitle}>Pesanan Saya</Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={st.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       <ScrollView
         horizontal
@@ -151,18 +147,14 @@ function OrderCard({ order }: { order: Order }) {
 
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
 
-  filterScroll: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray, maxHeight: 52 },
+  filterScroll: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray, maxHeight: 52, marginTop: 56 },
   filterContent: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, gap: Spacing.sm },
   chip: {
     paddingHorizontal: Spacing.md, paddingVertical: 6,

@@ -123,14 +123,9 @@ export default function CreateRequestScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Request Jastip</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
+          <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+        </TouchableOpacity>
 
         <ScrollView
           style={styles.scroll}
@@ -286,16 +281,15 @@ export default function CreateRequestScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
 
   scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.xl, paddingBottom: 40 },
+  content: { paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: 40 },
 
   triperBanner: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,

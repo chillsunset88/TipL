@@ -97,18 +97,9 @@ export default function AdminVerificationsScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
-      <View style={st.header}>
-        <TouchableOpacity style={st.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <View>
-          <Text style={st.headerTitle}>Kelola Verifikasi</Text>
-          {!loading && (
-            <Text style={st.headerSub}>{items.length} menunggu persetujuan</Text>
-          )}
-        </View>
-        <View style={{ width: 44 }} />
-      </View>
+      <TouchableOpacity style={st.floatingBack} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
 
       {loading ? (
         <ActivityIndicator color={Colors.primary} style={{ marginTop: 60 }} />
@@ -223,17 +214,12 @@ function VerificationCard({ item, isActing, onApprove, onReject }: {
 
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  headerSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
 
   denied: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   deniedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },

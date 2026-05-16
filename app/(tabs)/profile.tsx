@@ -84,21 +84,22 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ── Pesanan & Wishlist ── */}
+        {/* ── Wishlist & Tripper Favorit ── */}
         <View style={s.card}>
-          <ActionRow
-            icon="receipt-outline"
-            label="Pesanan Saya"
-            color={Colors.primary}
-            onPress={() => router.push('/profile/orders')}
-          />
-          <View style={s.actionDivider} />
-          <ActionRow
-            icon="heart-outline"
-            label="Wishlist"
-            color={Colors.error}
-            onPress={() => router.push('/profile/wishlist')}
-          />
+          <View style={s.gridRow}>
+            <GridItem
+              icon="heart-outline"
+              label="Wishlist"
+              color={Colors.error}
+              onPress={() => router.push('/profile/wishlist')}
+            />
+            <GridItem
+              icon="star-outline"
+              label="Tripper Favorit"
+              color={Colors.warning}
+              onPress={() => router.push('/profile/favorites' as any)}
+            />
+          </View>
         </View>
 
         {/* ── Jastip card (hanya jika sudah terverifikasi) ── */}

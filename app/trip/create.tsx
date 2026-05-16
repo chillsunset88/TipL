@@ -24,6 +24,7 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } f
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { createTrip } from '@/src/lib/hooks/useTrips';
+import { COUNTRIES_DATA } from '@/src/lib/countryData';
 
 // ─── Product draft shape (matches CreateTripPayload.products element) ─────────
 interface CreateTripProductDraft {
@@ -66,6 +67,7 @@ export default function CreateTripScreen() {
   // Form state
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  const [destinationCity, setDestinationCity] = useState('');
   const [departDate, setDepartDate] = useState<Date>(new Date(Date.now() + 86400000 * 3));
   const [returnDate, setReturnDate] = useState<Date>(new Date(Date.now() + 86400000 * 10));
   const [capacity, setCapacity] = useState('');
@@ -78,6 +80,8 @@ export default function CreateTripScreen() {
   // UI state
   const [countryModal, setCountryModal] = useState<'origin' | 'destination' | null>(null);
   const [countrySearch, setCountrySearch] = useState('');
+  const [cityModal, setCityModal] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
   const [currencyModal, setCurrencyModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState<DateField | null>(null);
   const [pickerTempDate, setPickerTempDate] = useState<Date>(new Date());
@@ -86,6 +90,15 @@ export default function CreateTripScreen() {
   const filteredCountries = COUNTRIES.filter((c) =>
     c.toLowerCase().includes(countrySearch.toLowerCase()),
   );
+
+  // Kota tersedia untuk negara yang dipilih (dari COUNTRIES_DATA)
+  const countryEntry = COUNTRIES_DATA.find(
+    (c) => c.name.toLowerCase() === destination.toLowerCase()
+  );
+  const availableCities = countryEntry?.cities ?? [];
+  const filteredCities = citySearch
+    ? availableCities.filter((c) => c.toLowerCase().includes(citySearch.toLowerCase()))
+    : availableCities;
 
   // ─── Date Picker helpers ──────────────────────────────────────────────────
   const openDatePicker = (field: DateField) => {
@@ -149,6 +162,7 @@ export default function CreateTripScreen() {
   // ─── Validation & Submit ──────────────────────────────────────────────────
   const validate = (): string | null => {
     if (!origin || !destination) return t.validationRequired;
+    if (!destinationCity) return 'Pilih kota tujuan terlebih dahulu';
     const cap = parseFloat(capacity);
     if (!capacity || isNaN(cap) || cap <= 0) return t.validationCapacity;
     const min = parseFloat(priceMin);
@@ -181,6 +195,7 @@ export default function CreateTripScreen() {
         triperId: user.id,
         originCountry: origin,
         destinationCountry: destination,
+        destinationCity: destinationCity.trim() || undefined,
         departureDate: departDate.toISOString().split('T')[0],
         returnDate: returnDate.toISOString().split('T')[0],
         capacityKg: parseFloat(capacity),
@@ -252,6 +267,26 @@ export default function CreateTripScreen() {
           <Ionicons name="location-outline" size={18} color={Colors.primary} style={styles.selectorIcon} />
           <Text style={[styles.selectorText, !destination && styles.placeholder]}>
             {destination || t.selectCountry}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={Colors.gray} />
+        </TouchableOpacity>
+
+        {/* Destination City — wajib */}
+        <Text style={styles.label}>Kota Tujuan *</Text>
+        <TouchableOpacity
+          style={[styles.selector, !destination && styles.selectorDisabled]}
+          onPress={() => {
+            if (!destination) {
+              Alert.alert('', 'Pilih negara tujuan dulu sebelum memilih kota');
+              return;
+            }
+            setCitySearch('');
+            setCityModal(true);
+          }}
+        >
+          <Ionicons name="business-outline" size={18} color={destination ? Colors.primary : Colors.gray} style={styles.selectorIcon} />
+          <Text style={[styles.selectorText, !destinationCity && styles.placeholder]}>
+            {destinationCity || 'Pilih kota tujuan'}
           </Text>
           <Ionicons name="chevron-down" size={16} color={Colors.gray} />
         </TouchableOpacity>
@@ -378,6 +413,80 @@ export default function CreateTripScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* City picker modal */}
+      <Modal visible={cityModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Pilih Kota — {destination}</Text>
+            <TouchableOpacity onPress={() => setCityModal(false)}>
+              <Ionicons name="close" size={24} color={Colors.nearBlack} />
+            </TouchableOpacity>
+          </View>
+
+          {availableCities.length > 0 ? (
+            <>
+              <TextInput
+                style={styles.searchInput}
+                value={citySearch}
+                onChangeText={setCitySearch}
+                placeholder="Cari kota..."
+                placeholderTextColor={Colors.gray}
+                autoFocus
+              />
+              <FlatList
+                data={filteredCities}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.countryItem}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setDestinationCity(item);
+                      setCityModal(false);
+                    }}
+                  >
+                    <Text style={styles.countryText}>{item}</Text>
+                    {destinationCity === item && (
+                      <Ionicons name="checkmark" size={18} color={Colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                )}
+                keyboardShouldPersistTaps="handled"
+              />
+            </>
+          ) : (
+            // Negara tidak ada di COUNTRIES_DATA — input manual
+            <View style={styles.cityManualWrap}>
+              <Text style={styles.cityManualLabel}>
+                Masukkan nama kota untuk {destination}:
+              </Text>
+              <TextInput
+                style={styles.cityManualInput}
+                value={destinationCity}
+                onChangeText={setDestinationCity}
+                placeholder="Nama kota..."
+                placeholderTextColor={Colors.gray}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  if (destinationCity.trim()) setCityModal(false);
+                }}
+              />
+              <TouchableOpacity
+                style={[styles.cityManualBtn, !destinationCity.trim() && { opacity: 0.4 }]}
+                disabled={!destinationCity.trim()}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setCityModal(false);
+                }}
+              >
+                <Text style={styles.cityManualBtnTxt}>Konfirmasi</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
+
       {/* Country picker modal */}
       <Modal visible={!!countryModal} animationType="slide" presentationStyle="pageSheet">
         <View style={styles.modal}>
@@ -403,8 +512,14 @@ export default function CreateTripScreen() {
                 style={styles.countryItem}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  if (countryModal === 'origin') setOrigin(item);
-                  else setDestination(item);
+                  if (countryModal === 'origin') {
+                    setOrigin(item);
+                  } else {
+                    if (item !== destination) {
+                      setDestination(item);
+                      setDestinationCity(''); // reset kota jika negara berubah
+                    }
+                  }
                   setCountryModal(null);
                 }}
               >
@@ -677,7 +792,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    ...Typography.serifBold,
+    ...Typography.semiBold,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
@@ -690,6 +805,44 @@ const styles = StyleSheet.create({
     color: Colors.charcoal,
     marginTop: Spacing.base,
     marginBottom: Spacing.xs,
+  },
+  selectorDisabled: {
+    opacity: 0.5,
+  },
+  cityManualWrap: {
+    flex: 1,
+    padding: Spacing.base,
+    gap: Spacing.md,
+  },
+  cityManualLabel: {
+    ...Typography.medium,
+    fontSize: Typography.sizes.sm,
+    color: Colors.charcoal,
+    marginTop: Spacing.sm,
+  },
+  cityManualInput: {
+    backgroundColor: Colors.cream,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    height: 50,
+    ...Typography.regular,
+    fontSize: Typography.sizes.base,
+    color: Colors.nearBlack,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  cityManualBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.sm,
+  },
+  cityManualBtnTxt: {
+    ...Typography.semiBold,
+    fontSize: Typography.sizes.base,
+    color: Colors.white,
   },
   selector: {
     flexDirection: 'row',

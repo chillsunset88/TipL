@@ -42,19 +42,12 @@ export default function MyTripsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Trips</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/trip/create')}
-        >
-          <Ionicons name="add" size={22} color={Colors.primary} />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={styles.floatingBack}>
+        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.floatingAdd} onPress={() => router.push('/trip/create')}>
+        <Ionicons name="add" size={22} color={Colors.primary} />
+      </TouchableOpacity>
 
       {loading ? (
         <View style={styles.centered}>
@@ -134,39 +127,20 @@ export default function MyTripsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
+  floatingBack: {
+    position: 'absolute', top: 12, left: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  floatingAdd: {
+    position: 'absolute', top: 12, right: 20, zIndex: 10,
+    width: 38, height: 38, borderRadius: 19,
     backgroundColor: Colors.primaryPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
+    alignItems: 'center', justifyContent: 'center',
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  list: { padding: Spacing.base, paddingBottom: 40 },
+  list: { padding: Spacing.base, paddingTop: 60, paddingBottom: 40 },
   tripCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,

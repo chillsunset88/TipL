@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   },
   headerCenter: { alignItems: 'center' },
   headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
+    fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },

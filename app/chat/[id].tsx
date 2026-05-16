@@ -170,7 +170,7 @@ export default function ChatRoomScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color={Colors.darkTextPrimary} />
+          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
         </TouchableOpacity>
         <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
         <View style={styles.headerInfo}>
@@ -186,7 +186,7 @@ export default function ChatRoomScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.headerAction}>
-          <Ionicons name="ellipsis-vertical" size={20} color={Colors.darkTextPrimary} />
+          <Ionicons name="ellipsis-vertical" size={20} color={Colors.darkGray} />
         </TouchableOpacity>
       </View>
 
@@ -220,7 +220,7 @@ export default function ChatRoomScreen() {
           >
             {uploadingImage
               ? <ActivityIndicator size="small" color={Colors.primary} />
-              : <Ionicons name="image-outline" size={26} color={Colors.darkTextSecondary} />
+              : <Ionicons name="image-outline" size={26} color={Colors.darkGray} />
             }
           </TouchableOpacity>
 
@@ -244,7 +244,7 @@ export default function ChatRoomScreen() {
           >
             {sending
               ? <ActivityIndicator size="small" color={Colors.white} />
-              : <Ionicons name="send" size={20} color={inputText.trim() ? Colors.white : Colors.darkTextSecondary} />
+              : <Ionicons name="send" size={20} color={inputText.trim() ? Colors.white : Colors.darkGray} />
             }
           </TouchableOpacity>
         </View>
@@ -270,7 +270,7 @@ function ReadReceipt({ read }: { read: boolean }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.darkBg,
+    backgroundColor: Colors.offWhite,
   },
   flex: { flex: 1 },
 
@@ -279,8 +279,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.darkBorder,
+    borderBottomColor: Colors.lightGray,
     gap: Spacing.sm,
   },
   backButton: {
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   headerName: {
     fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.base,
-    color: Colors.darkTextPrimary,
+    color: Colors.nearBlack,
   },
   headerStatus: {
     fontFamily: Typography.regular.fontFamily,
@@ -335,13 +336,15 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubbleOther: {
-    backgroundColor: Colors.darkCard,
+    backgroundColor: Colors.white,
     borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
   },
   messageText: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
-    color: Colors.darkTextPrimary,
+    color: Colors.charcoal,
     lineHeight: 21,
   },
   messageTextMe: {
@@ -359,10 +362,10 @@ const styles = StyleSheet.create({
   timestamp: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: 10,
-    color: Colors.darkTextSecondary,
+    color: Colors.gray,
   },
   timestampMe: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.7)',
   },
   readReceipt: {
     marginLeft: 2,
@@ -382,8 +385,8 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     paddingBottom: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.darkBorder,
-    backgroundColor: Colors.darkBg,
+    borderTopColor: Colors.lightGray,
+    backgroundColor: Colors.white,
     gap: Spacing.sm,
   },
   attachButton: {
@@ -395,8 +398,10 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: Colors.darkCard,
+    backgroundColor: Colors.cream,
     borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
     paddingHorizontal: Spacing.base,
     paddingVertical: Platform.OS === 'ios' ? Spacing.sm : 0,
     maxHeight: 100,
@@ -404,14 +409,14 @@ const styles = StyleSheet.create({
   textInput: {
     fontFamily: Typography.regular.fontFamily,
     fontSize: Typography.sizes.base,
-    color: Colors.darkTextPrimary,
+    color: Colors.nearBlack,
     minHeight: 36,
   },
   sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.darkCard,
+    backgroundColor: Colors.cream,
     alignItems: 'center',
     justifyContent: 'center',
   },

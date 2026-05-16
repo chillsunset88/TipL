@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
+    fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.xl,
     color: Colors.nearBlack,
     flex: 1,

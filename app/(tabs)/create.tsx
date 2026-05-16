@@ -21,6 +21,17 @@ const ALL_CATEGORIES = [
   ...ITEM_CATEGORIES.map((c) => ({ id: c.id as string | null, label: c.label, icon: c.icon as string })),
 ];
 
+const CATEGORY_MAP: Record<string, { label: string; icon: string; color: string }> = {
+  luxury:      { label: 'Luxury Goods',     icon: 'diamond-outline',       color: '#A78BFA' },
+  skincare:    { label: 'Skincare',          icon: 'leaf-outline',          color: '#34D399' },
+  food:        { label: 'Food & Beverages',  icon: 'restaurant-outline',    color: '#F97316' },
+  electronics: { label: 'Electronics',       icon: 'hardware-chip-outline', color: '#60A5FA' },
+  fashion:     { label: 'Fashion',           icon: 'shirt-outline',         color: '#F472B6' },
+  toys:        { label: 'Toys & Games',      icon: 'game-controller-outline', color: '#FBBF24' },
+  books:       { label: 'Books',             icon: 'book-outline',          color: '#6EE7B7' },
+  other:       { label: 'Other',             icon: 'grid-outline',          color: '#94A3B8' },
+};
+
 export default function OrderScreen() {
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<ProductWithTripInfo[]>([]);
@@ -53,9 +64,10 @@ export default function OrderScreen() {
     return () => { unsub(); };
   }, [load]);
 
-  const filtered = selectedCategory
+  const filtered = (selectedCategory
     ? products.filter((p) => p.category === selectedCategory)
-    : products;
+    : products
+  ).filter((p) => p.name?.trim()); // hide products with empty names
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -129,8 +141,9 @@ function ProductCard({ item }: { item: ProductWithTripInfo }) {
     ? priceMax && item.price_max !== item.price_min
       ? `${priceMin} – ${priceMax}`
       : priceMin
-    : '—';
+    : null;
   const dest = item.trips?.destination_city || item.trips?.destination_country || null;
+  const catInfo = item.category ? CATEGORY_MAP[item.category] ?? null : null;
 
   return (
     <TouchableOpacity
@@ -141,18 +154,26 @@ function ProductCard({ item }: { item: ProductWithTripInfo }) {
       {firstImage ? (
         <Image source={{ uri: firstImage }} style={s.cardImg} contentFit="cover" transition={200} />
       ) : (
-        <View style={[s.cardImg, s.cardImgEmpty]}>
-          <Ionicons name="image-outline" size={32} color={Colors.midGray} />
+        <View style={[s.cardImg, s.cardImgEmpty, catInfo ? { backgroundColor: catInfo.color + '22' } : undefined]}>
+          <Ionicons
+            name={(catInfo?.icon ?? 'cube-outline') as any}
+            size={36}
+            color={catInfo?.color ?? Colors.midGray}
+          />
         </View>
       )}
-      {item.category ? (
-        <View style={s.catBadge}>
-          <Text style={s.catBadgeTxt}>{item.category}</Text>
+      {catInfo ? (
+        <View style={[s.catBadge, { backgroundColor: catInfo.color + 'DD' }]}>
+          <Text style={s.catBadgeTxt}>{catInfo.label}</Text>
         </View>
       ) : null}
       <View style={s.cardBody}>
         <Text style={s.cardName} numberOfLines={2}>{item.name}</Text>
-        <Text style={s.cardPrice}>{priceStr}</Text>
+        {priceStr ? (
+          <Text style={s.cardPrice}>{priceStr}</Text>
+        ) : (
+          <Text style={s.cardPriceMuted}>Harga belum diset</Text>
+        )}
         {dest ? (
           <View style={s.destRow}>
             <Ionicons name="location-outline" size={11} color={Colors.primary} />
@@ -175,7 +196,7 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.lightGray,
   },
   headerTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
+    fontFamily: Typography.semiBold.fontFamily,
     fontSize: Typography.sizes.xl,
     color: Colors.nearBlack,
   },
@@ -259,6 +280,13 @@ const s = StyleSheet.create({
     fontSize: Typography.sizes.sm,
     color: Colors.nearBlack,
     marginBottom: 3,
+  },
+  cardPriceMuted: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.gray,
+    marginBottom: 3,
+    fontStyle: 'italic',
   },
   destRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   destTxt: {
