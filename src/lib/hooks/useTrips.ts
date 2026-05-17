@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { getOpenTrips, getTripById, getMyTrips, createTrip as createTripService, getProductsByTrip, createProduct, uploadProductImage, subscribeToTrips, TripWithProfile } from '@/src/services/supabase/trips';
+import { useEffect, useState, useCallback } from 'react';
+import { getTripById, getMyTrips, createTrip as createTripService, getProductsByTrip, createProduct, uploadProductImage, TripWithProfile } from '@/src/services/supabase/trips';
+import { useTripsStore } from '@/src/store/tripsStore';
 
 export type { TripWithProfile };
 import type { Database } from '@/src/lib/database.types';
@@ -8,32 +9,17 @@ type Trip = Database['public']['Tables']['trips']['Row'];
 type Product = Database['public']['Tables']['products']['Row'];
 
 export function useTrips() {
-  const [trips, setTrips] = useState<TripWithProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const initialized = useRef(false);
-
-  const load = useCallback(async () => {
-    if (!initialized.current) setLoading(true);
-    setError(null);
-    try {
-      const data = await getOpenTrips();
-      setTrips(data);
-      initialized.current = true;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load trips');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { trips, loading, error, fetch, subscribe } = useTripsStore();
 
   useEffect(() => {
-    load();
-    const unsub = subscribeToTrips(setTrips);
+    // Fetch hanya jika belum ada data — tidak repeat saat tab di-focus ulang
+    fetch();
+    const unsub = subscribe();
     return () => { unsub(); };
-  }, [load]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  return { trips, loading, error, refetch: load };
+  return { trips, loading, error, refetch: fetch };
 }
 
 export function useTrip(tripId: string | undefined) {

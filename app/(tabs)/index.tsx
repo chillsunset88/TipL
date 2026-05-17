@@ -1,18 +1,17 @@
 /**
  * TipL — Home Screen
- * Infinite parallax carousel + Supabase real trips + featured products.
+ * Infinite parallax carousel + real products from Supabase filtered by destination.
  */
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from "@/src/lib/constants";
-import { JASTIP_PRODUCTS } from "@/src/lib/mockData";
-import { useCartStore } from "@/src/store/cartStore";
 import { useNotificationStore } from "@/src/store/notificationStore";
 import { useSettingsStore } from "@/src/store/settingsStore";
+import { useCartStore } from "@/src/store/cartStore";
 import { SkeletonProductGrid } from "@/src/components/ui/Skeleton";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions, Platform, ScrollView,
   StatusBar, StyleSheet, Text, TouchableOpacity, View, type GestureResponderEvent,
@@ -20,6 +19,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Carousel from "react-native-reanimated-carousel";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { getProductsByDestination, ProductWithTripInfo } from "@/src/services/supabase/trips";
 
 const { width: SW } = Dimensions.get("window");
 
@@ -30,7 +30,13 @@ const DESTINATION_BANNERS = [
   { id: "uk", destination: "London", title: "London Premium", subtitle: "Luxury brands and iconic British tea", imageUrl: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800" },
 ];
 
-const fmtIDR = (v: number) => "Rp " + v.toLocaleString("id-ID");
+const fmtPrice = (min: number | null, max: number | null) => {
+  if (min == null && max == null) return "Harga Negosiasi";
+  if (min != null && max != null && min !== max)
+    return `Rp ${min.toLocaleString("id-ID")} – ${max.toLocaleString("id-ID")}`;
+  const val = min ?? max!;
+  return "Rp " + val.toLocaleString("id-ID");
+};
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -39,10 +45,22 @@ export default function HomeScreen() {
   const notifCount = useNotificationStore((s) => s.count);
   const cartCount = useCartStore((s) => s.count);
 
-  useEffect(() => { useSettingsStore.getState().loadSettings(); }, []);
+  const [products, setProducts] = useState<ProductWithTripInfo[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const lastDest = useRef("");
 
   const activeDest = DESTINATION_BANNERS[carouselIdx]?.destination ?? "";
-  const products = useMemo(() => JASTIP_PRODUCTS.filter((p) => p.destination === activeDest), [activeDest]);
+
+  useEffect(() => {
+    if (!activeDest || activeDest === lastDest.current) return;
+    lastDest.current = activeDest;
+    setProductsLoading(true);
+    setProducts([]);
+    getProductsByDestination(activeDest, 8)
+      .then(setProducts)
+      .catch(() => setProducts([]))
+      .finally(() => setProductsLoading(false));
+  }, [activeDest]);
 
   const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const TAP_THRESHOLD = 10;
@@ -146,8 +164,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {products.length === 0 ? (
+          {productsLoading ? (
             <SkeletonProductGrid count={4} />
+          ) : products.length === 0 ? (
+            <View style={s.emptyWrap}>
+              <Ionicons name="bag-outline" size={36} color={Colors.midGray} />
+              <Text style={s.emptyTxt}>Belum ada produk dari {activeDest}</Text>
+            </View>
           ) : (
             <Animated.View
               key={activeDest}
@@ -163,17 +186,26 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/product/${p.id}`)}
                 >
                   <View style={s.prodImgWrap}>
-                    <Image source={{ uri: p.imageUrl }} style={s.prodImg} contentFit="cover" transition={200} />
-                    <View style={s.prodCatBadge}>
-                      <Text style={s.prodCatTxt}>{p.category}</Text>
-                    </View>
+                    <Image
+                      source={{ uri: p.image_urls?.[0] ?? undefined }}
+                      style={s.prodImg}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                    {p.category && (
+                      <View style={s.prodCatBadge}>
+                        <Text style={s.prodCatTxt}>{p.category}</Text>
+                      </View>
+                    )}
                   </View>
                   <View style={s.prodBody}>
                     <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
-                    <Text style={s.prodPrice}>{fmtIDR(p.priceIDR)}</Text>
+                    <Text style={s.prodPrice}>{fmtPrice(p.price_min, p.price_max)}</Text>
                     <View style={s.prodTravelerRow}>
-                      <Ionicons name="person-circle-outline" size={12} color={Colors.darkGray} />
-                      <Text style={s.prodTravelerTxt} numberOfLines={1}>{p.travelerName}</Text>
+                      <Ionicons name="location-outline" size={12} color={Colors.darkGray} />
+                      <Text style={s.prodTravelerTxt} numberOfLines={1}>
+                        {p.trips?.destination_city ?? p.trips?.destination_country ?? activeDest}
+                      </Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -230,6 +262,9 @@ const s = StyleSheet.create({
   viewAllRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   viewAll: { fontFamily: Typography.semiBold.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
 
+  emptyWrap: { alignItems: "center", paddingVertical: Spacing["2xl"], gap: Spacing.md },
+  emptyTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
+
   prodGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.md },
   prodCard: { width: (SW - Spacing.xl * 2 - Spacing.md) / 2, backgroundColor: Colors.white, borderRadius: BorderRadius.lg, overflow: "hidden", borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm },
   prodImgWrap: { position: "relative" },
@@ -241,5 +276,4 @@ const s = StyleSheet.create({
   prodPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack, marginBottom: 4 },
   prodTravelerRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   prodTravelerTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray, flex: 1 },
-
 });
