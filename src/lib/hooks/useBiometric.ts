@@ -13,8 +13,10 @@ export async function checkBiometricAvailable(): Promise<{
   if (!enrolled) return { available: false, type: '' };
 
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+  const hasFingerprint = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
   const hasFace = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
-  const type = hasFace ? 'Face ID' : 'Sidik Jari';
+  // Prioritaskan fingerprint — face unlock Android sering muncul bersama fingerprint
+  const type = hasFingerprint ? 'Sidik Jari' : hasFace ? 'Face ID' : 'Biometrik';
   return { available: true, type };
 }
 

@@ -22,20 +22,24 @@ export function LockScreen() {
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [biometricType, setBiometricType] = useState('Sidik Jari');
+  const [isFace, setIsFace] = useState(false);
 
   useEffect(() => {
+    // Deteksi tipe dulu, baru trigger prompt
     checkBiometricAvailable().then(({ type }) => {
+      const face = type === 'Face ID';
       if (type) setBiometricType(type);
+      setIsFace(face);
+      handleAuthenticate(type || 'Sidik Jari');
     });
-    // Langsung trigger prompt saat lock screen muncul
-    handleAuthenticate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAuthenticate = async () => {
+  const handleAuthenticate = async (type?: string) => {
     setLoading(true);
     setFailed(false);
-    const success = await authenticateBiometric(`Gunakan ${biometricType} untuk masuk ke TipL`);
+    const label = type ?? biometricType;
+    const success = await authenticateBiometric(`Gunakan ${label} untuk masuk ke TipL`);
     setLoading(false);
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -58,7 +62,7 @@ export function LockScreen() {
       colors={[Colors.nearBlack, '#2D1F1A']}
       style={st.fill}
     >
-      <SafeAreaView style={st.fill} edges={['top', 'bottom']}>
+      <SafeAreaView style={st.safeArea} edges={['top', 'bottom']}>
         <View style={st.center}>
           {/* Logo area */}
           <View style={st.logoWrap}>
@@ -77,7 +81,7 @@ export function LockScreen() {
           {/* Biometric icon */}
           <TouchableOpacity
             style={[st.biometricBtn, failed && st.biometricBtnFailed]}
-            onPress={handleAuthenticate}
+            onPress={() => handleAuthenticate()}
             activeOpacity={0.8}
             disabled={loading}
           >
@@ -85,7 +89,7 @@ export function LockScreen() {
               <ActivityIndicator color={Colors.white} size="large" />
             ) : (
               <Ionicons
-                name="finger-print"
+                name={isFace ? 'scan-outline' : 'finger-print'}
                 size={56}
                 color={failed ? Colors.error : Colors.primary}
               />
@@ -101,7 +105,7 @@ export function LockScreen() {
           </Text>
 
           {failed && (
-            <TouchableOpacity style={st.retryBtn} onPress={handleAuthenticate}>
+            <TouchableOpacity style={st.retryBtn} onPress={() => handleAuthenticate()}>
               <Text style={st.retryTxt}>Coba Lagi</Text>
             </TouchableOpacity>
           )}
@@ -118,7 +122,8 @@ export function LockScreen() {
 }
 
 const st = StyleSheet.create({
-  fill: { flex: 1 },
+  fill: { ...StyleSheet.absoluteFillObject },
+  safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.xl, paddingHorizontal: Spacing['2xl'] },
 
   logoWrap: { alignItems: 'center', gap: 4 },
