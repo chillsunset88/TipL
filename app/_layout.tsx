@@ -35,6 +35,7 @@ import { useAuthListener } from '@/src/lib/hooks/useAuth';
 import { supabase } from '@/src/lib/supabase';
 import { useBiometricStore } from '@/src/store/biometricStore';
 import { LockScreen } from '@/src/components/LockScreen';
+import { NotificationBanner } from '@/src/components/ui/NotificationBanner';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -235,6 +236,9 @@ function RootLayoutNav() {
 
         {/* Lock screen overlay — muncul di atas semua konten */}
         {showLock && <LockScreen />}
+
+        {/* In-app notification banner — muncul paling atas */}
+        <NotificationBanner />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

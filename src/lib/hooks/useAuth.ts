@@ -88,8 +88,18 @@ export function useAuthListener() {
             schema: 'public',
             table: 'notifications',
             filter: `user_id=eq.${userId}`,
-          }, () => {
-            useNotificationStore.getState().incrementCount();
+          }, (payload) => {
+            const notif = payload.new as any;
+            const store = useNotificationStore.getState();
+            store.incrementCount();
+            const data = notif.data
+              ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data)
+              : {};
+            store.showBanner({
+              title: notif.title ?? 'Notifikasi baru',
+              body: notif.body ?? '',
+              orderId: data?.orderId,
+            });
           })
           .subscribe();
 
