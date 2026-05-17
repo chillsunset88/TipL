@@ -105,6 +105,7 @@ export default function OrderDetailScreen() {
   const status = order.status ?? 'pending';
   const isTiper = order.tiper_id === (user?.id ?? '');
   const isTriper = order.triper_id === (user?.id ?? '');
+  const isAdmin = user?.role === 'admin';
 
   const statusCfg = STATUS_CONFIG[status] ?? STATUS_CONFIG['pending'];
 
@@ -328,16 +329,33 @@ export default function OrderDetailScreen() {
         status={status}
         isTiper={isTiper}
         isTriper={isTriper}
+        isAdmin={isAdmin}
         loading={actionLoading}
         onPayNow={handlePayNow}
         onAccept={handleAccept}
         onMarkShipped={handleMarkShipped}
         onConfirmReceipt={handleConfirmReceipt}
         onDispute={handleDispute}
+        onAdminSetStatus={(s) => withLoading(() => updateOrderStatus(order.id, s))}
       />
     </SafeAreaView>
   );
 }
+
+// ─── Status config untuk admin ────────────────────────────────────────────────
+type OrderStatus = 'pending' | 'accepted' | 'in_escrow' | 'purchased' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'disputed';
+
+const ADMIN_STATUSES: { status: OrderStatus; label: string; color: string; icon: string }[] = [
+  { status: 'pending',    label: 'Pending',   color: '#9E9E9E', icon: 'time-outline' },
+  { status: 'accepted',   label: 'Diterima',  color: '#2196F3', icon: 'checkmark-outline' },
+  { status: 'in_escrow',  label: 'Escrow',    color: '#F59E0B', icon: 'lock-closed-outline' },
+  { status: 'purchased',  label: 'Dibeli',    color: '#66BB6A', icon: 'bag-outline' },
+  { status: 'shipped',    label: 'Dikirim',   color: '#42A5F5', icon: 'airplane-outline' },
+  { status: 'delivered',  label: 'Tiba',      color: '#26A69A', icon: 'home-outline' },
+  { status: 'completed',  label: 'Selesai',   color: '#43A047', icon: 'checkmark-circle-outline' },
+  { status: 'cancelled',  label: 'Dibatal',   color: '#EF5350', icon: 'close-circle-outline' },
+  { status: 'disputed',   label: 'Dispute',   color: '#FF7043', icon: 'alert-circle-outline' },
+];
 
 // ─── Action bar ───────────────────────────────────────────────────────────────
 interface ActionBarProps {
@@ -345,17 +363,66 @@ interface ActionBarProps {
   status: string;
   isTiper: boolean;
   isTriper: boolean;
+  isAdmin: boolean;
   loading: boolean;
   onPayNow: () => void;
   onAccept: () => void;
   onMarkShipped: () => void;
   onConfirmReceipt: () => void;
   onDispute: () => void;
+  onAdminSetStatus: (s: OrderStatus) => void;
 }
 
-function ActionBar({ status, isTiper, isTriper, loading, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute }: ActionBarProps) {
+function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute, onAdminSetStatus }: ActionBarProps) {
   const terminal = ['completed', 'cancelled', 'disputed'].includes(status);
 
+  // ── Admin override panel ────────────────────────────────────────────────────
+  if (isAdmin) {
+    return (
+      <View style={styles.actionBar}>
+        {loading && <ActivityIndicator color={Colors.primary} style={{ marginBottom: Spacing.sm }} />}
+        <View style={styles.adminHeader}>
+          <Ionicons name="shield-checkmark" size={14} color={Colors.primary} />
+          <Text style={styles.adminHeaderTxt}>Admin Controls (Demo)</Text>
+        </View>
+        <View style={styles.adminGrid}>
+          {ADMIN_STATUSES.map(({ status: s, label, color, icon }) => {
+            const isCurrent = status === s;
+            return (
+              <TouchableOpacity
+                key={s}
+                style={[
+                  styles.adminBtn,
+                  { borderColor: isCurrent ? color : Colors.lightGray },
+                  isCurrent && { backgroundColor: `${color}15` },
+                ]}
+                activeOpacity={0.7}
+                disabled={loading || isCurrent}
+                onPress={() => {
+                  Alert.alert(
+                    'Ubah Status',
+                    `Set status ke "${label}"?`,
+                    [
+                      { text: 'Batal', style: 'cancel' },
+                      { text: 'Ya, Ubah', onPress: () => onAdminSetStatus(s) },
+                    ],
+                  );
+                }}
+              >
+                <Ionicons name={icon as any} size={16} color={isCurrent ? color : Colors.charcoal} />
+                <Text style={[styles.adminBtnTxt, isCurrent && { color }]}>{label}</Text>
+                {isCurrent && (
+                  <View style={[styles.activeDot, { backgroundColor: color }]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
+  // ── Normal user bar ─────────────────────────────────────────────────────────
   if (terminal) {
     return (
       <View style={styles.actionBar}>
@@ -576,6 +643,33 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
     ...Shadows.lg,
+  },
+
+  adminHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  adminHeaderTxt: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.primary, letterSpacing: 0.5,
+  },
+  adminGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm,
+  },
+  adminBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full, borderWidth: 1,
+    backgroundColor: Colors.white, position: 'relative',
+  },
+  adminBtnTxt: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs, color: Colors.charcoal,
+  },
+  activeDot: {
+    width: 6, height: 6, borderRadius: 3,
+    position: 'absolute', top: 4, right: 4,
   },
   terminalBadge: {
     flexDirection: 'row', alignItems: 'center',

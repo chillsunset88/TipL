@@ -1,6 +1,6 @@
 /**
  * TipL — Root Layout
- * Mounts auth listener, deep link handler, navigation guard, and fonts.
+ * Mounts auth listener, deep link handler, navigation guard, fonts, and biometric lock.
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -10,9 +10,9 @@ import { useFonts } from 'expo-font';
 import { Stack, router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
 
 import {
@@ -27,11 +27,14 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 
+import Constants from 'expo-constants';
 import { Colors } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { useAuthListener } from '@/src/lib/hooks/useAuth';
 import { supabase } from '@/src/lib/supabase';
+import { useBiometricStore } from '@/src/store/biometricStore';
+import { LockScreen } from '@/src/components/LockScreen';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -73,6 +76,8 @@ export default function RootLayout() {
     if (loaded) {
       SplashScreen.hideAsync();
       useSettingsStore.getState().loadSettings();
+      // Hydrate biometric preference dari AsyncStorage
+      useBiometricStore.getState().hydrate();
     }
   }, [loaded]);
 
@@ -81,13 +86,41 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+
 function RootLayoutNav() {
   useAuthListener();
 
   const { isAuthenticated, isLoading } = useAuthStore();
+  const { isEnabled, isLocked, lock, hydrated } = useBiometricStore();
   const segments = useSegments();
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<{ remove: () => void } | null>(null);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  // Kunci app saat masuk background dan kembali ke foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (
+        appState.current === 'active' &&
+        (nextState === 'background' || nextState === 'inactive')
+      ) {
+        // App masuk background — tandai untuk dikunci saat kembali
+        appState.current = nextState;
+      } else if (
+        appState.current !== 'active' &&
+        nextState === 'active' &&
+        isEnabled &&
+        isAuthenticated
+      ) {
+        // App kembali ke foreground — kunci
+        lock();
+        appState.current = nextState;
+      } else {
+        appState.current = nextState;
+      }
+    });
+    return () => sub.remove();
+  }, [isEnabled, isAuthenticated, lock]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -137,7 +170,6 @@ function RootLayoutNav() {
     };
 
     const subscription = Linking.addEventListener('url', handleDeepLink);
-
     Linking.getInitialURL().then((url) => {
       if (url) handleDeepLink({ url });
     });
@@ -146,25 +178,34 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as Record<string, string>;
-      if (data.type === 'order' && data.orderId) {
-        router.push(`/order/${data.orderId}`);
-      } else if (data.type === 'chat' && data.chatId) {
-        router.push(`/chat/${data.chatId}`);
-      }
-    });
+    // expo-notifications remote push tidak didukung Expo Go SDK 53+
+    // require() tidak dipanggil sama sekali di Expo Go
+    if (!isExpoGo) {
+      try {
+        const Notifs = require('expo-notifications') as typeof import('expo-notifications');
+        responseListener.current = Notifs.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data as Record<string, string>;
+          if (data.type === 'order' && data.orderId) {
+            router.push(`/order/${data.orderId}`);
+          } else if (data.type === 'chat' && data.chatId) {
+            router.push(`/chat/${data.chatId}`);
+          }
+        });
+      } catch {}
+    }
 
     return () => {
-      notificationListener.current?.remove();
       responseListener.current?.remove();
     };
   }, []);
 
+  // Tampilkan lock screen di atas semua konten jika terkunci
+  const showLock = hydrated && isEnabled && isLocked && isAuthenticated;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={TipLTheme}>
-        <StatusBar style="dark" />
+        <StatusBar style={showLock ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />
@@ -189,7 +230,11 @@ function RootLayoutNav() {
           <Stack.Screen name="destination/[name]" options={{ presentation: 'card' }} />
           <Stack.Screen name="verification" options={{ presentation: 'card', headerShown: false }} />
           <Stack.Screen name="admin/verifications" options={{ presentation: 'card', headerShown: false }} />
+          <Stack.Screen name="admin/orders" options={{ presentation: 'card', headerShown: false }} />
         </Stack>
+
+        {/* Lock screen overlay — muncul di atas semua konten */}
+        {showLock && <LockScreen />}
       </ThemeProvider>
     </GestureHandlerRootView>
   );

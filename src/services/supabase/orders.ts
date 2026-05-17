@@ -31,6 +31,16 @@ export async function getOrderById(orderId: string): Promise<OrderWithProfiles |
   return data as OrderWithProfiles | null;
 }
 
+/** Admin: ambil semua order tanpa filter user (butuh RLS admin policy). */
+export async function getAllOrders(): Promise<OrderWithProfiles[]> {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, tiper:profiles!orders_tiper_id_fkey(id,full_name,avatar_url), triper:profiles!orders_triper_id_fkey(id,full_name,avatar_url)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as OrderWithProfiles[];
+}
+
 export async function createOrder(payload: OrderInsert): Promise<Order> {
   const { data, error } = await db
     .from('orders')
@@ -54,7 +64,7 @@ export async function updateOrderStatus(
 
 export function subscribeToOrder(orderId: string, onChange: (order: OrderWithProfiles) => void) {
   const channel = supabase
-    .channel(`order-${orderId}`)
+    .channel(`order-${orderId}-${Date.now()}`)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, async () => {
       const fresh = await getOrderById(orderId);
       if (fresh) onChange(fresh);
@@ -65,9 +75,21 @@ export function subscribeToOrder(orderId: string, onChange: (order: OrderWithPro
 
 export function subscribeToMyOrders(userId: string, onChange: (orders: OrderWithProfiles[]) => void) {
   const channel = supabase
-    .channel(`my-orders-${userId}`)
+    .channel(`my-orders-${userId}-${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
       const fresh = await getMyOrders(userId);
+      onChange(fresh);
+    })
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}
+
+/** Admin: subscribe semua perubahan order (INSERT/UPDATE/DELETE). */
+export function subscribeToAllOrders(onChange: (orders: OrderWithProfiles[]) => void) {
+  const channel = supabase
+    .channel(`admin-all-orders-${Date.now()}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
+      const fresh = await getAllOrders();
       onChange(fresh);
     })
     .subscribe();

@@ -1,67 +1,88 @@
 /**
  * TipL — Push Notification Service
- * Registers Expo push token, schedules local notifications,
- * and handles foreground/background notification events.
+ * expo-notifications static import crash di Expo Go SDK 53+.
+ * Semua usage dibungkus lazy require yang di-guard isExpoGo,
+ * sehingga module effect (PushTokenAutoRegistration) tidak pernah jalan di Expo Go.
  */
 
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { upsertPushToken, deletePushToken } from '@/src/services/supabase/pushTokens';
 
-// Configure how notifications appear when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
-/** Request permission and register the Expo push token for a user. */
+type N = typeof import('expo-notifications');
+
+function notifs(): N {
+  return require('expo-notifications') as N;
+}
+
+/** Setup foreground notification handler — panggil sekali di app init (dev build only). */
+export function setupNotificationHandler(): void {
+  if (isExpoGo) return;
+  notifs().setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
+
+/** Request permission dan register Expo push token untuk user. */
 export async function registerForPushNotifications(userId: string): Promise<string | null> {
-  if (!Device.isDevice) return null;
+  if (!Device.isDevice || isExpoGo) return null;
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  const N = notifs();
+
+  const { status: existingStatus } = await N.getPermissionsAsync();
   let finalStatus = existingStatus;
 
   if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = await N.requestPermissionsAsync();
     finalStatus = status;
   }
 
   if (finalStatus !== 'granted') return null;
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
+    await N.setNotificationChannelAsync('default', {
       name: 'TipL Notifications',
-      importance: Notifications.AndroidImportance.MAX,
+      importance: N.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#C4A265',
     });
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync();
-  const token = tokenData.data;
-
-  await upsertPushToken(userId, token, Platform.OS as 'ios' | 'android');
-
-  return token;
+  try {
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      (Constants as any).easConfig?.projectId;
+    const tokenData = await N.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+    const token = tokenData.data;
+    await upsertPushToken(userId, token, Platform.OS as 'ios' | 'android');
+    return token;
+  } catch {
+    return null;
+  }
 }
 
-/** Unregister push token on logout. */
+/** Hapus push token saat logout. */
 export async function unregisterPushToken(userId: string): Promise<void> {
-  await deletePushToken(userId, Platform.OS as 'ios' | 'android');
+  if (isExpoGo) return;
+  await deletePushToken(userId, Platform.OS as 'ios' | 'android').catch(() => {});
 }
 
-/** Schedule a local notification for a new chat message. */
+/** Local notification untuk pesan chat baru. */
 export async function scheduleNewMessageNotification(
   senderName: string,
   text: string,
 ): Promise<void> {
-  await Notifications.scheduleNotificationAsync({
+  if (isExpoGo) return;
+  await notifs().scheduleNotificationAsync({
     content: {
       title: senderName,
       body: text.length > 80 ? text.slice(0, 77) + '...' : text,
@@ -72,13 +93,14 @@ export async function scheduleNewMessageNotification(
   });
 }
 
-/** Schedule a local notification for an order status change. */
+/** Local notification untuk perubahan status order. */
 export async function scheduleOrderStatusNotification(
   orderNumber: string,
   statusLabel: string,
   orderId: string,
 ): Promise<void> {
-  await Notifications.scheduleNotificationAsync({
+  if (isExpoGo) return;
+  await notifs().scheduleNotificationAsync({
     content: {
       title: `Order ${orderNumber}`,
       body: statusLabel,
@@ -89,33 +111,33 @@ export async function scheduleOrderStatusNotification(
   });
 }
 
-/** Schedule a trip departure reminder for the day before departure. */
+/** Jadwalkan reminder trip H-1 keberangkatan. */
 export async function scheduleTripDepartureReminder(
   tripId: string,
   destination: string,
   departureDate: number,
-): Promise<string> {
+): Promise<string | null> {
+  if (isExpoGo) return null;
+  const N = notifs();
   const reminderDate = new Date(departureDate);
   reminderDate.setDate(reminderDate.getDate() - 1);
   reminderDate.setHours(9, 0, 0, 0);
-
-  const identifier = await Notifications.scheduleNotificationAsync({
+  return await N.scheduleNotificationAsync({
     content: {
       title: 'Trip Reminder',
-      body: `Your trip to ${destination} departs tomorrow. Bon voyage!`,
+      body: `Trip ke ${destination} berangkat besok!`,
       sound: true,
       data: { type: 'trip', tripId },
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      type: N.SchedulableTriggerInputTypes.DATE,
       date: reminderDate,
     },
   });
-
-  return identifier;
 }
 
-/** Cancel a previously scheduled notification. */
+/** Batalkan scheduled notification. */
 export async function cancelNotification(identifier: string): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(identifier);
+  if (isExpoGo) return;
+  await notifs().cancelScheduledNotificationAsync(identifier);
 }

@@ -30,33 +30,55 @@ export default function XenditPaymentScreen() {
   const handlePaymentSuccess = async () => {
     if (settlementHandled.current) return;
     settlementHandled.current = true;
+
+    // Catat escrow (best-effort — gagal pun tidak blokir update status)
+    createEscrowPayment({
+      order_id: orderId,
+      buyer_id: buyerId,
+      traveler_id: travelerId,
+      amount: parseFloat(amount ?? '0'),
+      currency: currency ?? 'IDR',
+    }).catch(() => {});
+
+    // Update status order — ini yang wajib berhasil
     try {
-      await createEscrowPayment({
-        order_id: orderId,
-        buyer_id: buyerId,
-        traveler_id: travelerId,
-        amount: parseFloat(amount ?? '0'),
-        currency: currency ?? 'IDR',
-      });
       await updateOrderStatus(orderId, 'in_escrow');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(`/order/${orderId}` as any);
-    } catch {
+    } catch (e) {
+      console.error('[Payment] updateOrderStatus failed:', e);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         'Pembayaran Berhasil',
-        'Pembayaran diterima namun gagal update status. Hubungi support.',
+        `Dana diterima namun gagal update status order.\n\nError: ${e instanceof Error ? e.message : String(e)}`,
         [{ text: 'Lihat Order', onPress: () => router.replace(`/order/${orderId}` as any) }],
       );
     }
   };
 
+  // Intercept redirect SEBELUM WebView mencoba load URL yang tidak ada
+  // Return false = jangan load, tangani sendiri
+  const handleShouldStartLoad = ({ url }: { url: string }): boolean => {
+    if (url.includes('tipl.app/payment/success')) {
+      handlePaymentSuccess();
+      return false;
+    }
+    if (url.includes('tipl.app/payment/failure')) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Pembayaran Gagal', 'Pembayaran tidak berhasil. Silakan coba lagi.', [
+        { text: 'Kembali', onPress: () => router.back() },
+      ]);
+      return false;
+    }
+    return true;
+  };
+
+  // Fallback untuk Android (onShouldStartLoadWithRequest kadang tidak konsisten)
   const handleNavigationChange = (navState: { url: string }) => {
     const { url } = navState;
     if (!url) return;
-    if (url.includes('tipl.app/payment/success')) {
-      handlePaymentSuccess();
-    } else if (url.includes('tipl.app/payment/failure')) {
+    if (url.includes('tipl.app/payment/success')) handlePaymentSuccess();
+    else if (url.includes('tipl.app/payment/failure')) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Pembayaran Gagal', 'Pembayaran tidak berhasil. Silakan coba lagi.', [
         { text: 'Kembali', onPress: () => router.back() },
@@ -79,7 +101,7 @@ export default function XenditPaymentScreen() {
       <WebView
         source={{ uri: invoiceUrl }}
         style={styles.webview}
-        onLoadEnd={() => {}}
+        onShouldStartLoadWithRequest={handleShouldStartLoad}
         onNavigationStateChange={handleNavigationChange}
         javaScriptEnabled
         domStorageEnabled

@@ -84,9 +84,15 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ── Wishlist & Tripper Favorit ── */}
+        {/* ── Wishlist, Pesanan & Tripper Favorit ── */}
         <View style={s.card}>
           <View style={s.gridRow}>
+            <GridItem
+              icon="receipt-outline"
+              label="Pesanan Saya"
+              color={Colors.primary}
+              onPress={() => router.push('/profile/orders')}
+            />
             <GridItem
               icon="heart-outline"
               label="Wishlist"
@@ -127,6 +133,12 @@ export default function ProfileScreen() {
               label="Kelola Verifikasi"
               color={Colors.info}
               onPress={() => router.push('/admin/verifications' as any)}
+            />
+            <ActionRow
+              icon="cube-outline"
+              label="Kelola Paket (Demo)"
+              color={Colors.warning}
+              onPress={() => router.push('/admin/orders' as any)}
             />
           </View>
         )}
@@ -217,18 +229,27 @@ function VerificationPendingCard() {
   );
 }
 
-function ActionRow({ icon, label, color, onPress }: {
+function ActionRow({ icon, label, sub, color, onPress, last = false }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  sub?: string;
   color: string;
   onPress: () => void;
+  last?: boolean;
 }) {
   return (
-    <TouchableOpacity style={s.actionRow} activeOpacity={0.7} onPress={onPress}>
+    <TouchableOpacity
+      style={[s.actionRow, !last && s.actionRowBorder]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
       <View style={[s.actionIconBox, { backgroundColor: `${color}14` }]}>
         <Ionicons name={icon} size={20} color={color} />
       </View>
-      <Text style={s.actionLabel}>{label}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={s.actionLabel}>{label}</Text>
+        {sub ? <Text style={s.actionSub}>{sub}</Text> : null}
+      </View>
       <Ionicons name="chevron-forward" size={16} color={Colors.gray} />
     </TouchableOpacity>
   );
@@ -321,8 +342,10 @@ const s = StyleSheet.create({
   },
   cardTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.md },
   actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
+  actionRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.lightGray },
   actionIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  actionLabel: { flex: 1, fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  actionLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
+  actionSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
   actionDivider: { height: 1, backgroundColor: Colors.lightGray },
 
   gridRow: { flexDirection: 'row', justifyContent: 'space-around' },

@@ -18,6 +18,7 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/co
 import { useCartStore } from '@/src/store/cartStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { createXenditInvoice } from '@/src/lib/xendit';
+import { createOrder } from '@/src/services/supabase/orders';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
@@ -79,11 +80,25 @@ export default function CartScreen() {
     setCheckoutLoading(true);
     try {
       const subtotal = groupItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      const total = subtotal + 15000;
-      const externalId = `tipl-cart-${Date.now()}`;
+      const serviceFee = 15000;
+      const total = subtotal + serviceFee;
       const itemDesc = groupItems.length === 1 ? groupItems[0].name : `${groupItems.length} items`;
+
+      // Create Supabase order first — its UUID is what we track
+      const order = await createOrder({
+        tiper_id: user.id,
+        triper_id: groupItems[0].travelerId,
+        trip_id: groupItems[0].tripId ?? null,
+        item_name: itemDesc,
+        agreed_price: subtotal,
+        service_fee: serviceFee,
+        total_amount: total,
+        currency: 'IDR',
+        status: 'pending',
+      } as any);
+
       const { invoice_url } = await createXenditInvoice({
-        externalId,
+        externalId: `tipl-order-${order.id}`,
         amount: total,
         payerEmail: user.email,
         description: `TipL Order - ${itemDesc}`,
@@ -93,7 +108,7 @@ export default function CartScreen() {
         pathname: '/payment/xendit-qr',
         params: {
           invoiceUrl: invoice_url,
-          orderId: externalId,
+          orderId: order.id,
           buyerId: user.id,
           travelerId: groupItems[0]?.travelerId ?? '',
           amount: String(total),

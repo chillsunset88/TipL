@@ -20,6 +20,7 @@ import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
+import { useNotificationStore } from '@/src/store/notificationStore';
 import {
   getNotifications,
   markNotificationRead,
@@ -60,6 +61,7 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
+  const setStoreCount = useNotificationStore((s) => s.setCount);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -100,10 +102,14 @@ export default function NotificationsScreen() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n))
       );
+      // Sync badge ke store
+      const remaining = notifications.filter((n) => n.id !== notif.id && !n.read_at).length;
+      setStoreCount(remaining);
     }
+    // notif.type adalah jenis notifikasi, bukan notif.data.type
     const data = notif.data ?? {};
-    if (data.type === 'order' && data.orderId) router.push(`/order/${data.orderId}`);
-    else if (data.type === 'chat' && data.chatId) router.push(`/chat/${data.chatId}`);
+    if (notif.type === 'order' && data.orderId) router.push(`/order/${data.orderId}`);
+    else if (notif.type === 'chat' && data.chatId) router.push(`/chat/${data.chatId}`);
   };
 
   const handleMarkAllRead = async () => {
@@ -111,6 +117,7 @@ export default function NotificationsScreen() {
     await markAllRead(userId).catch(() => {});
     const now = new Date().toISOString();
     setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? now })));
+    setStoreCount(0);
   };
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;

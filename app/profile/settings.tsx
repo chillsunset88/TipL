@@ -22,13 +22,30 @@ import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { signOut } from '@/src/services/supabase/auth';
 import { Locale } from '@/src/lib/i18n';
+import { useBiometric } from '@/src/lib/hooks/useBiometric';
+import { checkBiometricAvailable } from '@/src/lib/hooks/useBiometric';
 
 export default function SettingsScreen() {
   const [pushNotifications, setPushNotifications] = React.useState(true);
   const [orderUpdates, setOrderUpdates] = React.useState(true);
   const [chatNotifications, setChatNotifications] = React.useState(true);
+  const [biometricSupported, setBiometricSupported] = React.useState(false);
+  const [biometricType, setBiometricType] = React.useState('Sidik Jari');
   const { locale, setLocale, t } = useSettingsStore();
   const logout = useAuthStore((s) => s.logout);
+  const { isEnabled, enable, disable } = useBiometric();
+
+  React.useEffect(() => {
+    checkBiometricAvailable().then(({ available, type }) => {
+      setBiometricSupported(available);
+      if (type) setBiometricType(type);
+    });
+  }, []);
+
+  const handleBiometricToggle = async (val: boolean) => {
+    if (val) await enable();
+    else await disable();
+  };
 
   const handleLogout = () => {
     Alert.alert(t.signOut, t.signOutConfirm, [
@@ -110,8 +127,17 @@ export default function SettingsScreen() {
             label={t.chatMessages}
             value={chatNotifications}
             onToggle={setChatNotifications}
-            last
+            last={!biometricSupported}
           />
+          {biometricSupported && (
+            <ToggleRow
+              icon="finger-print"
+              label={`Kunci ${biometricType}`}
+              value={isEnabled}
+              onToggle={handleBiometricToggle}
+              last
+            />
+          )}
         </View>
 
         {/* ── Bantuan ── */}
