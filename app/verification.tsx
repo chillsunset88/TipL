@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
@@ -102,8 +102,8 @@ export default function VerificationScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <FloatingBackButton onPress={goBack} />
+    <SafeAreaView style={s.safe} edges={[]}>
+      <PageHeader title="Verifikasi Identitas" onBack={goBack} />
 
       {/* Step indicator */}
       <View style={s.stepper}>
@@ -371,7 +371,7 @@ const s = StyleSheet.create({
 
   stepper: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing['2xl'], paddingTop: 56, paddingBottom: Spacing.base,
+    paddingHorizontal: Spacing['2xl'], paddingTop: Spacing.md, paddingBottom: Spacing.base,
     backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.lightGray,
   },
   stepItem: { alignItems: 'center', gap: 4 },

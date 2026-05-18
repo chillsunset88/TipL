@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Address Management Screen
  * List, add, edit, delete, and set default shipping addresses.
  */
@@ -19,11 +19,12 @@ import {
   Platform,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import {
   getAddresses,
@@ -45,13 +46,13 @@ const EMPTY_FORM = {
 };
 
 export default function AddressesScreen() {
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
 
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { t } = useSettingsStore();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export default function AddressesScreen() {
 
   const handleSave = async () => {
     if (!form.recipient_name.trim() || !form.phone.trim() || !form.full_address.trim() || !form.city.trim()) {
-      Alert.alert('Lengkapi Data', 'Nama penerima, nomor HP, alamat, dan kota wajib diisi.');
+      Alert.alert(t.error, 'Nama penerima, nomor HP, alamat, dan kota wajib diisi.');
       return;
     }
     setSaving(true);
@@ -110,8 +111,8 @@ export default function AddressesScreen() {
   };
 
   const handleDelete = (addr: UserAddress) => {
-    Alert.alert('Hapus Alamat', `Hapus "${addr.label}"?`, [
-      { text: 'Batal', style: 'cancel' },
+    Alert.alert(t.deleteAddressTitle, `Hapus "${addr.label}"?`, [
+      { text: t.cancel, style: 'cancel' },
       {
         text: 'Hapus', style: 'destructive', onPress: async () => {
           await deleteAddress(addr.id).catch(() => {});
@@ -135,7 +136,7 @@ export default function AddressesScreen() {
           </View>
           {item.is_default && (
             <View style={st.defaultPill}>
-              <Text style={st.defaultTxt}>Utama</Text>
+              <Text style={st.defaultTxt}>{t.defaultAddress}</Text>
             </View>
           )}
         </View>
@@ -153,18 +154,15 @@ export default function AddressesScreen() {
       <Text style={st.address}>{item.full_address}, {item.city}, {item.province} {item.postal_code}</Text>
       {!item.is_default && (
         <TouchableOpacity style={st.setDefaultBtn} onPress={() => handleSetDefault(item)}>
-          <Text style={st.setDefaultTxt}>Jadikan Utama</Text>
+          <Text style={st.setDefaultTxt}>{t.setAsDefault}</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
-      <TouchableOpacity style={[st.floatingAdd, { top: insets.top + 12 }]} onPress={openAdd}>
-        <Ionicons name="add" size={22} color={Colors.primary} />
-      </TouchableOpacity>
+    <SafeAreaView style={st.safe} edges={[]}>
+      <PageHeader title={t.myAddresses} onBack={() => router.back()} rightIcon="add" rightIconColor={Colors.primary} onRightPress={openAdd} />
 
       {loading ? (
         <View style={st.centered}>
@@ -180,10 +178,10 @@ export default function AddressesScreen() {
           ListEmptyComponent={
             <View style={st.emptyWrap}>
               <Ionicons name="location-outline" size={56} color={Colors.midGray} />
-              <Text style={st.emptyTitle}>Belum ada alamat</Text>
+              <Text style={st.emptyTitle}>{t.noAddresses}</Text>
               <Text style={st.emptySub}>Tambahkan alamat pengiriman untuk mempermudah checkout.</Text>
               <TouchableOpacity style={st.addBtn} onPress={openAdd}>
-                <Text style={st.addBtnTxt}>Tambah Alamat</Text>
+                <Text style={st.addBtnTxt}>{t.addAddress}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -195,19 +193,19 @@ export default function AddressesScreen() {
         <SafeAreaView style={st.modalSafe} edges={['top', 'bottom']}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} style={{ flex: 1 }}>
             <View style={st.modalHeader}>
-              <Text style={st.modalTitle}>{editingId ? 'Edit Alamat' : 'Tambah Alamat'}</Text>
+              <Text style={st.modalTitle}>{editingId ? t.edit + ' Alamat' : t.addAddress}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={24} color={Colors.nearBlack} />
               </TouchableOpacity>
             </View>
             <ScrollView style={st.modalBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Field label="Label (cth: Rumah, Kantor)" value={form.label} onChangeText={(v) => setForm(f => ({ ...f, label: v }))} />
-              <Field label="Nama Penerima" value={form.recipient_name} onChangeText={(v) => setForm(f => ({ ...f, recipient_name: v }))} />
-              <Field label="Nomor HP" value={form.phone} onChangeText={(v) => setForm(f => ({ ...f, phone: v }))} keyboardType="phone-pad" />
-              <Field label="Alamat Lengkap" value={form.full_address} onChangeText={(v) => setForm(f => ({ ...f, full_address: v }))} multiline />
-              <Field label="Kota" value={form.city} onChangeText={(v) => setForm(f => ({ ...f, city: v }))} />
-              <Field label="Provinsi" value={form.province} onChangeText={(v) => setForm(f => ({ ...f, province: v }))} />
-              <Field label="Kode Pos" value={form.postal_code} onChangeText={(v) => setForm(f => ({ ...f, postal_code: v }))} keyboardType="number-pad" />
+              <Field label={t.addressLabel} value={form.label} onChangeText={(v) => setForm(f => ({ ...f, label: v }))} />
+              <Field label={t.recipientName} value={form.recipient_name} onChangeText={(v) => setForm(f => ({ ...f, recipient_name: v }))} />
+              <Field label={t.phoneNumber} value={form.phone} onChangeText={(v) => setForm(f => ({ ...f, phone: v }))} keyboardType="phone-pad" />
+              <Field label={t.fullAddress} value={form.full_address} onChangeText={(v) => setForm(f => ({ ...f, full_address: v }))} multiline />
+              <Field label={t.city} value={form.city} onChangeText={(v) => setForm(f => ({ ...f, city: v }))} />
+              <Field label={t.province} value={form.province} onChangeText={(v) => setForm(f => ({ ...f, province: v }))} />
+              <Field label={t.postalCode} value={form.postal_code} onChangeText={(v) => setForm(f => ({ ...f, postal_code: v }))} keyboardType="number-pad" />
 
               <TouchableOpacity style={st.defaultToggle} onPress={() => setForm(f => ({ ...f, is_default: !f.is_default }))}>
                 <Ionicons
@@ -215,13 +213,13 @@ export default function AddressesScreen() {
                   size={22}
                   color={form.is_default ? Colors.primary : Colors.darkGray}
                 />
-                <Text style={st.defaultToggleTxt}>Jadikan alamat utama</Text>
+                <Text style={st.defaultToggleTxt}>{t.setAsDefault}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={st.saveBtn} onPress={handleSave} disabled={saving}>
                 {saving
                   ? <ActivityIndicator color={Colors.white} />
-                  : <Text style={st.saveBtnTxt}>Simpan Alamat</Text>
+                  : <Text style={st.saveBtnTxt}>{t.saveAddress}</Text>
                 }
               </TouchableOpacity>
               <View style={{ height: 40 }} />
@@ -264,13 +262,7 @@ function Field({
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  floatingAdd: {
-    position: 'absolute', right: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.primaryPale,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  list: { padding: Spacing.base, paddingTop: 60, paddingBottom: 40 },
+  list: { padding: Spacing.base, paddingBottom: 40 },
 
   card: {
     backgroundColor: Colors.white,

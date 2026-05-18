@@ -2,7 +2,7 @@
  * TipL — Home Screen
  * Infinite parallax carousel + real products from Supabase filtered by destination.
  */
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from "@/src/lib/constants";
+import { BorderRadius, CATEGORY_MAP, Colors, Shadows, Spacing, Typography } from "@/src/lib/constants";
 import { useNotificationStore } from "@/src/store/notificationStore";
 import { useSettingsStore } from "@/src/store/settingsStore";
 import { useCartStore } from "@/src/store/cartStore";
@@ -114,7 +114,7 @@ export default function HomeScreen() {
           <Carousel
             loop
             width={SW}
-            height={SW * 0.82}
+            height={SW * 0.65}
             autoPlay
             autoPlayInterval={4000}
             data={DESTINATION_BANNERS}
@@ -186,15 +186,25 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/product/${p.id}`)}
                 >
                   <View style={s.prodImgWrap}>
-                    <Image
-                      source={{ uri: p.image_urls?.[0] ?? undefined }}
-                      style={s.prodImg}
-                      contentFit="cover"
-                      transition={200}
-                    />
-                    {p.category && (
-                      <View style={s.prodCatBadge}>
-                        <Text style={s.prodCatTxt}>{p.category}</Text>
+                    {p.image_urls?.[0] ? (
+                      <Image
+                        source={{ uri: p.image_urls[0] }}
+                        style={s.prodImg}
+                        contentFit="cover"
+                        transition={200}
+                      />
+                    ) : (
+                      <View style={[s.prodImg, s.prodImgEmpty, p.category ? { backgroundColor: (CATEGORY_MAP[p.category]?.color ?? Colors.midGray) + '22' } : undefined]}>
+                        <Ionicons
+                          name={(CATEGORY_MAP[p.category ?? '']?.icon ?? 'cube-outline') as any}
+                          size={32}
+                          color={CATEGORY_MAP[p.category ?? '']?.color ?? Colors.midGray}
+                        />
+                      </View>
+                    )}
+                    {p.category && CATEGORY_MAP[p.category] && (
+                      <View style={[s.prodCatBadge, { backgroundColor: CATEGORY_MAP[p.category].color + 'DD' }]}>
+                        <Text style={s.prodCatTxt}>{CATEGORY_MAP[p.category].label}</Text>
                       </View>
                     )}
                   </View>
@@ -202,7 +212,7 @@ export default function HomeScreen() {
                     <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
                     <Text style={s.prodPrice}>{fmtPrice(p.price_min, p.price_max)}</Text>
                     <View style={s.prodTravelerRow}>
-                      <Ionicons name="location-outline" size={12} color={Colors.darkGray} />
+                      <Ionicons name="location-outline" size={11} color={Colors.primary} />
                       <Text style={s.prodTravelerTxt} numberOfLines={1}>
                         {p.trips?.destination_city ?? p.trips?.destination_country ?? activeDest}
                       </Text>
@@ -268,12 +278,13 @@ const s = StyleSheet.create({
   prodGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.md },
   prodCard: { width: (SW - Spacing.xl * 2 - Spacing.md) / 2, backgroundColor: Colors.white, borderRadius: BorderRadius.lg, overflow: "hidden", borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm },
   prodImgWrap: { position: "relative" },
-  prodImg: { width: "100%", height: 130, backgroundColor: Colors.cream },
-  prodCatBadge: { position: "absolute", top: Spacing.sm, left: Spacing.sm, backgroundColor: "rgba(0,0,0,0.55)", paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.full },
+  prodImg: { width: "100%", height: 130 },
+  prodImgEmpty: { backgroundColor: Colors.cream, alignItems: "center", justifyContent: "center" },
+  prodCatBadge: { position: "absolute", top: Spacing.sm, left: Spacing.sm, paddingHorizontal: 6, paddingVertical: 2, borderRadius: BorderRadius.full },
   prodCatTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.white, letterSpacing: 0.3 },
   prodBody: { padding: Spacing.sm },
-  prodName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, lineHeight: 18, marginBottom: 5 },
-  prodPrice: { fontFamily: Typography.bold.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack, marginBottom: 4 },
+  prodName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, lineHeight: 18, marginBottom: 4 },
+  prodPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack, marginBottom: 3 },
   prodTravelerRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-  prodTravelerTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray, flex: 1 },
+  prodTravelerTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.primary, flex: 1 },
 });

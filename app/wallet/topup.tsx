@@ -17,7 +17,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
@@ -89,8 +89,8 @@ export default function TopUpScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <PageHeader title="Top Up" onBack={() => router.back()} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Current Balance */}
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  scroll: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: 56 },
+  scroll: { flex: 1, paddingHorizontal: Spacing.xl },
 
   balanceCard: {
     borderRadius: BorderRadius.xl,

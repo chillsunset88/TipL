@@ -14,11 +14,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { useNotificationStore } from '@/src/store/notificationStore';
 import {
@@ -58,7 +59,7 @@ function notifIcon(type: string): { name: string; color: string } {
 }
 
 export default function NotificationsScreen() {
-  const insets = useSafeAreaInsets();
+  const { t } = useSettingsStore();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
   const setStoreCount = useNotificationStore((s) => s.setCount);
@@ -148,13 +149,13 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
-      {unreadCount > 0 && (
-        <TouchableOpacity onPress={handleMarkAllRead} style={[styles.floatingMarkAll, { top: insets.top + 18 }]}>
-          <Text style={styles.markAllText}>Mark all read</Text>
-        </TouchableOpacity>
-      )}
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <PageHeader
+        title={t.notifications}
+        onBack={() => router.back()}
+        rightLabel={unreadCount > 0 ? t.markAllRead : undefined}
+        onRightPress={unreadCount > 0 ? handleMarkAllRead : undefined}
+      />
 
       {loading ? (
         <View style={styles.centered}>
@@ -178,10 +179,8 @@ export default function NotificationsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="notifications-off-outline" size={56} color={Colors.midGray} />
-              <Text style={styles.emptyTitle}>No notifications yet</Text>
-              <Text style={styles.emptySubtext}>
-                We'll notify you about orders, messages, and more.
-              </Text>
+              <Text style={styles.emptyTitle}>{t.noNotifications}</Text>
+              <Text style={styles.emptySubtext}>{t.noNotificationsDesc}</Text>
             </View>
           }
         />
@@ -192,27 +191,13 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  floatingMarkAll: {
-    position: 'absolute', right: 20, zIndex: 10,
-  },
-  markAllText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.primary,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing['2xl'],
   },
-  list: { paddingTop: 56, paddingBottom: Spacing.sm },
+  list: { paddingBottom: Spacing.sm },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',

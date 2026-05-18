@@ -14,9 +14,9 @@ import {
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Badge } from '@/src/components/ui/Badge';
@@ -38,16 +38,12 @@ function statusVariant(status: string): 'success' | 'info' | 'warning' | 'error'
 }
 
 export default function MyTripsScreen() {
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const { trips, loading } = useMyTrips(user?.id);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
-      <TouchableOpacity style={[styles.floatingAdd, { top: insets.top + 12 }]} onPress={() => router.push('/trip/create')}>
-        <Ionicons name="add" size={22} color={Colors.primary} />
-      </TouchableOpacity>
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <PageHeader title="Trip Saya" onBack={() => router.back()} rightIcon="add" rightIconColor={Colors.primary} onRightPress={() => router.push('/trip/create')} />
 
       {loading ? (
         <View style={styles.centered}>
@@ -133,14 +129,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center', justifyContent: 'center',
   },
-  floatingAdd: {
-    position: 'absolute', top: 12, right: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.primaryPale,
-    alignItems: 'center', justifyContent: 'center',
-  },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  list: { padding: Spacing.base, paddingTop: 60, paddingBottom: 40 },
+  list: { padding: Spacing.base, paddingBottom: 40 },
   tripCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,

@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { Badge } from '@/src/components/ui/Badge';
 import { Skeleton } from '@/src/components/ui/Skeleton';
 import { useTrip } from '@/src/lib/hooks/useTrips';
@@ -54,17 +55,18 @@ export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { trip, products, loading } = useTrip(id);
   const user = useAuthStore((s) => s.user);
+  const { t } = useSettingsStore();
   const [deleting, setDeleting] = useState(false);
 
   const handleDelete = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'Hapus Trip',
-      'Trip ini akan dihapus permanen beserta semua datanya. Yakin?',
+      t.deleteTrip,
+      t.deleteTripConfirm,
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t.delete,
           style: 'destructive',
           onPress: async () => {
             try {
@@ -73,7 +75,7 @@ export default function TripDetailScreen() {
               router.back();
             } catch {
               setDeleting(false);
-              Alert.alert('Gagal', 'Gagal menghapus trip. Coba lagi.');
+              Alert.alert(t.error, t.deleteTripFailed);
             }
           },
         },
@@ -113,7 +115,7 @@ export default function TripDetailScreen() {
             marginTop: Spacing.md,
           }}
         >
-          Trip not found
+          {t.tripNotFound}
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: Spacing.base }}>
           <Text
@@ -123,7 +125,7 @@ export default function TripDetailScreen() {
               color: Colors.primary,
             }}
           >
-            Go Back
+            {t.back}
           </Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -197,7 +199,7 @@ export default function TripDetailScreen() {
           {trip.capacity_items != null && (
             <View style={styles.badge}>
               <Ionicons name="bag-outline" size={14} color={Colors.secondary} />
-              <Text style={[styles.badgeText, { color: Colors.secondary }]}>{trip.capacity_items} items max</Text>
+              <Text style={[styles.badgeText, { color: Colors.secondary }]}>{trip.capacity_items} {t.itemsMax}</Text>
             </View>
           )}
           {priceStr && (
@@ -210,7 +212,7 @@ export default function TripDetailScreen() {
 
         {/* Triper profile */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Your Traveler</Text>
+          <Text style={styles.sectionTitle}>{t.yourTraveler}</Text>
           <TouchableOpacity
             style={styles.profileRow}
             activeOpacity={0.75}
@@ -237,7 +239,7 @@ export default function TripDetailScreen() {
                   <Text style={styles.ratingText}>{profile.rating.toFixed(1)}</Text>
                 </View>
               )}
-              <Text style={styles.profileStat}>{profile?.total_trips ?? 0} trips completed</Text>
+              <Text style={styles.profileStat}>{profile?.total_trips ?? 0} {t.tripsCompleted}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={Colors.midGray} />
           </TouchableOpacity>
@@ -246,7 +248,7 @@ export default function TripDetailScreen() {
         {/* Notes */}
         {trip.notes && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Traveler's Notes</Text>
+            <Text style={styles.sectionTitle}>{t.travelersNotes}</Text>
             <Text style={styles.notesText}>{trip.notes}</Text>
           </View>
         )}
@@ -254,7 +256,7 @@ export default function TripDetailScreen() {
         {/* Products */}
         {products.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Available Products</Text>
+            <Text style={styles.sectionTitle}>{t.availableProducts}</Text>
             {products.map((p) => (
               <View key={p.id} style={styles.productRow}>
                 {p.image_urls && p.image_urls.length > 0 ? (
@@ -305,7 +307,7 @@ export default function TripDetailScreen() {
               end={{ x: 1, y: 0 }}
             >
               <Ionicons name="add-circle-outline" size={22} color={Colors.white} />
-              <Text style={styles.ctaText}>Tambah Produk ke Trip</Text>
+              <Text style={styles.ctaText}>{t.addProductToTrip}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -329,7 +331,7 @@ export default function TripDetailScreen() {
               end={{ x: 1, y: 0 }}
             >
               <Ionicons name="bag-add-outline" size={22} color={Colors.white} />
-              <Text style={styles.ctaText}>Request Item from This Trip</Text>
+              <Text style={styles.ctaText}>{t.requestItemFromTrip}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

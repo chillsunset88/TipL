@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Checkout Address Selection
  * Pick a saved address or add a new one before proceeding to payment.
  */
@@ -17,8 +17,9 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { useCheckoutStore } from '@/src/store/checkoutStore';
 import { useCartStore } from '@/src/store/cartStore';
@@ -31,6 +32,7 @@ const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 export default function CheckoutAddressScreen() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
+  const { t } = useSettingsStore();
   const { pendingItems, selectedAddress, setSelectedAddress, clear } = useCheckoutStore();
   const removeItem = useCartStore((s) => s.removeItem);
 
@@ -56,7 +58,7 @@ export default function CheckoutAddressScreen() {
 
   const handleConfirm = async () => {
     if (!selectedAddress) {
-      Alert.alert('Pilih Alamat', 'Silakan pilih alamat pengiriman terlebih dahulu.');
+      Alert.alert(t.selectAddress, 'Silakan pilih alamat pengiriman terlebih dahulu.');
       return;
     }
     if (!user || pendingItems.length === 0) return;
@@ -143,10 +145,8 @@ export default function CheckoutAddressScreen() {
   const total = subtotal + 15000;
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
-
-      <Text style={st.screenTitle}>Pilih Alamat</Text>
+    <SafeAreaView style={st.safe} edges={[]}>
+      <PageHeader title={t.selectAddress} onBack={() => router.back()} />
 
       {loading ? (
         <View style={st.centered}>
@@ -165,15 +165,15 @@ export default function CheckoutAddressScreen() {
               onPress={() => router.push('/profile/addresses')}
             >
               <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-              <Text style={st.addNewTxt}>Tambah Alamat Baru</Text>
+              <Text style={st.addNewTxt}>{t.addNewAddress}</Text>
             </TouchableOpacity>
           }
           ListEmptyComponent={
             <View style={st.emptyWrap}>
               <Ionicons name="location-outline" size={56} color={Colors.midGray} />
-              <Text style={st.emptyTitle}>Belum ada alamat</Text>
+              <Text style={st.emptyTitle}>{t.noAddresses}</Text>
               <TouchableOpacity style={st.addBtn} onPress={() => router.push('/profile/addresses')}>
-                <Text style={st.addBtnTxt}>Tambah Alamat</Text>
+                <Text style={st.addBtnTxt}>{t.addAddressFirst}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -183,15 +183,15 @@ export default function CheckoutAddressScreen() {
       {/* Summary footer */}
       <View style={st.footer}>
         <View style={st.summaryRow}>
-          <Text style={st.summaryLbl}>Subtotal</Text>
+          <Text style={st.summaryLbl}>{t.subtotal}</Text>
           <Text style={st.summaryVal}>{fmtIDR(subtotal)}</Text>
         </View>
         <View style={st.summaryRow}>
-          <Text style={st.summaryLbl}>Biaya layanan</Text>
+          <Text style={st.summaryLbl}>{t.serviceFee}</Text>
           <Text style={st.summaryVal}>{fmtIDR(15000)}</Text>
         </View>
         <View style={[st.summaryRow, st.totalRow]}>
-          <Text style={st.totalLbl}>Total</Text>
+          <Text style={st.totalLbl}>{t.total}</Text>
           <Text style={st.totalVal}>{fmtIDR(total)}</Text>
         </View>
         <TouchableOpacity
@@ -201,7 +201,7 @@ export default function CheckoutAddressScreen() {
         >
           {paying
             ? <ActivityIndicator color={Colors.white} />
-            : <Text style={st.payBtnTxt}>Lanjutkan Pembayaran</Text>
+            : <Text style={st.payBtnTxt}>{t.proceedPayment}</Text>
           }
         </TouchableOpacity>
       </View>
@@ -212,15 +212,6 @@ export default function CheckoutAddressScreen() {
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  screenTitle: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-    textAlign: 'center',
-    paddingTop: 56,
-    paddingBottom: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-  },
   list: { padding: Spacing.base, paddingBottom: 16 },
 
   card: {

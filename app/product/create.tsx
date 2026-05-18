@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
@@ -83,10 +83,9 @@ export default function AddProductScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <SafeAreaView style={s.safe} edges={[]}>
+      <PageHeader title="Tambah Produk" onBack={() => router.back()} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <FloatingBackButton onPress={() => router.back()} />
-
         <ScrollView style={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Images */}
           <View style={s.section}>
@@ -217,7 +216,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  scroll: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: 56 },
+  scroll: { flex: 1, paddingHorizontal: Spacing.xl },
   section: { marginTop: Spacing.xl },
   label: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
   required: { color: Colors.error },

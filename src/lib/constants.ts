@@ -151,15 +151,19 @@ export enum OrderStatus {
 }
 
 export const ITEM_CATEGORIES = [
-  { id: 'luxury', label: 'Luxury Goods', icon: 'diamond-outline' },
-  { id: 'skincare', label: 'Skincare', icon: 'leaf-outline' },
-  { id: 'food', label: 'Food & Beverages', icon: 'restaurant-outline' },
-  { id: 'electronics', label: 'Electronics', icon: 'hardware-chip-outline' },
-  { id: 'fashion', label: 'Fashion', icon: 'shirt-outline' },
-  { id: 'toys', label: 'Toys & Games', icon: 'game-controller-outline' },
-  { id: 'books', label: 'Books', icon: 'book-outline' },
-  { id: 'other', label: 'Other', icon: 'grid-outline' },
+  { id: 'luxury',      label: 'Luxury Goods',     icon: 'diamond-outline',         color: '#A78BFA' },
+  { id: 'skincare',    label: 'Skincare',          icon: 'leaf-outline',            color: '#34D399' },
+  { id: 'food',        label: 'Food & Beverages',  icon: 'restaurant-outline',      color: '#F97316' },
+  { id: 'electronics', label: 'Electronics',       icon: 'hardware-chip-outline',   color: '#60A5FA' },
+  { id: 'fashion',     label: 'Fashion',           icon: 'shirt-outline',           color: '#F472B6' },
+  { id: 'toys',        label: 'Toys & Games',      icon: 'game-controller-outline', color: '#FBBF24' },
+  { id: 'books',       label: 'Books',             icon: 'book-outline',            color: '#6EE7B7' },
+  { id: 'other',       label: 'Other',             icon: 'grid-outline',            color: '#94A3B8' },
 ] as const;
+
+export const CATEGORY_MAP = Object.fromEntries(
+  ITEM_CATEGORIES.map((c) => [c.id, c])
+) as Record<string, { id: string; label: string; icon: string; color: string }>;
 
 export const CURRENCIES = ['IDR', 'USD', 'JPY', 'EUR', 'KRW', 'SGD', 'MYR', 'AUD', 'GBP'] as const;
 export type Currency = typeof CURRENCIES[number];

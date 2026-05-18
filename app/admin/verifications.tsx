@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
 import {
@@ -32,7 +32,7 @@ export default function AdminVerificationsScreen() {
   // Guard: only admin can access
   if (user?.role !== 'admin') {
     return (
-      <SafeAreaView style={st.safe} edges={['top']}>
+      <SafeAreaView style={st.safe} edges={[]}>
         <View style={st.denied}>
           <Ionicons name="lock-closed-outline" size={48} color={Colors.midGray} />
           <Text style={st.deniedTxt}>Akses ditolak</Text>
@@ -97,11 +97,11 @@ export default function AdminVerificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={st.safe} edges={[]}>
+      <PageHeader title="Kelola Verifikasi" onBack={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing.xl }} />
       ) : (
         <FlatList
           data={items}
@@ -223,7 +223,7 @@ const st = StyleSheet.create({
   denied: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   deniedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
 
-  list: { padding: Spacing.xl, paddingTop: 56, paddingBottom: 80 },
+  list: { padding: Spacing.xl, paddingBottom: 80 },
   empty: { alignItems: 'center', paddingTop: 80, gap: Spacing.md },
   emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack },
   emptyTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },

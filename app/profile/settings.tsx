@@ -3,27 +3,26 @@
  * Shopee-inspired flat list: gray section headers, plain dividers, no card boxes.
  */
 
+import { PageHeader } from '@/src/components/ui/PageHeader';
+import { BorderRadius, Colors, Spacing, Typography } from '@/src/lib/constants';
+import { checkBiometricAvailable, useBiometric } from '@/src/lib/hooks/useBiometric';
+import { Locale } from '@/src/lib/i18n';
+import { signOut } from '@/src/services/supabase/auth';
+import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
-import { useSettingsStore } from '@/src/store/settingsStore';
-import { useAuthStore } from '@/src/store/authStore';
-import { signOut } from '@/src/services/supabase/auth';
-import { Locale } from '@/src/lib/i18n';
-import { useBiometric } from '@/src/lib/hooks/useBiometric';
-import { checkBiometricAvailable } from '@/src/lib/hooks/useBiometric';
 
 export default function SettingsScreen() {
   const [pushNotifications, setPushNotifications] = React.useState(true);
@@ -33,7 +32,16 @@ export default function SettingsScreen() {
   const [biometricType, setBiometricType] = React.useState('Sidik Jari');
   const { locale, setLocale, t } = useSettingsStore();
   const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
+  const verificationStatus = user?.verificationStatus ?? 'none';
   const { isEnabled, enable, disable } = useBiometric();
+
+  const verificationLabel = (() => {
+    if (verificationStatus === 'approved') return t.verifiedStatus;
+    if (verificationStatus === 'pending') return t.pendingReview;
+    if (verificationStatus === 'rejected') return t.rejected;
+    return t.verifyNow;
+  })();
 
   React.useEffect(() => {
     checkBiometricAvailable().then(({ available, type }) => {
@@ -54,7 +62,7 @@ export default function SettingsScreen() {
         text: t.signOut,
         style: 'destructive',
         onPress: async () => {
-          try { await signOut(); } catch {}
+          try { await signOut(); } catch { }
           logout();
           router.replace('/(auth)/login');
         },
@@ -68,13 +76,13 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={st.safe} edges={[]}>
+      <PageHeader title={t.settings} onBack={() => router.back()} />
 
       <ScrollView style={st.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ── Akun Saya ── */}
-        <SectionHeader label="Akun Saya" />
+        <SectionHeader label={t.account} />
         <View style={st.group}>
           <RowItem
             icon="person-outline"
@@ -83,7 +91,7 @@ export default function SettingsScreen() {
           />
           <RowItem
             icon="location-outline"
-            label="Alamat Saya"
+            label={t.myAddresses}
             onPress={() => router.push('/profile/addresses')}
           />
           <RowItem
@@ -94,14 +102,16 @@ export default function SettingsScreen() {
           <RowItem
             icon="shield-checkmark-outline"
             label={t.verification}
-            value={t.verified}
-            onPress={() => {}}
+            value={verificationLabel}
+            onPress={() => {
+              if (verificationStatus !== 'approved') router.push('/verification');
+            }}
             last
           />
         </View>
 
         {/* ── Pengaturan ── */}
-        <SectionHeader label="Pengaturan" />
+        <SectionHeader label={t.settings} />
         <View style={st.group}>
           <TouchableOpacity style={st.row} activeOpacity={0.7} onPress={toggleLanguage}>
             <View style={st.rowLeft}>
@@ -146,11 +156,11 @@ export default function SettingsScreen() {
         </View>
 
         {/* ── Bantuan ── */}
-        <SectionHeader label="Bantuan" />
+        <SectionHeader label={t.support} />
         <View style={st.group}>
-          <RowItem icon="help-circle-outline" label={t.helpSupport} onPress={() => {}} />
-          <RowItem icon="document-text-outline" label={t.termsPrivacy} onPress={() => {}} />
-          <RowItem icon="information-circle-outline" label={t.aboutApp} value="v1.0.0" onPress={() => {}} last />
+          <RowItem icon="help-circle-outline" label={t.helpSupport} onPress={() => { }} />
+          <RowItem icon="document-text-outline" label={t.termsPrivacy} onPress={() => { }} />
+          <RowItem icon="information-circle-outline" label={t.aboutApp} value="v1.0.0" onPress={() => { }} last />
         </View>
 
         {/* ── Sign out ── */}
@@ -245,7 +255,7 @@ const st = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  scroll: { flex: 1, paddingTop: 56 },
+  scroll: { flex: 1 },
 
   sectionHeader: {
     paddingHorizontal: Spacing.xl,
@@ -258,6 +268,7 @@ const st = StyleSheet.create({
     fontSize: Typography.sizes.sm,
     color: Colors.charcoal,
     letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
 
   group: {

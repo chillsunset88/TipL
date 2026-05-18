@@ -6,7 +6,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 
 const HISTORY = [
@@ -17,8 +17,8 @@ const HISTORY = [
 
 export default function PaymentsScreen() {
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={s.safe} edges={[]}>
+      <PageHeader title="Metode Pembayaran" onBack={() => router.back()} />
       <View style={s.card}>
         <Text style={s.cardLabel}>Escrow Balance</Text>
         <Text style={s.cardAmount}>Rp 5,200,000</Text>

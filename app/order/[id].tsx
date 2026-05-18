@@ -21,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { useOrder, updateOrderStatus } from '@/src/lib/hooks/useOrders';
 import { useAuthStore } from '@/src/store/authStore';
 import { createXenditInvoice } from '@/src/lib/xendit';
@@ -30,54 +31,22 @@ import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import type { OrderWithProfiles } from '@/src/services/supabase/orders';
 
-// ─── Status config ────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { label: string; gradient: [string, string]; sub: string }> = {
-  pending: {
-    label: 'Waiting for Traveler',
-    gradient: ['#E8E8E8', '#D0D0D0'],
-    sub: 'Your request is pending traveler acceptance.',
-  },
-  accepted: {
-    label: 'Offer Accepted',
-    gradient: ['#E8F4FD', '#C8E6F9'],
-    sub: 'Traveler accepted. Please proceed to payment.',
-  },
-  in_escrow: {
-    label: 'Funds in Escrow',
-    gradient: ['#F5E6C8', '#EDD9A3'],
-    sub: 'Your funds are securely held in escrow.',
-  },
-  purchased: {
-    label: 'Item Purchased',
-    gradient: ['#F0F8E8', '#D4EDBA'],
-    sub: 'Traveler has purchased your item.',
-  },
-  shipped: {
-    label: 'In Transit',
-    gradient: ['#E8F0FE', '#C5D8F8'],
-    sub: 'Your item is on the way.',
-  },
-  delivered: {
-    label: 'Delivered',
-    gradient: ['#E8F9EE', '#B8ECC8'],
-    sub: 'Item delivered. Confirm to release payment.',
-  },
-  completed: {
-    label: 'Completed',
-    gradient: ['#E8F9EE', '#B8ECC8'],
-    sub: 'Transaction complete. Funds released.',
-  },
-  cancelled: {
-    label: 'Cancelled',
-    gradient: ['#FFEBE9', '#FFD0CC'],
-    sub: 'This order has been cancelled.',
-  },
-  disputed: {
-    label: 'Disputed',
-    gradient: ['#FFF4E5', '#FFE0A8'],
-    sub: 'A dispute has been filed. Support will contact you.',
-  },
-};
+// ─── Status config (computed from translations) ───────────────────────────────
+import type { Translations } from '@/src/lib/i18n';
+
+function getStatusConfig(t: Translations): Record<string, { label: string; gradient: [string, string]; sub: string }> {
+  return {
+    pending:   { label: t.statusWaiting,       gradient: ['#E8E8E8', '#D0D0D0'], sub: t.statusWaitingDesc },
+    accepted:  { label: t.statusOfferAccepted, gradient: ['#E8F4FD', '#C8E6F9'], sub: t.statusOfferAcceptedDesc },
+    in_escrow: { label: t.statusInEscrow,      gradient: ['#F5E6C8', '#EDD9A3'], sub: t.statusInEscrowDesc },
+    purchased: { label: t.statusItemPurchased, gradient: ['#F0F8E8', '#D4EDBA'], sub: t.statusItemPurchasedDesc },
+    shipped:   { label: t.statusInTransit,     gradient: ['#E8F0FE', '#C5D8F8'], sub: t.statusInTransitDesc },
+    delivered: { label: t.statusDelivered,     gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusDeliveredDesc },
+    completed: { label: t.statusCompleted,     gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
+    cancelled: { label: t.statusCancelled,     gradient: ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
+    disputed:  { label: t.statusDisputed,      gradient: ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
+  };
+}
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -85,6 +54,7 @@ export default function OrderDetailScreen() {
   const { order, loading } = useOrder(id);
 
   const [actionLoading, setActionLoading] = useState(false);
+  const { t } = useSettingsStore();
 
   if (loading) {
     return (
@@ -97,7 +67,7 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <SafeAreaView style={[styles.safe, { alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={{ color: Colors.darkGray }}>Order not found.</Text>
+        <Text style={{ color: Colors.darkGray }}>{t.orderNotFound}</Text>
       </SafeAreaView>
     );
   }
@@ -107,6 +77,7 @@ export default function OrderDetailScreen() {
   const isTriper = order.triper_id === (user?.id ?? '');
   const isAdmin = user?.role === 'admin';
 
+  const STATUS_CONFIG = getStatusConfig(t);
   const statusCfg = STATUS_CONFIG[status] ?? STATUS_CONFIG['pending'];
 
   const totalAmount = order.total_amount ?? 0;
@@ -174,18 +145,18 @@ export default function OrderDetailScreen() {
   /** Tiper: Confirm receipt → release escrow */
   const handleConfirmReceipt = () => {
     Alert.alert(
-      'Confirm Delivery',
-      'This will release the escrow funds to the traveler. This cannot be undone.',
+      t.confirmDelivery,
+      t.confirmDeliveryMsg,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: 'Confirm & Release',
+          text: t.confirmAndRelease,
           style: 'default',
           onPress: () => withLoading(async () => {
             await releaseEscrow(order.id);
             await updateOrderStatus(order.id, 'completed');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert('Payment Released', 'Funds have been released to the traveler.');
+            Alert.alert(t.paymentReleased, t.paymentReleasedMsg);
           }),
         },
       ],
@@ -195,18 +166,18 @@ export default function OrderDetailScreen() {
   /** Tiper: Dispute */
   const handleDispute = () => {
     Alert.alert(
-      'File a Dispute',
-      'Describe the issue with your order.',
+      t.fileDispute,
+      t.fileDisputeMsg,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: 'File Dispute',
+          text: t.fileDispute,
           style: 'destructive',
           onPress: () => withLoading(async () => {
             await disputeEscrow(order.id, 'Buyer filed dispute from app');
             await updateOrderStatus(order.id, 'disputed');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            Alert.alert('Dispute Filed', 'Our support team will contact you within 24 hours.');
+            Alert.alert(t.disputeFiled, t.disputeFiledMsg);
           }),
         },
       ],
@@ -223,12 +194,12 @@ export default function OrderDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Order Tracking</Text>
+          <Text style={styles.headerTitle}>{t.orderTracking}</Text>
           <TouchableOpacity
             onPress={async () => {
               await Clipboard.setStringAsync(order.id);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert('Copied!', `Order ID copied to clipboard.`);
+              Alert.alert(t.orderIdCopied, t.orderIdCopiedMsg);
             }}
           >
             <Text style={styles.orderNumber}>#{order.id.slice(0, 8)} ⎘</Text>
@@ -247,7 +218,7 @@ export default function OrderDetailScreen() {
               await Clipboard.setStringAsync(
                 `TipL Order #${order.id.slice(0, 8)}\nItem: ${order.item_name}\nStatus: ${STATUS_CONFIG[status]?.label ?? status}`,
               );
-              Alert.alert('Copied!', 'Order summary copied to clipboard.');
+              Alert.alert(t.summaryCopied, t.summaryCopiedMsg);
             }
           }}
         >
@@ -269,14 +240,14 @@ export default function OrderDetailScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.statusCard}
         >
-          <Text style={styles.statusLabel}>CURRENT STATUS</Text>
+          <Text style={styles.statusLabel}>{t.currentStatus}</Text>
           <Text style={styles.statusTitle}>{statusCfg.label}</Text>
           <Text style={styles.statusSubtext}>{statusCfg.sub}</Text>
 
           {escrowStatuses.includes(status) && (
             <View style={styles.escrowBadge}>
               <Ionicons name="shield-checkmark" size={14} color={Colors.primary} />
-              <Text style={styles.escrowBadgeText}>Funds in Escrow</Text>
+              <Text style={styles.escrowBadgeText}>{t.fundsInEscrowBadge}</Text>
             </View>
           )}
         </LinearGradient>
@@ -298,25 +269,25 @@ export default function OrderDetailScreen() {
 
         {/* Payment Summary */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Summary</Text>
+          <Text style={styles.sectionTitle}>{t.paymentSummary}</Text>
           <View style={styles.summaryCard}>
-            <SummaryRow label="Item Price" value={fmt(agreedPrice)} />
-            <SummaryRow label="Service Fee" value={fmt(serviceFee)} />
+            <SummaryRow label={t.itemPrice} value={fmt(agreedPrice)} />
+            <SummaryRow label={t.serviceFee} value={fmt(serviceFee)} />
             <View style={styles.summaryDivider} />
-            <SummaryRow label="Total" value={fmt(totalAmount)} bold />
+            <SummaryRow label={t.total} value={fmt(totalAmount)} bold />
           </View>
         </View>
 
         {/* Participants */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Participants</Text>
+          <Text style={styles.sectionTitle}>{t.participants}</Text>
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Buyer</Text>
+              <Text style={styles.summaryLabel}>{t.buyer}</Text>
               <Text style={styles.summaryValue}>{order.tiper?.full_name ?? order.tiper_id.slice(0, 8)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Traveler</Text>
+              <Text style={styles.summaryLabel}>{t.traveler}</Text>
               <Text style={styles.summaryValue}>{order.triper?.full_name ?? order.triper_id.slice(0, 8)}</Text>
             </View>
           </View>
@@ -374,6 +345,7 @@ interface ActionBarProps {
 }
 
 function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute, onAdminSetStatus }: ActionBarProps) {
+  const { t } = useSettingsStore();
   const terminal = ['completed', 'cancelled', 'disputed'].includes(status);
 
   // ── Admin override panel ────────────────────────────────────────────────────
@@ -433,7 +405,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAc
             color={status === 'completed' ? Colors.success : status === 'cancelled' ? Colors.error : Colors.warning}
           />
           <Text style={styles.terminalText}>
-            {status === 'completed' ? 'Order Completed' : status === 'cancelled' ? 'Order Cancelled' : 'Dispute Filed — Support will contact you'}
+            {status === 'completed' ? t.orderCompletedMsg : status === 'cancelled' ? t.orderCancelledMsg : t.disputeFiledStatus}
           </Text>
         </View>
       </View>
@@ -446,14 +418,14 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAc
 
       {/* Tiper actions */}
       {isTiper && (status === 'pending' || status === 'accepted') && (
-        <Button title="Pay Now" onPress={onPayNow} fullWidth size="lg" disabled={loading}
+        <Button title={t.payNow} onPress={onPayNow} fullWidth size="lg" disabled={loading}
           icon={<Ionicons name="card-outline" size={18} color={Colors.white} />} />
       )}
       {isTiper && status === 'shipped' && (
         <View style={{ gap: Spacing.sm }}>
-          <Button title="Confirm Receipt" onPress={onConfirmReceipt} fullWidth size="lg" disabled={loading}
+          <Button title={t.confirmReceipt} onPress={onConfirmReceipt} fullWidth size="lg" disabled={loading}
             icon={<Ionicons name="checkmark-circle-outline" size={18} color={Colors.white} />} />
-          <Button title="File a Dispute" onPress={onDispute} variant="secondary" fullWidth disabled={loading}
+          <Button title={t.fileDispute} onPress={onDispute} variant="secondary" fullWidth disabled={loading}
             icon={<Ionicons name="alert-circle-outline" size={18} color={Colors.error} />}
             style={{ borderColor: Colors.error }} />
         </View>
@@ -461,11 +433,11 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAc
 
       {/* Triper actions */}
       {isTriper && status === 'pending' && (
-        <Button title="Accept Order" onPress={onAccept} fullWidth size="lg" disabled={loading}
+        <Button title={t.acceptOrder} onPress={onAccept} fullWidth size="lg" disabled={loading}
           icon={<Ionicons name="checkmark-outline" size={18} color={Colors.white} />} />
       )}
       {isTriper && status === 'in_escrow' && (
-        <Button title="Mark as Shipped" onPress={onMarkShipped} fullWidth size="lg" disabled={loading}
+        <Button title={t.markAsShipped} onPress={onMarkShipped} fullWidth size="lg" disabled={loading}
           icon={<Ionicons name="airplane-outline" size={18} color={Colors.white} />} />
       )}
 

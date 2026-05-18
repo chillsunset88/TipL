@@ -6,7 +6,7 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
@@ -48,11 +48,11 @@ export default function FavoritesScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={s.safe} edges={[]}>
+      <PageHeader title="Tripper Favorit" onBack={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing.xl }} />
       ) : (
         <FlatList
           data={items}
@@ -175,7 +175,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  list: { padding: Spacing.xl, paddingTop: 60, paddingBottom: 60 },
+  list: { padding: Spacing.xl, paddingBottom: 60 },
 
   // ── Card
   card: {

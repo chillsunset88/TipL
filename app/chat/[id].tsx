@@ -27,6 +27,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useChat } from '@/src/lib/hooks/useChat';
 import { useAuthStore } from '@/src/store/authStore';
@@ -47,6 +48,7 @@ export default function ChatRoomScreen() {
   const { receiverId } = useLocalSearchParams<{ receiverId?: string }>();
   const otherUserId = receiverId ?? '';
 
+  const { t } = useSettingsStore();
   const { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage } = useChat(currentUserId, otherUserId);
   const setActiveChatId = useChatStore((s) => s.setActiveChatId);
 
@@ -93,7 +95,7 @@ export default function ChatRoomScreen() {
     try {
       await sendMessage(text);
     } catch (e: any) {
-      Alert.alert('Gagal kirim pesan', e?.message ?? 'Terjadi kesalahan.');
+      Alert.alert(t.failedSend, e?.message ?? 'Terjadi kesalahan.');
     } finally {
       setSending(false);
     }
@@ -116,7 +118,7 @@ export default function ChatRoomScreen() {
       await sendImage(url);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (e: any) {
-      Alert.alert('Gagal kirim gambar', e?.message ?? 'Terjadi kesalahan.');
+      Alert.alert(t.failedSendImage, e?.message ?? 'Terjadi kesalahan.');
     } finally {
       setUploadingImage(false);
     }
@@ -168,7 +170,7 @@ export default function ChatRoomScreen() {
         </View>
       </View>
     );
-  }, [currentUserId]);
+  }, [currentUserId, otherUserName, otherUserAvatar]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -180,7 +182,7 @@ export default function ChatRoomScreen() {
         <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
         <View style={styles.headerInfo}>
           <Text style={styles.headerName}>{otherUserName}</Text>
-          <Text style={styles.headerStatus}>Online</Text>
+          <Text style={styles.headerStatus}>{t.online}</Text>
         </View>
         {orderId && (
           <TouchableOpacity
@@ -217,7 +219,7 @@ export default function ChatRoomScreen() {
         />
 
         {/* Input bar */}
-        <View style={[styles.inputBar, { paddingBottom: (Platform.OS === 'ios' ? insets.bottom : 0) + Spacing.md }]}>
+        <View style={[styles.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
           <TouchableOpacity
             style={styles.attachButton}
             onPress={handlePickImage}
@@ -232,7 +234,7 @@ export default function ChatRoomScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder="Type a message..."
+              placeholder={t.typeMessage}
               placeholderTextColor={Colors.darkTextSecondary}
               value={inputText}
               onChangeText={setInputText}
