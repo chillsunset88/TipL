@@ -14,7 +14,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
@@ -22,6 +22,7 @@ import { Avatar } from '@/src/components/ui/Avatar';
 import { useAuthStore } from '@/src/store/authStore';
 import { getConversations, getUnreadCount } from '@/src/services/supabase/messages';
 import { getProfilesByIds } from '@/src/services/supabase/profiles';
+import { supabase } from '@/src/lib/supabase';
 
 interface ConversationItem {
   partnerId: string;
@@ -95,7 +96,23 @@ export default function ChatsScreen() {
     }
   }, [userId]);
 
-  useEffect(() => { load(); }, [load]);
+  // Reload whenever the tab comes into focus (returning from a chat room)
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Real-time: reload when a new message arrives for this user
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`chat-list-${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${userId}`,
+      }, () => { load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, load]);
 
   const onRefresh = () => { setRefreshing(true); load(); };
 

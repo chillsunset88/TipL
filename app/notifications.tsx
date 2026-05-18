@@ -109,7 +109,8 @@ export default function NotificationsScreen() {
     // notif.type adalah jenis notifikasi, bukan notif.data.type
     const data = notif.data ?? {};
     if (notif.type === 'order' && data.orderId) router.push(`/order/${data.orderId}`);
-    else if (notif.type === 'chat' && data.chatId) router.push(`/chat/${data.chatId}`);
+    else if (notif.type === 'chat' && data.chatId)
+      router.push({ pathname: '/chat/[id]', params: { id: data.chatId, receiverId: data.chatId } } as any);
   };
 
   const handleMarkAllRead = async () => {

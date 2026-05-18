@@ -4,8 +4,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,8 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useCartStore } from '@/src/store/cartStore';
 import { useAuthStore } from '@/src/store/authStore';
-import { createXenditInvoice } from '@/src/lib/xendit';
-import { createOrder } from '@/src/services/supabase/orders';
+import { useCheckoutStore } from '@/src/store/checkoutStore';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
@@ -26,9 +24,9 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const { items, removeItem } = useCartStore();
   const user = useAuthStore((s) => s.user);
+  const { setPendingItems, setSelectedAddress } = useCheckoutStore();
   const [editMode, setEditMode] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Set<string>>(new Set());
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const groupedArray = useMemo(() => {
     const map: Record<string, { travelerId: string; travelerName: string; items: typeof items }> = {};
@@ -68,7 +66,7 @@ export default function CartScreen() {
     ]);
   };
 
-  const handleBuyGroup = async (groupItems: typeof items) => {
+  const handleBuyGroup = (groupItems: typeof items) => {
     if (!user) {
       Alert.alert('Login Diperlukan', 'Silakan masuk untuk melanjutkan checkout.', [
         { text: 'Masuk', onPress: () => router.replace('/(auth)/login' as any) },
@@ -77,49 +75,10 @@ export default function CartScreen() {
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setCheckoutLoading(true);
-    try {
-      const subtotal = groupItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      const serviceFee = 15000;
-      const total = subtotal + serviceFee;
-      const itemDesc = groupItems.length === 1 ? groupItems[0].name : `${groupItems.length} items`;
-
-      // Create Supabase order first — its UUID is what we track
-      const order = await createOrder({
-        tiper_id: user.id,
-        triper_id: groupItems[0].travelerId,
-        trip_id: groupItems[0].tripId ?? null,
-        item_name: itemDesc,
-        agreed_price: subtotal,
-        service_fee: serviceFee,
-        total_amount: total,
-        currency: 'IDR',
-        status: 'pending',
-      } as any);
-
-      const { invoice_url } = await createXenditInvoice({
-        externalId: `tipl-order-${order.id}`,
-        amount: total,
-        payerEmail: user.email,
-        description: `TipL Order - ${itemDesc}`,
-      });
-      groupItems.forEach(i => removeItem(i.id));
-      router.push({
-        pathname: '/payment/xendit-qr',
-        params: {
-          invoiceUrl: invoice_url,
-          orderId: order.id,
-          buyerId: user.id,
-          travelerId: groupItems[0]?.travelerId ?? '',
-          amount: String(total),
-          currency: 'IDR',
-        },
-      });
-    } catch {
-      Alert.alert('Error', 'Gagal memuat halaman pembayaran. Coba lagi.');
-    } finally {
-      setCheckoutLoading(false);
-    }
+    // Store pending items and reset selected address, then go to address selection
+    setPendingItems(groupItems);
+    setSelectedAddress(null);
+    router.push('/checkout/address');
   };
 
   return (
@@ -246,17 +205,13 @@ export default function CartScreen() {
                     ) : (
                       <TouchableOpacity
                         onPress={() => handleBuyGroup(group.items)}
-                        disabled={checkoutLoading}
                         style={st.beliWrap}
                       >
                         <LinearGradient
-                          colors={checkoutLoading ? [Colors.midGray, Colors.midGray] : [Colors.primaryLight, Colors.primaryDark]}
+                          colors={[Colors.primaryLight, Colors.primaryDark]}
                           style={st.beliBtn}
                         >
-                          {checkoutLoading
-                            ? <ActivityIndicator color={Colors.white} size="small" />
-                            : <Text style={st.beliBtnTxt}>Beli sekarang</Text>
-                          }
+                          <Text style={st.beliBtnTxt}>Beli sekarang</Text>
                         </LinearGradient>
                       </TouchableOpacity>
                     )}

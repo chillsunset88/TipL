@@ -16,6 +16,8 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
+  Modal,
+  StatusBar,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -51,6 +53,7 @@ export default function ChatRoomScreen() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState('Chat');
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -138,12 +141,14 @@ export default function ChatRoomScreen() {
         <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
           {/* Image message */}
           {item.image_url ? (
-            <Image
-              source={{ uri: item.image_url }}
-              style={styles.chatImage}
-              contentFit="cover"
-              transition={200}
-            />
+            <TouchableOpacity activeOpacity={0.85} onPress={() => setViewingImage(item.image_url!)}>
+              <Image
+                source={{ uri: item.image_url }}
+                style={styles.chatImage}
+                contentFit="cover"
+                transition={200}
+              />
+            </TouchableOpacity>
           ) : null}
 
           {/* Text */}
@@ -192,7 +197,7 @@ export default function ChatRoomScreen() {
 
       {/* Messages */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
         style={styles.flex}
         keyboardVerticalOffset={0}
       >
@@ -212,7 +217,7 @@ export default function ChatRoomScreen() {
         />
 
         {/* Input bar */}
-        <View style={[styles.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
+        <View style={[styles.inputBar, { paddingBottom: (Platform.OS === 'ios' ? insets.bottom : 0) + Spacing.md }]}>
           <TouchableOpacity
             style={styles.attachButton}
             onPress={handlePickImage}
@@ -249,6 +254,24 @@ export default function ChatRoomScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen image viewer */}
+      <Modal visible={!!viewingImage} transparent animationType="fade" onRequestClose={() => setViewingImage(null)}>
+        <StatusBar hidden />
+        <View style={styles.imageViewerBg}>
+          <TouchableOpacity style={styles.imageViewerClose} onPress={() => setViewingImage(null)}>
+            <Ionicons name="close" size={28} color={Colors.white} />
+          </TouchableOpacity>
+          {viewingImage && (
+            <Image
+              source={{ uri: viewingImage }}
+              style={styles.imageViewerImg}
+              contentFit="contain"
+              transition={200}
+            />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -422,5 +445,28 @@ const styles = StyleSheet.create({
   },
   sendButtonActive: {
     backgroundColor: Colors.primary,
+  },
+
+  imageViewerBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageViewerClose: {
+    position: 'absolute',
+    top: 48,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageViewerImg: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH * 1.2,
   },
 });

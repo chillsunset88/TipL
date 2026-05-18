@@ -82,6 +82,11 @@ export default function SettingsScreen() {
             onPress={() => router.push('/profile/edit')}
           />
           <RowItem
+            icon="location-outline"
+            label="Alamat Saya"
+            onPress={() => router.push('/profile/addresses')}
+          />
+          <RowItem
             icon="card-outline"
             label={t.paymentMethods}
             onPress={() => router.push('/profile/payments')}
