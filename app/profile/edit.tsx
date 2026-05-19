@@ -23,11 +23,13 @@ import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { updateProfile as updateSupabaseProfile, uploadAvatar } from '@/src/services/supabase/profiles';
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 export default function EditProfileScreen() {
   const C = useThemeColors();
+  const { t } = useSettingsStore();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
@@ -40,7 +42,7 @@ export default function EditProfileScreen() {
   const pickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk memilih foto profil.');
+      Alert.alert(t.permissionRequired, t.galleryPermission);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -56,7 +58,7 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      Alert.alert('Error', 'Name cannot be empty.');
+      Alert.alert(t.error, t.nameEmpty);
       return;
     }
     if (!user) return;
@@ -76,11 +78,11 @@ export default function EditProfileScreen() {
 
       setUser({ ...user, displayName: displayName.trim(), phone: phone.trim(), bio: bio.trim(), avatarUrl: finalAvatarUrl ?? null });
 
-      Alert.alert('Saved', 'Your profile has been updated.', [
-        { text: 'OK', onPress: () => router.back() },
+      Alert.alert(t.profileSaved, t.profileUpdated, [
+        { text: t.ok, onPress: () => router.back() },
       ]);
     } catch {
-      Alert.alert('Error', 'Failed to update profile.');
+      Alert.alert(t.error, t.failedUpdateProfile);
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={[]}>
-      <PageHeader title="Edit Profil" onBack={() => router.back()} />
+      <PageHeader title={t.editProfileTitle} onBack={() => router.back()} />
 
       <ScrollView style={s.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Avatar */}
@@ -124,17 +126,17 @@ export default function EditProfileScreen() {
               <Ionicons name="camera" size={16} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
-          <Text style={s.changePhotoText}>Tap to change photo</Text>
+          <Text style={s.changePhotoText}>{t.tapToChangePhoto}</Text>
         </View>
 
         {/* Form */}
-        <Input label="Full Name" value={displayName} onChangeText={setDisplayName} icon="person-outline" />
-        <Input label="Email" value={email} onChangeText={setEmail} icon="mail-outline" keyboardType="email-address" autoCapitalize="none" />
-        <Input label="Phone Number" value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />
-        <Input label="Bio" value={bio} onChangeText={setBio} placeholder="Tell others about yourself..." multiline numberOfLines={3} />
+        <Input label={t.fullName} value={displayName} onChangeText={setDisplayName} icon="person-outline" />
+        <Input label={t.emailLabel} value={email} onChangeText={setEmail} icon="mail-outline" keyboardType="email-address" autoCapitalize="none" />
+        <Input label={t.phoneNumber} value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />
+        <Input label={t.bioLabel} value={bio} onChangeText={setBio} placeholder={t.bioPlaceholder} multiline numberOfLines={3} />
 
         <Button
-          title="Save Changes"
+          title={t.saveChanges}
           onPress={handleSave}
           loading={loading}
           fullWidth

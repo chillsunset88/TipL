@@ -27,79 +27,11 @@ export default function ProfileScreen() {
   const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const { t, locale } = useSettingsStore();
-
-  const copy = locale === 'id' ? {
-    signedOutTitle: 'Belum Masuk',
-    signedOutDesc: 'Masuk untuk melihat profil dan pesanan kamu',
-    signInSignUp: 'Masuk / Daftar',
-    jastipTitle: 'Jastip',
-    incomingOrdersLabel: 'Pesanan Masuk',
-    orderGridLabel: 'Pesanan Saya',
-    wishlistGridLabel: 'Wishlist',
-    favoritesGridLabel: 'Tripper Favorit',
-    verificationTitle: 'Jadilah Jastiper',
-    verificationDesc: 'Verifikasi identitasmu untuk mulai berjastip dan terima pesanan.',
-    verificationRejectedDesc: 'Verifikasi kamu ditolak. Coba ajukan kembali.',
-    verificationRejectedBadge: 'Ditolak — ajukan ulang',
-    verificationBenefits: [
-      'Buat & kelola trip sendiri',
-      'Terima pesanan dari tiper',
-      'Dapatkan penghasilan tambahan',
-    ],
-    verificationReapplyText: 'Ajukan Ulang',
-    verificationStartText: 'Mulai Verifikasi',
-    pendingTitle: 'Menunggu Verifikasi',
-    pendingDesc: 'Dokumenmu sedang ditinjau tim TipL. Proses membutuhkan 1–2 hari kerja.',
-    pendingStatus: 'Sedang ditinjau...',
-    helpTitle: 'Bantuan',
-    helpCenterLabel: 'Pusat Bantuan',
-    contactUsLabel: 'Hubungi Kami',
-    termsLabel: 'Syarat & Ketentuan',
-    termsSub: 'Kebijakan privasi',
-    aboutAppLabel: 'Tentang TipL',
-    versionLabel: 'Versi 1.0.0',
-    adminPanelLabel: 'Admin',
-    manageVerification: 'Kelola Verifikasi',
-    manageOrders: 'Kelola Paket (Demo)',
-  } : {
-    signedOutTitle: 'Not signed in',
-    signedOutDesc: 'Sign in to view your profile and orders',
-    signInSignUp: 'Sign In / Sign Up',
-    jastipTitle: 'Jastip',
-    incomingOrdersLabel: 'Incoming Orders',
-    orderGridLabel: t.myOrders,
-    wishlistGridLabel: t.myWishlist,
-    favoritesGridLabel: t.myFavorites,
-    verificationTitle: 'Become a Tripper',
-    verificationDesc: 'Verify your identity to start accepting requests and earning.',
-    verificationRejectedDesc: 'Your verification was rejected. Please reapply.',
-    verificationRejectedBadge: 'Rejected — reapply now',
-    verificationBenefits: [
-      'Create & manage trips',
-      'Accept orders from buyers',
-      'Earn extra income',
-    ],
-    verificationReapplyText: 'Reapply',
-    verificationStartText: 'Start Verification',
-    pendingTitle: 'Waiting for Review',
-    pendingDesc: 'Your documents are under review. This usually takes 1–2 business days.',
-    pendingStatus: 'Under review...',
-    helpTitle: 'Help',
-    helpCenterLabel: 'Help Center',
-    contactUsLabel: 'Contact Us',
-    termsLabel: 'Terms & Privacy',
-    termsSub: 'Privacy policy',
-    aboutAppLabel: 'About TipL',
-    versionLabel: 'Version 1.0.0',
-    adminPanelLabel: 'Admin',
-    manageVerification: 'Manage Verification',
-    manageOrders: 'Manage Orders (Demo)',
-  };
+  const { t } = useSettingsStore();
 
   const verifyButtonLabel = user?.verificationStatus === 'rejected'
-    ? copy.verificationReapplyText
-    : copy.verificationStartText;
+    ? t.verificationReapply
+    : t.verificationStart;
 
   const handleSignOut = () => {
     Alert.alert(t.signOut, t.signOutConfirm, [
@@ -237,10 +169,10 @@ export default function ProfileScreen() {
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.authRequired}>
           <Ionicons name="person-circle-outline" size={64} color={C.midGray} />
-          <Text style={s.authTitle}>{copy.signedOutTitle}</Text>
-          <Text style={s.authSub}>{copy.signedOutDesc}</Text>
+          <Text style={s.authTitle}>{t.signedOutTitle}</Text>
+          <Text style={s.authSub}>{t.signedOutDesc}</Text>
           <TouchableOpacity style={s.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
-            <Text style={s.signInTxt}>{copy.signInSignUp}</Text>
+            <Text style={s.signInTxt}>{t.signInSignUp}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -286,21 +218,21 @@ export default function ProfileScreen() {
           <View style={s.gridRow}>
             <GridItem
               icon="receipt-outline"
-              label={copy.orderGridLabel}
+              label={t.myOrders}
               color={C.primary}
               onPress={() => router.push('/profile/orders')}
               s={s}
             />
             <GridItem
               icon="heart-outline"
-              label={copy.wishlistGridLabel}
+              label={t.myWishlist}
               color={C.error}
               onPress={() => router.push('/profile/wishlist')}
               s={s}
             />
             <GridItem
               icon="star-outline"
-              label={copy.favoritesGridLabel}
+              label={t.myFavorites}
               color={C.warning}
               onPress={() => router.push('/profile/favorites' as any)}
               s={s}
@@ -311,26 +243,26 @@ export default function ProfileScreen() {
         {/* ── Jastip card ── */}
         {(user.verificationStatus === 'approved' || user.role === 'admin') ? (
           <View style={s.card}>
-            <Text style={s.cardTitle}>{copy.jastipTitle}</Text>
+            <Text style={s.cardTitle}>{t.jastipSection}</Text>
             <View style={s.gridRow}>
               <GridItem icon="airplane-outline" label={t.myTrips} color={C.info} onPress={() => router.push('/profile/trips')} s={s} />
               <GridItem icon="add-circle-outline" label={t.createTrip} color={C.primary} onPress={() => router.push('/trip/create')} s={s} />
-              <GridItem icon="cube-outline" label={copy.incomingOrdersLabel} color={C.success} onPress={() => router.push('/profile/incoming-orders' as any)} s={s} />
+              <GridItem icon="cube-outline" label={t.incomingOrders} color={C.success} onPress={() => router.push('/profile/incoming-orders' as any)} s={s} />
             </View>
           </View>
         ) : user.verificationStatus === 'pending' ? (
-          <VerificationPendingCard copy={copy} s={s} C={C} />
+          <VerificationPendingCard s={s} C={C} />
         ) : (
-          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} copy={copy} verifyButtonLabel={verifyButtonLabel} s={s} C={C} />
+          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} verifyButtonLabel={verifyButtonLabel} s={s} C={C} />
         )}
 
         {/* ── Admin panel ── */}
         {user.role === 'admin' && (
           <View style={s.card}>
-            <Text style={s.cardTitle}>{copy.adminPanelLabel}</Text>
+            <Text style={s.cardTitle}>{t.adminPanel}</Text>
             <ActionRow
               icon="shield-checkmark-outline"
-              label={copy.manageVerification}
+              label={t.manageVerification}
               color={C.info}
               onPress={() => router.push('/admin/verifications' as any)}
               s={s}
@@ -338,7 +270,7 @@ export default function ProfileScreen() {
             />
             <ActionRow
               icon="cube-outline"
-              label={copy.manageOrders}
+              label={t.manageOrdersDemo}
               color={C.warning}
               onPress={() => router.push('/admin/orders' as any)}
               s={s}
@@ -349,18 +281,18 @@ export default function ProfileScreen() {
 
         {/* ── Help & Support ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>{copy.helpTitle}</Text>
-          <SettingRow icon="help-circle-outline" label={copy.helpCenterLabel} sub={locale === 'id' ? 'FAQ & panduan penggunaan' : 'FAQ & usage guide'} onPress={() => router.push('/help')} s={s} C={C} />
-          <SettingRow icon="chatbubble-ellipses-outline" label={copy.contactUsLabel} sub={locale === 'id' ? 'Chat dengan tim TipL' : 'Chat with TipL support'} onPress={() => {}} s={s} C={C} />
+          <Text style={s.cardTitle}>{t.helpSection}</Text>
+          <SettingRow icon="help-circle-outline" label={t.helpCenter} sub={t.helpCenterSub} onPress={() => router.push('/help')} s={s} C={C} />
+          <SettingRow icon="chatbubble-ellipses-outline" label={t.contactUs} sub={t.contactUsSub} onPress={() => {}} s={s} C={C} />
           <SettingRow
             icon="document-text-outline"
-            label={copy.termsLabel}
-            sub={copy.termsSub}
+            label={t.termsPrivacy}
+            sub={t.privacyPolicySub}
             onPress={() => router.push('/terms')}
             s={s}
             C={C}
           />
-          <SettingRow icon="information-circle-outline" label={copy.aboutAppLabel} sub={copy.versionLabel} onPress={() => {}} last s={s} C={C} />
+          <SettingRow icon="information-circle-outline" label={t.aboutApp} sub={t.appVersion} onPress={() => {}} last s={s} C={C} />
         </View>
 
         {/* ── Sign out ── */}
@@ -369,7 +301,7 @@ export default function ProfileScreen() {
             <Ionicons name="log-out-outline" size={20} color={C.error} />
             <Text style={s.signOutTxt}>{t.signOut}</Text>
           </TouchableOpacity>
-          <Text style={s.versionTxt}>{copy.versionLabel}</Text>
+          <Text style={s.versionTxt}>{t.appVersion}</Text>
         </View>
 
         <View style={{ height: 100 }} />
@@ -380,13 +312,13 @@ export default function ProfileScreen() {
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
-function VerificationPromoCard({ rejected, copy, verifyButtonLabel, s, C }: {
+function VerificationPromoCard({ rejected, verifyButtonLabel, s, C }: {
   rejected: boolean;
-  copy: any;
   verifyButtonLabel: string;
   s: any;
   C: ReturnType<typeof useThemeColors>;
 }) {
+  const { t } = useSettingsStore();
   return (
     <View style={s.verifyCard}>
       <View style={s.verifyTop}>
@@ -394,20 +326,20 @@ function VerificationPromoCard({ rejected, copy, verifyButtonLabel, s, C }: {
           <Ionicons name="shield-checkmark-outline" size={28} color={C.primary} />
         </View>
         <View style={s.verifyTextWrap}>
-          <Text style={s.verifyTitle}>{copy.verificationTitle}</Text>
+          <Text style={s.verifyTitle}>{t.becomeTripper}</Text>
           <Text style={s.verifySub}>
-            {rejected ? copy.verificationRejectedDesc : copy.verificationDesc}
+            {rejected ? t.verificationRejectedDesc : t.becomeTriperDesc}
           </Text>
         </View>
       </View>
       {rejected && (
         <View style={s.rejectedPill}>
           <Ionicons name="close-circle" size={13} color={C.error} />
-          <Text style={s.rejectedTxt}>{copy.verificationRejectedBadge}</Text>
+          <Text style={s.rejectedTxt}>{t.verificationRejectedBadge}</Text>
         </View>
       )}
       <View style={s.verifyBenefits}>
-        {copy.verificationBenefits.map((b: string) => (
+        {[t.verificationBenefit1, t.verificationBenefit2, t.verificationBenefit3].map((b) => (
           <View key={b} style={s.benefitRow}>
             <Ionicons name="checkmark-circle" size={14} color={C.success} />
             <Text style={s.benefitTxt}>{b}</Text>
@@ -422,7 +354,8 @@ function VerificationPromoCard({ rejected, copy, verifyButtonLabel, s, C }: {
   );
 }
 
-function VerificationPendingCard({ copy, s, C }: { copy: any; s: any; C: ReturnType<typeof useThemeColors> }) {
+function VerificationPendingCard({ s, C }: { s: any; C: ReturnType<typeof useThemeColors> }) {
+  const { t } = useSettingsStore();
   return (
     <View style={[s.verifyCard, s.pendingCard]}>
       <View style={s.verifyTop}>
@@ -430,13 +363,13 @@ function VerificationPendingCard({ copy, s, C }: { copy: any; s: any; C: ReturnT
           <Ionicons name="time-outline" size={28} color={C.warning} />
         </View>
         <View style={s.verifyTextWrap}>
-          <Text style={s.verifyTitle}>{copy.pendingTitle}</Text>
-          <Text style={s.verifySub}>{copy.pendingDesc}</Text>
+          <Text style={s.verifyTitle}>{t.pendingVerification}</Text>
+          <Text style={s.verifySub}>{t.pendingVerificationDesc}</Text>
         </View>
       </View>
       <View style={s.pendingPill}>
         <ActivityIndicator size="small" color={C.warning} style={{ transform: [{ scale: 0.7 }] }} />
-        <Text style={s.pendingPillTxt}>{copy.pendingStatus}</Text>
+        <Text style={s.pendingPillTxt}>{t.pendingVerificationStatus}</Text>
       </View>
     </View>
   );

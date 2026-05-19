@@ -541,22 +541,22 @@ export default function TripDetailScreen() {
                         const activeCount = await getActiveOrderCountForProduct(p.id);
                         if (activeCount > 0) {
                           Alert.alert(
-                            'Tidak Bisa Dihapus',
-                            `Ada ${activeCount} pesanan aktif untuk produk ini. Selesaikan semua pesanan terlebih dahulu.`,
+                            t.cannotDeleteProduct,
+                            `${activeCount} ${t.activeOrdersBlock}`,
                           );
                           return;
                         }
-                        Alert.alert('Hapus Produk', `Hapus "${p.name}"?`, [
-                          { text: 'Batal', style: 'cancel' },
+                        Alert.alert(t.deleteProductTitle, `${t.delete} "${p.name}"?`, [
+                          { text: t.cancel, style: 'cancel' },
                           {
-                            text: 'Hapus',
+                            text: t.delete,
                             style: 'destructive',
                             onPress: async () => {
                               try {
                                 await deleteProduct(p.id);
                                 setDeletedProductIds((prev) => new Set([...prev, p.id]));
                               } catch {
-                                Alert.alert(t.error, 'Gagal menghapus produk.');
+                                Alert.alert(t.error, t.failedDeleteProduct);
                               }
                             },
                           },

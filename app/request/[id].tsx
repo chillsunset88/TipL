@@ -12,6 +12,7 @@ import { Button } from '@/src/components/ui/Button';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import {
   getRequestById,
   completeRequest,
@@ -19,12 +20,7 @@ import {
 } from '@/src/services/supabase/requests';
 import { createOrder } from '@/src/services/supabase/orders';
 
-const STATUS_LABEL: Record<string, string> = {
-  open:      'Terbuka',
-  taken:     'Diambil',
-  completed: 'Selesai',
-  cancelled: 'Dibatalkan',
-};
+// STATUS_LABEL is computed inside component using t (see below)
 const STATUS_COLOR: Record<string, string> = {
   open:      '#2196F3',
   taken:     '#F59E0B',
@@ -45,6 +41,13 @@ function fmtDate(iso: string | null): string {
 export default function RequestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
+  const { t } = useSettingsStore();
+  const STATUS_LABEL: Record<string, string> = {
+    open:      t.reqOpen,
+    taken:     t.reqTaken,
+    completed: t.orderStatusCompleted,
+    cancelled: t.orderStatusCancelled,
+  };
   const [request, setRequest] = useState<CustomRequestWithProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [taking, setTaking] = useState(false);
@@ -57,7 +60,7 @@ export default function RequestDetailScreen() {
       const data = await getRequestById(id);
       setRequest(data);
     } catch {
-      Alert.alert('Error', 'Gagal memuat detail request.');
+      Alert.alert(t.error, t.failedLoadRequest);
     } finally {
       setLoading(false);
     }
@@ -68,12 +71,12 @@ export default function RequestDetailScreen() {
   const handleTake = async () => {
     if (!request || !user) return;
     Alert.alert(
-      'Ambil Request',
-      `Ambil request "${request.item_name}" dan buat pesanan untuk pembeli?`,
+      t.takeRequestTitle,
+      t.takeRequestBody,
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: 'Ambil',
+          text: t.takeRequestBtn,
           onPress: async () => {
             setTaking(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -91,7 +94,7 @@ export default function RequestDetailScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               router.replace(`/order/${order.id}` as any);
             } catch (e: any) {
-              Alert.alert('Gagal', e?.message ?? 'Terjadi kesalahan. Coba lagi.');
+              Alert.alert(t.error, e?.message ?? t.takeRequestFailed);
             } finally {
               setTaking(false);
             }
@@ -104,7 +107,7 @@ export default function RequestDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={st.safe} edges={[]}>
-        <PageHeader title="Detail Request" onBack={() => router.back()} />
+        <PageHeader title={t.requestDetail} onBack={() => router.back()} />
         <View style={st.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -115,10 +118,10 @@ export default function RequestDetailScreen() {
   if (!request) {
     return (
       <SafeAreaView style={st.safe} edges={[]}>
-        <PageHeader title="Detail Request" onBack={() => router.back()} />
+        <PageHeader title={t.requestDetail} onBack={() => router.back()} />
         <View style={st.centered}>
           <Ionicons name="alert-circle-outline" size={56} color={Colors.midGray} />
-          <Text style={st.emptyTitle}>Request tidak ditemukan</Text>
+          <Text style={st.emptyTitle}>{t.requestNotFound}</Text>
         </View>
       </SafeAreaView>
     );
@@ -135,7 +138,7 @@ export default function RequestDetailScreen() {
   return (
     <SafeAreaView style={st.safe} edges={[]}>
       <PageHeader
-        title="Detail Request"
+        title={t.requestDetail}
         onBack={() => router.back()}
         rightLabel={isTaken && isTriper ? undefined : undefined}
       />
@@ -164,7 +167,7 @@ export default function RequestDetailScreen() {
         ) : (
           <View style={st.heroPlaceholder}>
             <Ionicons name="cube-outline" size={56} color={Colors.midGray} />
-            <Text style={st.noImageText}>Tidak ada foto referensi</Text>
+            <Text style={st.noImageText}>{t.noReferencePhoto}</Text>
           </View>
         )}
 
@@ -187,15 +190,15 @@ export default function RequestDetailScreen() {
               </Text>
             </View>
             <View style={st.buyerInfo}>
-              <Text style={st.buyerLabel}>Diminta oleh</Text>
-              <Text style={st.buyerName}>{buyer?.full_name ?? 'Pembeli'}</Text>
+              <Text style={st.buyerLabel}>{t.requestedBy}</Text>
+              <Text style={st.buyerName}>{buyer?.full_name ?? t.buyer}</Text>
             </View>
           </View>
 
           {/* Description */}
           {request.description ? (
             <View style={st.section}>
-              <Text style={st.sectionTitle}>Deskripsi</Text>
+              <Text style={st.sectionTitle}>{t.descriptionLabel}</Text>
               <Text style={st.descText}>{request.description}</Text>
             </View>
           ) : null}
@@ -204,14 +207,14 @@ export default function RequestDetailScreen() {
           <View style={st.detailGrid}>
             <View style={st.detailRow}>
               <Ionicons name="wallet-outline" size={16} color={Colors.primary} />
-              <Text style={st.detailLabel}>Budget Maks</Text>
+              <Text style={st.detailLabel}>{t.maxBudget}</Text>
               <Text style={st.detailValue}>{fmtAmount(request.budget_max, request.currency ?? 'IDR')}</Text>
             </View>
 
             {request.target_country ? (
               <View style={st.detailRow}>
                 <Ionicons name="location-outline" size={16} color={Colors.primary} />
-                <Text style={st.detailLabel}>Negara Tujuan</Text>
+                <Text style={st.detailLabel}>{t.targetCountrySection}</Text>
                 <Text style={st.detailValue}>{request.target_country}</Text>
               </View>
             ) : null}
@@ -219,7 +222,7 @@ export default function RequestDetailScreen() {
             {(request as any).category ? (
               <View style={st.detailRow}>
                 <Ionicons name="grid-outline" size={16} color={Colors.primary} />
-                <Text style={st.detailLabel}>Kategori</Text>
+                <Text style={st.detailLabel}>{t.productCategory}</Text>
                 <Text style={st.detailValue}>{(request as any).category}</Text>
               </View>
             ) : null}
@@ -227,7 +230,7 @@ export default function RequestDetailScreen() {
             {request.item_url ? (
               <View style={st.detailRow}>
                 <Ionicons name="link-outline" size={16} color={Colors.primary} />
-                <Text style={st.detailLabel}>Link Referensi</Text>
+                <Text style={st.detailLabel}>{t.referenceLink}</Text>
                 <Text style={[st.detailValue, { color: Colors.primary }]} numberOfLines={2}>
                   {request.item_url}
                 </Text>
@@ -236,7 +239,7 @@ export default function RequestDetailScreen() {
 
             <View style={st.detailRow}>
               <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
-              <Text style={st.detailLabel}>Tanggal</Text>
+              <Text style={st.detailLabel}>{t.dateLabel}</Text>
               <Text style={st.detailValue}>{fmtDate(request.created_at)}</Text>
             </View>
           </View>
@@ -245,7 +248,7 @@ export default function RequestDetailScreen() {
           {isTaken && isTriper && (
             <View style={st.ctaWrap}>
               <Button
-                title="Ambil"
+                title={t.takeRequestBtn}
                 onPress={handleTake}
                 loading={taking}
                 fullWidth

@@ -145,7 +145,7 @@ export default function CreateTripScreen() {
   const pickProductImage = async (localId: string) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk memilih foto.');
+      Alert.alert(t.permissionRequired, t.galleryPermission);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -169,7 +169,7 @@ export default function CreateTripScreen() {
   // ─── Validation & Submit ──────────────────────────────────────────────────
   const validate = (): string | null => {
     if (!origin || !destination) return t.validationRequired;
-    if (!destinationCity) return 'Pilih kota tujuan terlebih dahulu';
+    if (!destinationCity) return t.selectCityPlaceholder;
     const cap = parseFloat(capacity);
     if (!capacity || isNaN(cap) || cap <= 0) return t.validationCapacity;
     const min = parseFloat(priceMin);
@@ -190,8 +190,8 @@ export default function CreateTripScreen() {
       return;
     }
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to create a trip.', [
-        { text: 'Sign In', onPress: () => router.replace('/(auth)/login') },
+      Alert.alert(t.loginRequired, t.loginRequiredDesc, [
+        { text: t.signIn, onPress: () => router.replace('/(auth)/login') },
       ]);
       return;
     }
@@ -225,7 +225,7 @@ export default function CreateTripScreen() {
       ]);
     } catch (e: unknown) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to create trip');
+      Alert.alert(t.error, e instanceof Error ? e.message : t.createTripFailed);
     } finally {
       setSubmitting(false);
     }
@@ -270,12 +270,12 @@ export default function CreateTripScreen() {
         </TouchableOpacity>
 
         {/* Destination City — wajib */}
-        <Text style={styles.label}>Kota Tujuan *</Text>
+        <Text style={styles.label}>{t.destinationCityLabel} *</Text>
         <TouchableOpacity
           style={[styles.selector, !destination && styles.selectorDisabled]}
           onPress={() => {
             if (!destination) {
-              Alert.alert('', 'Pilih negara tujuan dulu sebelum memilih kota');
+              Alert.alert('', t.selectDestFirst);
               return;
             }
             setCitySearch('');
@@ -284,7 +284,7 @@ export default function CreateTripScreen() {
         >
           <Ionicons name="business-outline" size={18} color={destination ? Colors.primary : Colors.gray} style={styles.selectorIcon} />
           <Text style={[styles.selectorText, !destinationCity && styles.placeholder]}>
-            {destinationCity || 'Pilih kota tujuan'}
+            {destinationCity || t.selectCityPlaceholder}
           </Text>
           <Ionicons name="chevron-down" size={16} color={Colors.gray} />
         </TouchableOpacity>

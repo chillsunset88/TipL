@@ -42,13 +42,13 @@ type Notification = {
   created_at: string | null;
 };
 
-function formatTime(iso: string | null) {
+function formatTime(iso: string | null, t: { justNow: string; minutesAgoSuffix: string; hoursAgoSuffix: string }) {
   if (!iso) return '';
   const d = new Date(iso);
   const diff = Date.now() - d.getTime();
-  if (diff < 60000) return 'just now';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  if (diff < 60000) return t.justNow;
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}${t.minutesAgoSuffix}`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}${t.hoursAgoSuffix}`;
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
@@ -247,7 +247,7 @@ export default function NotificationsScreen() {
               {formatNotifBody(item.body)}
             </Text>
           ) : null}
-          <Text style={st.itemTime}>{formatTime(item.created_at)}</Text>
+          <Text style={st.itemTime}>{formatTime(item.created_at, t)}</Text>
         </View>
         {isUnread && <View style={st.dot} />}
       </TouchableOpacity>

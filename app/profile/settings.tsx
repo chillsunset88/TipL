@@ -22,7 +22,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -243,16 +242,11 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <View style={dynStyles.rowRight}>
-              <View style={dynStyles.themePill}>
-                <Text style={dynStyles.themePillTxt}>
-                  {isDark ? '🌙 Dark' : '☀️ Light'}
-                </Text>
-              </View>
               <Switch
                 value={isDark}
                 onValueChange={toggleTheme}
                 trackColor={{ false: C.midGray, true: C.primaryLight }}
-                thumbColor={isDark ? C.primary : C.gray}
+                thumbColor="#FFFFFF"
               />
             </View>
           </TouchableOpacity>
@@ -388,6 +382,7 @@ function RowItem({
   );
 }
 
+
 function ToggleRow({
   icon,
   label,
@@ -415,7 +410,7 @@ function ToggleRow({
         value={value}
         onValueChange={onToggle}
         trackColor={{ false: C.midGray, true: C.primaryLight }}
-        thumbColor={value ? C.primary : C.gray}
+        thumbColor="#FFFFFF"
       />
     </View>
   );

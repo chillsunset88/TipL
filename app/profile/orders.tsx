@@ -18,19 +18,9 @@ import { useAuthStore } from '@/src/store/authStore';
 import { useMyOrders } from '@/src/lib/hooks/useOrders';
 import type { OrderWithProfiles } from '@/src/services/supabase/orders';
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
+import { useSettingsStore } from '@/src/store/settingsStore';
 
-// ─── Status config ─────────────────────────────────────────────────────────────
-const STATUS_LABEL: Record<string, string> = {
-  pending:    'Belum Bayar',
-  accepted:   'Diterima Traveler',
-  in_escrow:  'Dibayar',
-  purchased:  'Sedang Dibeli',
-  shipped:    'Dikirim',
-  delivered:  'Terkirim',
-  completed:  'Selesai',
-  cancelled:  'Dibatalkan',
-  disputed:   'Sengketa',
-};
+// ─── Status config (labels resolved at render time via t) ─────────────────────
 
 const STATUS_COLOR: Record<string, string> = {
   pending:    '#F59E0B',
@@ -58,15 +48,6 @@ const STATUS_ICON: Record<string, string> = {
 
 // ─── Filter tabs ───────────────────────────────────────────────────────────────
 type FilterKey = 'all' | 'unpaid' | 'processing' | 'shipped' | 'done' | 'problem';
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'all',        label: 'Semua' },
-  { key: 'unpaid',     label: 'Belum Bayar' },
-  { key: 'processing', label: 'Diproses' },
-  { key: 'shipped',    label: 'Dikirim' },
-  { key: 'done',       label: 'Selesai' },
-  { key: 'problem',    label: 'Bermasalah' },
-];
 
 const FILTER_STATUSES: Record<FilterKey, string[]> = {
   all:        [],
@@ -97,10 +78,32 @@ function fmtDate(iso: string | null): string {
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function OrdersScreen() {
   const C = useThemeColors();
+  const { t } = useSettingsStore();
   const user = useAuthStore((s) => s.user);
   const { orders, loading, refetch } = useMyOrders(user?.id);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
+
+  const STATUS_LABEL: Record<string, string> = {
+    pending:   t.orderStatusPending,
+    accepted:  t.orderStatusAccepted,
+    in_escrow: t.orderStatusInEscrow,
+    purchased: t.orderStatusPurchased,
+    shipped:   t.orderStatusShipped,
+    delivered: t.orderStatusDelivered,
+    completed: t.orderStatusCompleted,
+    cancelled: t.orderStatusCancelled,
+    disputed:  t.orderStatusDisputed,
+  };
+
+  const FILTERS: { key: FilterKey; label: string }[] = [
+    { key: 'all',        label: t.filterAll },
+    { key: 'unpaid',     label: t.filterUnpaid },
+    { key: 'processing', label: t.filterProcessing },
+    { key: 'shipped',    label: t.orderStatusShipped },
+    { key: 'done',       label: t.filterDone },
+    { key: 'problem',    label: t.filterProblem },
+  ];
 
   // Hanya tampilkan order di mana user adalah PEMBELI (tiper)
   const myPurchases = orders.filter((o) => o.tiper_id === user?.id);
@@ -234,7 +237,7 @@ export default function OrdersScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={[]}>
-      <PageHeader title="Pesanan Saya" onBack={() => router.back()} />
+      <PageHeader title={t.myOrders} onBack={() => router.back()} />
 
       {/* Filter tabs horizontal */}
       <ScrollView
@@ -280,16 +283,16 @@ export default function OrdersScreen() {
           ListEmptyComponent={
             <View style={s.empty}>
               <Ionicons name="receipt-outline" size={56} color={C.midGray} />
-              <Text style={s.emptyTitle}>Tidak ada pesanan</Text>
+              <Text style={s.emptyTitle}>{t.noOrders}</Text>
               <Text style={s.emptySub}>
                 {filter === 'all'
-                  ? 'Kamu belum pernah memesan produk apapun.'
-                  : `Tidak ada pesanan dengan status "${FILTERS.find(f => f.key === filter)?.label}"`}
+                  ? t.noOrdersDesc
+                  : `${t.noOrders} — ${FILTERS.find(f => f.key === filter)?.label}`}
               </Text>
             </View>
           }
           renderItem={({ item }) => (
-            <OrderCard order={item} myId={user?.id ?? ''} s={s} C={C} />
+            <OrderCard order={item} myId={user?.id ?? ''} statusLabel={STATUS_LABEL} s={s} C={C} />
           )}
         />
       )}
@@ -298,15 +301,17 @@ export default function OrdersScreen() {
 }
 
 // ─── Order Card ────────────────────────────────────────────────────────────────
-function OrderCard({ order, myId, s, C }: {
+function OrderCard({ order, myId, statusLabel, s, C }: {
   order: OrderWithProfiles;
   myId: string;
+  statusLabel: Record<string, string>;
   s: any;
   C: ReturnType<typeof useThemeColors>;
 }) {
+  const { t } = useSettingsStore();
   const status = order.status ?? 'pending';
   const color = STATUS_COLOR[status] ?? C.gray;
-  const label = STATUS_LABEL[status] ?? status;
+  const label = statusLabel[status] ?? status;
   const icon = STATUS_ICON[status] ?? 'receipt-outline';
   const isBuyer = order.tiper_id === myId;
 
@@ -341,11 +346,11 @@ function OrderCard({ order, myId, s, C }: {
             <Text style={s.itemNotes} numberOfLines={1}>{order.notes}</Text>
           ) : null}
           <Text style={s.roleTag}>
-            {isBuyer ? 'Saya: Pembeli' : 'Saya: Traveler'}
+            {isBuyer ? `${t.meLabel}: ${t.buyer}` : `${t.meLabel}: ${t.traveler}`}
             {' · '}
             {isBuyer
-              ? (order.triper?.full_name ?? 'Traveler')
-              : (order.tiper?.full_name ?? 'Pembeli')}
+              ? (order.triper?.full_name ?? t.traveler)
+              : (order.tiper?.full_name ?? t.buyer)}
           </Text>
         </View>
         <View style={s.priceWrap}>

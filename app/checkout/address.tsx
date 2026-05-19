@@ -60,7 +60,7 @@ export default function CheckoutAddressScreen() {
 
   const handleConfirm = async () => {
     if (!selectedAddress) {
-      Alert.alert(t.selectAddress, 'Silakan pilih alamat pengiriman terlebih dahulu.');
+      Alert.alert(t.selectAddress, t.selectAddressFirst);
       return;
     }
     if (!user || pendingItems.length === 0) return;
@@ -105,7 +105,7 @@ export default function CheckoutAddressScreen() {
         },
       });
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Gagal memuat halaman pembayaran. Coba lagi.');
+      Alert.alert(t.error, e?.message ?? t.failedLoadPayment);
     } finally {
       setPaying(false);
     }

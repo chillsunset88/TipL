@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, ITEM_CATEGORIES } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 import {
   createProduct, updateProduct, deleteProduct, uploadProductImage,
@@ -52,6 +53,7 @@ async function getActiveOrderCountForProduct(productId: string): Promise<number>
 
 export default function AddProductScreen() {
   const C = useThemeColors();
+  const { t } = useSettingsStore();
   const {
     tripId, productId, productName, productCategory,
     productPriceMin, productPriceMax, productDescription, productImages,
@@ -83,7 +85,7 @@ export default function AddProductScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk memilih foto.');
+      Alert.alert(t.permissionRequired, t.galleryPermission);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -97,7 +99,7 @@ export default function AddProductScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera.');
+      Alert.alert(t.permissionRequired, t.cameraPermission);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -109,8 +111,8 @@ export default function AddProductScreen() {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('Lengkapi Form', 'Nama produk wajib diisi'); return; }
-    if (!category) { Alert.alert('Lengkapi Form', 'Pilih kategori produk'); return; }
+    if (!name.trim()) { Alert.alert(t.incompleteForm, t.productNameRequiredMsg); return; }
+    if (!category) { Alert.alert(t.incompleteForm, t.categoryRequiredMsg); return; }
     if (!user) return;
 
     try {
@@ -135,7 +137,7 @@ export default function AddProductScreen() {
           image_urls: allUrls.length > 0 ? allUrls : null,
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Berhasil', 'Produk berhasil diperbarui!', [{ text: 'OK', onPress: () => router.back() }]);
+        Alert.alert(t.success, t.productUpdatedMsg, [{ text: t.ok, onPress: () => router.back() }]);
       } else {
         if (!tripId) return;
         await createProduct({
@@ -145,11 +147,11 @@ export default function AddProductScreen() {
           currency, image_urls: allUrls.length > 0 ? allUrls : null, is_available: true,
         } as any);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Berhasil', 'Produk berhasil ditambahkan ke trip!', [{ text: 'OK', onPress: () => router.back() }]);
+        Alert.alert(t.success, t.productAddedMsg, [{ text: t.ok, onPress: () => router.back() }]);
       }
     } catch (e: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Gagal', e?.message ?? 'Gagal menyimpan produk. Coba lagi.');
+      Alert.alert(t.error, e?.message ?? t.failedSaveProduct);
     } finally {
       setSaving(false);
     }
@@ -162,20 +164,20 @@ export default function AddProductScreen() {
       setDeleting(true);
       const activeCount = await getActiveOrderCountForProduct(productId);
       if (activeCount > 0) {
-        Alert.alert('Tidak Bisa Dihapus', `Ada ${activeCount} pesanan aktif untuk produk ini.`);
+        Alert.alert(t.cannotDeleteProduct, `${activeCount} ${t.activeOrdersBlock}`);
         return;
       }
-      Alert.alert('Hapus Produk', 'Produk ini akan dihapus permanen. Yakin?', [
-        { text: 'Batal', style: 'cancel' },
-        { text: 'Hapus', style: 'destructive', onPress: async () => {
+      Alert.alert(t.deleteProductTitle, t.deleteProductConfirmMsg, [
+        { text: t.cancel, style: 'cancel' },
+        { text: t.delete, style: 'destructive', onPress: async () => {
           try {
             await deleteProduct(productId);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.back();
-          } catch (e: any) { Alert.alert('Gagal', e?.message ?? 'Gagal menghapus produk.'); }
+          } catch (e: any) { Alert.alert(t.error, e?.message ?? t.failedDeleteProduct); }
         }},
       ]);
-    } catch { Alert.alert('Error', 'Gagal memeriksa pesanan aktif.'); }
+    } catch { Alert.alert(t.error, t.failedCheckOrders); }
     finally { setDeleting(false); }
   };
 

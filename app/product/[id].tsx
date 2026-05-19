@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows, CATEGORY_MAP } from '@/src/lib/constants';
 import { JASTIP_PRODUCTS, MOCK_TRIPS } from '@/src/lib/mockData';
 import { getProductWithTripInfo } from '@/src/services/supabase/trips';
 import { useSettingsStore } from '@/src/store/settingsStore';
@@ -70,7 +70,7 @@ export default function ProductDetailScreen() {
       const nowWishlisted = await toggleWishlist(currentUserId, id);
       setWishlisted(nowWishlisted);
     } catch {
-      Alert.alert('Gagal', 'Tidak bisa update wishlist. Coba lagi.');
+      Alert.alert(t.error, t.wishlistUpdateFailed);
     } finally {
       setWishlistLoading(false);
     }
@@ -112,7 +112,7 @@ export default function ProductDetailScreen() {
               category: data.category ?? 'Item',
               description: data.description ?? '',
               destination: data.trips?.destination_country ?? data.trips?.destination_city ?? 'Unknown',
-              imageUrl: data.image_urls?.[0] ?? 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400',
+              imageUrl: data.image_urls?.[0] ?? '',
               priceMin: data.price_min ?? 0,
               priceMax: data.price_max ?? null,
               stock: null,
@@ -219,7 +219,7 @@ export default function ProductDetailScreen() {
           <Ionicons name="cube-outline" size={48} color={C.midGray} />
           <Text style={st.emptyTxt}>{t.productNotFound}</Text>
           <TouchableOpacity style={st.backLink} onPress={() => router.back()}>
-            <Text style={st.backLinkTxt}>Go back</Text>
+            <Text style={st.backLinkTxt}>{t.back}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -230,11 +230,11 @@ export default function ProductDetailScreen() {
 
   const handleChat = () => {
   if (!product?.travelerId) {
-    Alert.alert('Chat', 'Info triper tidak tersedia.');
+    Alert.alert(t.chats, t.tripperInfoUnavailable);
     return;
   }
   if (isOwnProduct) {
-    Alert.alert('Chat', 'Ini adalah item milikmu sendiri.');
+    Alert.alert(t.chats, t.ownItemMessage);
     return;
   }
   router.push({
@@ -252,7 +252,7 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (isOwnProduct) {
-      Alert.alert('Produk Sendiri', 'Kamu tidak bisa memesan produkmu sendiri.');
+      Alert.alert(t.cannotOrder, t.cannotOrderOwnProduct);
       return;
     }
     addItem({
@@ -276,7 +276,21 @@ export default function ProductDetailScreen() {
     <View style={st.safe}>
       {/* Image Hero */}
       <View style={st.heroWrap}>
-        <Image source={{ uri: product.imageUrl }} style={st.heroImg} contentFit="cover" transition={300} />
+        {product.imageUrl ? (
+          <Image source={{ uri: product.imageUrl }} style={st.heroImg} contentFit="cover" transition={300} />
+        ) : (
+          <View style={[st.heroImg, {
+            backgroundColor: (CATEGORY_MAP[product.category]?.color ?? C.midGray) + '22',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }]}>
+            <Ionicons
+              name={(CATEGORY_MAP[product.category]?.icon ?? 'cube-outline') as any}
+              size={80}
+              color={CATEGORY_MAP[product.category]?.color ?? C.midGray}
+            />
+          </View>
+        )}
         <LinearGradient colors={['rgba(20,10,2,0.5)', 'transparent']} style={st.heroTop} />
         <SafeAreaView edges={['top']} style={st.heroNav}>
           <TouchableOpacity style={st.navBtn} onPress={() => router.back()}>
@@ -412,7 +426,7 @@ export default function ProductDetailScreen() {
         {isOwnProduct ? (
           <View style={st.ownProductBanner}>
             <Ionicons name="person-circle-outline" size={20} color={C.darkGray} />
-            <Text style={st.ownProductTxt}>Ini produk milikmu sendiri</Text>
+            <Text style={st.ownProductTxt}>{t.ownProductBanner}</Text>
           </View>
         ) : (
           <>

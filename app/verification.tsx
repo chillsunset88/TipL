@@ -11,6 +11,7 @@ import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
 import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { submitVerification } from '@/src/services/supabase/verification';
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
@@ -21,6 +22,7 @@ const STEP_LABELS = { selfie: 'Selfie', ktp: 'KTP', review: 'Review' };
 
 export default function VerificationScreen() {
   const C = useThemeColors();
+  const { t } = useSettingsStore();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
 
@@ -40,7 +42,7 @@ export default function VerificationScreen() {
   const takeSelfie = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera untuk mengambil selfie.');
+      Alert.alert(t.permissionRequired, t.cameraPermission);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -58,7 +60,7 @@ export default function VerificationScreen() {
   const pickKTPGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk memilih foto KTP.');
+      Alert.alert(t.permissionRequired, t.galleryPermission);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -73,7 +75,7 @@ export default function VerificationScreen() {
   const pickKTPCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera untuk foto KTP.');
+      Alert.alert(t.permissionRequired, t.cameraPermission);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -92,12 +94,12 @@ export default function VerificationScreen() {
       await submitVerification(user.id, selfieUri, ktpUri);
       setUser({ ...user, verificationStatus: 'pending' });
       Alert.alert(
-        'Verifikasi Terkirim!',
-        'Dokumen kamu sedang ditinjau tim TipL. Kami akan menghubungi kamu dalam 1–2 hari kerja.',
-        [{ text: 'OK', onPress: () => router.back() }],
+        t.verificationSubmitted,
+        t.verificationSubmittedMsg,
+        [{ text: t.ok, onPress: () => router.back() }],
       );
     } catch (e) {
-      Alert.alert('Gagal Mengirim', e instanceof Error ? e.message : 'Terjadi kesalahan. Coba lagi.');
+      Alert.alert(t.error, e instanceof Error ? e.message : t.failedSubmitVerification);
     } finally {
       setSubmitting(false);
     }

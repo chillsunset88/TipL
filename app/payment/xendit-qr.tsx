@@ -12,10 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { createEscrowPayment } from '@/src/services/supabase/escrow';
 import { updateOrderStatus } from '@/src/lib/hooks/useOrders';
 
 export default function XenditPaymentScreen() {
+  const { t } = useSettingsStore();
   const { invoiceUrl, orderId, buyerId, travelerId, amount, currency } = useLocalSearchParams<{
     invoiceUrl: string;
     orderId: string;
@@ -49,9 +51,9 @@ export default function XenditPaymentScreen() {
       console.error('[Payment] updateOrderStatus failed:', e);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
-        'Pembayaran Berhasil',
-        `Dana diterima namun gagal update status order.\n\nError: ${e instanceof Error ? e.message : String(e)}`,
-        [{ text: 'Lihat Order', onPress: () => router.replace(`/order/${orderId}` as any) }],
+        t.paymentSuccess,
+        `${t.paymentStatusError}\n\nError: ${e instanceof Error ? e.message : String(e)}`,
+        [{ text: t.viewOrder, onPress: () => router.replace(`/order/${orderId}` as any) }],
       );
     }
   };
@@ -65,8 +67,8 @@ export default function XenditPaymentScreen() {
     }
     if (url.includes('tipl.app/payment/failure')) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Pembayaran Gagal', 'Pembayaran tidak berhasil. Silakan coba lagi.', [
-        { text: 'Kembali', onPress: () => router.back() },
+      Alert.alert(t.paymentFailed, t.paymentFailedMsg, [
+        { text: t.back, onPress: () => router.back() },
       ]);
       return false;
     }
@@ -80,8 +82,8 @@ export default function XenditPaymentScreen() {
     if (url.includes('tipl.app/payment/success')) handlePaymentSuccess();
     else if (url.includes('tipl.app/payment/failure')) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Pembayaran Gagal', 'Pembayaran tidak berhasil. Silakan coba lagi.', [
-        { text: 'Kembali', onPress: () => router.back() },
+      Alert.alert(t.paymentFailed, t.paymentFailedMsg, [
+        { text: t.back, onPress: () => router.back() },
       ]);
     }
   };
@@ -92,7 +94,7 @@ export default function XenditPaymentScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="close" size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pembayaran</Text>
+        <Text style={styles.headerTitle}>{t.paymentTitle}</Text>
         <View style={styles.secureIcon}>
           <Ionicons name="lock-closed" size={16} color={Colors.success} />
         </View>

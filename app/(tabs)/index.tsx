@@ -32,8 +32,8 @@ const DESTINATION_BANNERS = [
   { id: "uk", destination: "London", title: "London Premium", subtitle: "Luxury brands and iconic British tea", imageUrl: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800" },
 ];
 
-const fmtPrice = (min: number | null, max: number | null) => {
-  if (min == null && max == null) return "Harga Negosiasi";
+const fmtPrice = (min: number | null, max: number | null, negotiableLabel: string) => {
+  if (min == null && max == null) return negotiableLabel;
   if (min != null && max != null && min !== max)
     return `Rp ${min.toLocaleString("id-ID")} – Rp ${max.toLocaleString("id-ID")}`;
   const val = min ?? max!;
@@ -193,7 +193,7 @@ export default function HomeScreen() {
                   <Text style={s.slideTitle}>{item.title}</Text>
                   <Text style={s.slideSub}>{item.subtitle}</Text>
                   <View style={s.slideShopRow}>
-                    <Text style={s.slideShopTxt}>Shop Now</Text>
+                    <Text style={s.slideShopTxt}>{t.shopNow}</Text>
                     <Ionicons name="arrow-forward" size={13} color={C.primary} />
                   </View>
                 </LinearGradient>
@@ -212,7 +212,7 @@ export default function HomeScreen() {
           <View style={s.sectionHead}>
             <View>
               <Text style={s.sectionTitle}>{t.jastipProducts}</Text>
-              <Text style={s.sectionSub}>From {activeDest}</Text>
+              <Text style={s.sectionSub}>{t.fromLabel} {activeDest}</Text>
             </View>
             <TouchableOpacity style={s.viewAllRow} onPress={() => router.push(`/search?destination=${activeDest}`)}>
               <Text style={s.viewAll}>{t.viewAll}</Text>
@@ -225,7 +225,7 @@ export default function HomeScreen() {
           ) : products.length === 0 ? (
             <View style={s.emptyWrap}>
               <Ionicons name="bag-outline" size={36} color={C.midGray} />
-              <Text style={s.emptyTxt}>Belum ada produk dari {activeDest}</Text>
+              <Text style={s.emptyTxt}>{t.noProductsFrom} {activeDest}</Text>
             </View>
           ) : (
             <Animated.View
@@ -266,7 +266,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={s.prodBody}>
                     <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
-                    <Text style={s.prodPrice}>{fmtPrice(p.price_min, p.price_max)}</Text>
+                    <Text style={s.prodPrice}>{fmtPrice(p.price_min, p.price_max, t.priceNegotiable)}</Text>
                     <View style={s.prodTravelerRow}>
                       <Ionicons name="location-outline" size={11} color={C.primary} />
                       <Text style={s.prodTravelerTxt} numberOfLines={1}>

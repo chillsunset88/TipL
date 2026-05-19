@@ -258,7 +258,7 @@ export default function ChatRoomScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk mengirim foto.');
+      Alert.alert(t.permissionRequired, t.galleryPermission);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -286,7 +286,7 @@ export default function ChatRoomScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera untuk mengambil foto.');
+      Alert.alert(t.permissionRequired, t.cameraPermission);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -316,7 +316,7 @@ export default function ChatRoomScreen() {
       await sendProductCard(pendingProduct);
       setPendingProduct(null);
     } catch (e: any) {
-      Alert.alert('Gagal', e?.message ?? 'Tidak bisa mengirim produk.');
+      Alert.alert(t.error, e?.message ?? t.failedSendProduct);
     }
   }, [pendingProduct, sendProductCard]);
 

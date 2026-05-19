@@ -12,20 +12,9 @@ import { useAuthStore } from '@/src/store/authStore';
 import { useMyOrders } from '@/src/lib/hooks/useOrders';
 import type { OrderWithProfiles } from '@/src/services/supabase/orders';
 import { getRequestsForTriper, type CustomRequestWithProfile } from '@/src/services/supabase/requests';
+import { useSettingsStore } from '@/src/store/settingsStore';
 
-// ─── Order status maps ────────────────────────────────────────────────────────
-
-const STATUS_LABEL: Record<string, string> = {
-  pending:   'Menunggu Konfirmasi',
-  accepted:  'Diterima',
-  in_escrow: 'Pembayaran Masuk',
-  purchased: 'Sedang Dibeli',
-  shipped:   'Dikirim',
-  delivered: 'Terkirim',
-  completed: 'Selesai',
-  cancelled: 'Dibatalkan',
-  disputed:  'Sengketa',
-};
+// ─── Order status maps (labels resolved inside component via t) ────────────────
 
 const STATUS_COLOR: Record<string, string> = {
   pending:   '#F59E0B',
@@ -51,14 +40,7 @@ const STATUS_ICON: Record<string, string> = {
   disputed:  'alert-circle-outline',
 };
 
-// ─── Request status maps ──────────────────────────────────────────────────────
-
-const REQ_STATUS_LABEL: Record<string, string> = {
-  open:      'Terbuka',
-  taken:     'Diambil',
-  completed: 'Selesai',
-  cancelled: 'Dibatalkan',
-};
+// ─── Request status maps (labels resolved inside component via t) ─────────────
 
 const REQ_STATUS_COLOR: Record<string, string> = {
   open:      '#2196F3',
@@ -77,15 +59,6 @@ const REQ_STATUS_ICON: Record<string, string> = {
 // ─── Order filter tabs ────────────────────────────────────────────────────────
 
 type FilterKey = 'all' | 'new' | 'active' | 'shipped' | 'done' | 'problem';
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'all',     label: 'Semua' },
-  { key: 'new',     label: 'Baru Masuk' },
-  { key: 'active',  label: 'Diproses' },
-  { key: 'shipped', label: 'Dikirim' },
-  { key: 'done',    label: 'Selesai' },
-  { key: 'problem', label: 'Bermasalah' },
-];
 
 const FILTER_STATUSES: Record<FilterKey, string[]> = {
   all:     [],
@@ -119,7 +92,36 @@ type TabKey = 'orders' | 'requests';
 
 export default function IncomingOrdersScreen() {
   const user = useAuthStore((s) => s.user);
+  const { t } = useSettingsStore();
   const { orders, loading: ordersLoading, refetch: refetchOrders } = useMyOrders(user?.id);
+
+  const STATUS_LABEL: Record<string, string> = {
+    pending:   t.incomingStatusPending,
+    accepted:  t.incomingStatusAccepted,
+    in_escrow: t.incomingStatusInEscrow,
+    purchased: t.orderStatusPurchased,
+    shipped:   t.orderStatusShipped,
+    delivered: t.orderStatusDelivered,
+    completed: t.orderStatusCompleted,
+    cancelled: t.orderStatusCancelled,
+    disputed:  t.orderStatusDisputed,
+  };
+
+  const REQ_STATUS_LABEL: Record<string, string> = {
+    open:      t.reqOpen,
+    taken:     t.reqTaken,
+    completed: t.orderStatusCompleted,
+    cancelled: t.orderStatusCancelled,
+  };
+
+  const FILTERS: { key: FilterKey; label: string }[] = [
+    { key: 'all',     label: t.filterAll },
+    { key: 'new',     label: t.filterNew },
+    { key: 'active',  label: t.filterActive },
+    { key: 'shipped', label: t.orderStatusShipped },
+    { key: 'done',    label: t.filterDone },
+    { key: 'problem', label: t.filterProblem },
+  ];
   const [filter, setFilter] = useState<FilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabKey>('orders');
@@ -166,7 +168,7 @@ export default function IncomingOrdersScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={[]}>
-      <PageHeader title="Pesanan Masuk" onBack={() => router.back()} />
+      <PageHeader title={t.incomingOrders} onBack={() => router.back()} />
 
       {/* ── Segment switch ── */}
       <View style={st.segmentWrap}>
@@ -177,7 +179,7 @@ export default function IncomingOrdersScreen() {
             activeOpacity={0.7}
           >
             <Ionicons name="cube-outline" size={15} color={tab === 'orders' ? Colors.white : Colors.charcoal} />
-            <Text style={[st.segTxt, tab === 'orders' && st.segTxtActive]}>Produk Trip</Text>
+            <Text style={[st.segTxt, tab === 'orders' && st.segTxtActive]}>{t.tripProducts}</Text>
             {pendingCount > 0 && tab !== 'orders' && (
               <View style={st.segBadge}><Text style={st.segBadgeTxt}>{pendingCount}</Text></View>
             )}
@@ -188,7 +190,7 @@ export default function IncomingOrdersScreen() {
             activeOpacity={0.7}
           >
             <Ionicons name="chatbubble-ellipses-outline" size={15} color={tab === 'requests' ? Colors.white : Colors.charcoal} />
-            <Text style={[st.segTxt, tab === 'requests' && st.segTxtActive]}>Request Custom</Text>
+            <Text style={[st.segTxt, tab === 'requests' && st.segTxtActive]}>{t.customRequest}</Text>
             {openRequestCount > 0 && tab !== 'requests' && (
               <View style={st.segBadge}><Text style={st.segBadgeTxt}>{openRequestCount}</Text></View>
             )}
@@ -207,7 +209,7 @@ export default function IncomingOrdersScreen() {
             >
               <View style={st.alertDot} />
               <Text style={st.alertTxt}>
-                {pendingCount} pesanan baru menunggu konfirmasimu
+                {pendingCount} {t.newOrdersWaiting}
               </Text>
               <Ionicons name="chevron-forward" size={14} color={Colors.warning} />
             </TouchableOpacity>
@@ -258,12 +260,12 @@ export default function IncomingOrdersScreen() {
                 <View style={st.empty}>
                   <Ionicons name="cube-outline" size={56} color={Colors.midGray} />
                   <Text style={st.emptyTitle}>
-                    {filter === 'all' ? 'Belum ada pesanan masuk' : 'Tidak ada pesanan di kategori ini'}
+                    {filter === 'all' ? t.noIncomingOrders : t.noOrdersInCategory}
                   </Text>
                   <Text style={st.emptySub}>
                     {filter === 'all'
-                      ? 'Pesanan dari pembeli akan muncul di sini setelah mereka checkout.'
-                      : `Tidak ada order dengan status "${FILTERS.find((f2) => f2.key === filter)?.label}"`}
+                      ? t.noIncomingOrdersDesc
+                      : `${t.noOrdersInCategory} — ${FILTERS.find((f2) => f2.key === filter)?.label}`}
                   </Text>
                 </View>
               }
@@ -291,10 +293,8 @@ export default function IncomingOrdersScreen() {
             ListEmptyComponent={
               <View style={st.empty}>
                 <Ionicons name="chatbubble-ellipses-outline" size={56} color={Colors.midGray} />
-                <Text style={st.emptyTitle}>Belum ada request custom</Text>
-                <Text style={st.emptySub}>
-                  Request produk khusus yang kamu ambil dari pembeli akan muncul di sini.
-                </Text>
+                <Text style={st.emptyTitle}>{t.noCustomRequests}</Text>
+                <Text style={st.emptySub}>{t.noCustomRequestsDesc}</Text>
               </View>
             }
             renderItem={({ item }) => <RequestCard request={item} />}
@@ -308,6 +308,18 @@ export default function IncomingOrdersScreen() {
 // ─── Order card ───────────────────────────────────────────────────────────────
 
 function IncomingOrderCard({ order }: { order: OrderWithProfiles }) {
+  const { t } = useSettingsStore();
+  const STATUS_LABEL: Record<string, string> = {
+    pending:   t.incomingStatusPending,
+    accepted:  t.incomingStatusAccepted,
+    in_escrow: t.incomingStatusInEscrow,
+    purchased: t.orderStatusPurchased,
+    shipped:   t.orderStatusShipped,
+    delivered: t.orderStatusDelivered,
+    completed: t.orderStatusCompleted,
+    cancelled: t.orderStatusCancelled,
+    disputed:  t.orderStatusDisputed,
+  };
   const status = order.status ?? 'pending';
   const color = STATUS_COLOR[status] ?? Colors.gray;
   const label = STATUS_LABEL[status] ?? status;
@@ -344,7 +356,7 @@ function IncomingOrderCard({ order }: { order: OrderWithProfiles }) {
           ) : null}
           <View style={st.buyerRow}>
             <Ionicons name="person-outline" size={12} color={Colors.gray} />
-            <Text style={st.buyerName}>{order.tiper?.full_name ?? 'Pembeli'}</Text>
+            <Text style={st.buyerName}>{order.tiper?.full_name ?? t.buyer}</Text>
           </View>
         </View>
         <View style={st.priceWrap}>
@@ -356,7 +368,7 @@ function IncomingOrderCard({ order }: { order: OrderWithProfiles }) {
       {isNew && (
         <View style={st.ctaHint}>
           <Ionicons name="hand-right-outline" size={14} color={Colors.warning} />
-          <Text style={st.ctaHintTxt}>Ketuk untuk konfirmasi pesanan ini</Text>
+          <Text style={st.ctaHintTxt}>{t.tapToConfirmOrder}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -366,6 +378,13 @@ function IncomingOrderCard({ order }: { order: OrderWithProfiles }) {
 // ─── Request card ─────────────────────────────────────────────────────────────
 
 function RequestCard({ request }: { request: CustomRequestWithProfile }) {
+  const { t } = useSettingsStore();
+  const REQ_STATUS_LABEL: Record<string, string> = {
+    open:      t.reqOpen,
+    taken:     t.reqTaken,
+    completed: t.orderStatusCompleted,
+    cancelled: t.orderStatusCancelled,
+  };
   const status = request.status ?? 'open';
   const color = REQ_STATUS_COLOR[status] ?? Colors.gray;
   const label = REQ_STATUS_LABEL[status] ?? status;
@@ -402,14 +421,14 @@ function RequestCard({ request }: { request: CustomRequestWithProfile }) {
           ) : null}
           <View style={st.buyerRow}>
             <Ionicons name="person-outline" size={12} color={Colors.gray} />
-            <Text style={st.buyerName}>{request.profiles?.full_name ?? 'Pembeli'}</Text>
+            <Text style={st.buyerName}>{request.profiles?.full_name ?? t.buyer}</Text>
           </View>
         </View>
         <View style={st.priceWrap}>
           {request.budget ? (
             <Text style={st.price}>{fmtAmount(request.budget)}</Text>
           ) : (
-            <Text style={[st.price, { color: Colors.gray }]}>Nego</Text>
+            <Text style={[st.price, { color: Colors.gray }]}>{t.priceNegotiable}</Text>
           )}
           <Ionicons name="chevron-forward" size={14} color={Colors.gray} style={{ marginTop: 2 }} />
         </View>
@@ -418,7 +437,7 @@ function RequestCard({ request }: { request: CustomRequestWithProfile }) {
       {isOpen && (
         <View style={st.ctaHint}>
           <Ionicons name="hand-right-outline" size={14} color={Colors.warning} />
-          <Text style={st.ctaHintTxt}>Ketuk untuk lihat detail request ini</Text>
+          <Text style={st.ctaHintTxt}>{t.tapToViewRequest}</Text>
         </View>
       )}
     </TouchableOpacity>

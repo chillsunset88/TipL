@@ -53,10 +53,10 @@ export default function CartScreen() {
 
   const handleDeleteGroup = (groupItems: typeof items, groupPendingIds: string[]) => {
     if (groupPendingIds.length === 0) return;
-    Alert.alert(t.deleteConfirmTitle, `Hapus ${groupPendingIds.length} ${t.deleteConfirmMsg}`, [
+    Alert.alert(t.deleteConfirmTitle, `${t.delete} ${groupPendingIds.length} ${t.deleteConfirmMsg}`, [
       { text: t.cancel, style: 'cancel' },
       {
-        text: 'Hapus', style: 'destructive', onPress: () => {
+        text: t.delete, style: 'destructive', onPress: () => {
           groupPendingIds.forEach(id => removeItem(id));
           setPendingDelete(prev => {
             const next = new Set(prev);
@@ -77,7 +77,7 @@ export default function CartScreen() {
       return;
     }
     if (groupItems.some((i) => i.travelerId === user.id)) {
-      Alert.alert('Tidak Bisa Memesan', 'Kamu tidak bisa memesan produkmu sendiri.');
+      Alert.alert(t.cannotOrder, t.cannotOrderOwnProduct);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -235,7 +235,7 @@ export default function CartScreen() {
         >
           <Ionicons name="arrow-back" size={22} color={C.nearBlack} />
         </TouchableOpacity>
-        <Text style={st.headerTitle}>My Cart</Text>
+        <Text style={st.headerTitle}>{t.myCart}</Text>
         {items.length > 0 ? (
           <TouchableOpacity
             style={st.headerRightBtn}
@@ -292,10 +292,10 @@ export default function CartScreen() {
                         <Text style={st.sellerName}>{group.travelerName}</Text>
                         <View style={st.verifiedBadge}>
                           <Ionicons name="shield-checkmark" size={10} color={C.success} />
-                          <Text style={st.verifiedTxt}>Terverifikasi</Text>
+                          <Text style={st.verifiedTxt}>{t.verified}</Text>
                         </View>
                       </View>
-                      <Text style={st.itemCountTxt}>{group.items.length} produk</Text>
+                      <Text style={st.itemCountTxt}>{group.items.length} {t.itemsUnit}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={C.midGray} />
                   </TouchableOpacity>

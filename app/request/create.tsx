@@ -11,6 +11,7 @@ import { BorderRadius, ITEM_CATEGORIES, Spacing, Typography } from '@/src/lib/co
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 import { acceptRequest, createRequest, updateRequestImageUrls, uploadRequestImage } from '@/src/services/supabase/requests';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -65,6 +66,7 @@ function parseNum(s: string): string { return s.replace(/\D/g, ''); }
 
 export default function CreateRequestScreen() {
   const C = useThemeColors();
+  const { t } = useSettingsStore();
   const { tripId, triperId, triperName } = useLocalSearchParams<{
     tripId?: string;
     triperId?: string;
@@ -95,7 +97,7 @@ export default function CreateRequestScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk mengunggah referensi foto.');
+      Alert.alert(t.permissionRequired, t.galleryPermission);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -112,7 +114,7 @@ export default function CreateRequestScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera untuk mengambil referensi foto.');
+      Alert.alert(t.permissionRequired, t.cameraPermission);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -128,13 +130,13 @@ export default function CreateRequestScreen() {
   const removeImage = (index: number) => setImages(images.filter((_, i) => i !== index));
 
   const handleSubmit = async () => {
-    if (!itemName.trim()) { Alert.alert('Info Kurang', 'Masukkan nama item.'); return; }
-    if (!category) { Alert.alert('Info Kurang', 'Pilih kategori.'); return; }
+    if (!itemName.trim()) { Alert.alert(t.incompleteForm, t.itemNameRequiredMsg); return; }
+    if (!category) { Alert.alert(t.incompleteForm, t.categoryRequiredMsg); return; }
     const rawBudget = Number(parseNum(maxBudget));
     if (!maxBudget || isNaN(rawBudget) || rawBudget <= 0) {
-      Alert.alert('Info Kurang', 'Masukkan budget maksimal yang valid.'); return;
+      Alert.alert(t.incompleteForm, t.budgetInvalidMsg); return;
     }
-    if (!targetCountry) { Alert.alert('Info Kurang', 'Pilih negara tujuan.'); return; }
+    if (!targetCountry) { Alert.alert(t.incompleteForm, t.countryRequiredMsg); return; }
     if (!user) return;
 
     setLoading(true);
@@ -170,15 +172,15 @@ export default function CreateRequestScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'Berhasil!',
+        t.requestSubmitted,
         triperId
-          ? `Permintaanmu sudah dikirim ke ${triperName ?? 'traveler'}.`
-          : 'Permintaanmu sudah diposting.',
-        [{ text: 'OK', onPress: () => router.back() }],
+          ? `${t.requestSentTo} ${triperName ?? t.traveler}.`
+          : t.requestSubmittedMsg,
+        [{ text: t.ok, onPress: () => router.back() }],
       );
     } catch (e: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', e?.message ?? 'Gagal submit permintaan. Coba lagi.');
+      Alert.alert(t.error, e?.message ?? t.failedSubmitRequest);
     } finally {
       setLoading(false);
     }
@@ -339,7 +341,7 @@ export default function CreateRequestScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
-      <PageHeader title="Buat Permintaan" onBack={() => router.back()} />
+      <PageHeader title={t.createRequest} onBack={() => router.back()} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           style={styles.scroll}
@@ -356,8 +358,8 @@ export default function CreateRequestScreen() {
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.triperBannerLabel}>Requesting to</Text>
-                <Text style={styles.triperBannerName}>{triperName ?? 'Traveler'}</Text>
+                <Text style={styles.triperBannerLabel}>{t.requestingTo}</Text>
+                <Text style={styles.triperBannerName}>{triperName ?? t.traveler}</Text>
               </View>
               <Ionicons name="airplane" size={20} color={C.primary} />
             </View>
@@ -365,30 +367,28 @@ export default function CreateRequestScreen() {
 
           {/* Deskripsi halaman */}
           <Text style={styles.pageDescription}>
-            {triperId
-              ? `Ceritakan barang yang kamu inginkan. ${triperName ?? 'Traveler'} akan membawakan untuk kamu.`
-              : 'Provide the details of the item you wish to purchase. Our elite travelers will handle the rest.'}
+            {triperId ? t.requestBannerDescForTriper : t.requestBannerDescGeneral}
           </Text>
 
           {/* Section 1: Visual Reference */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Visual Reference</Text>
+            <Text style={styles.sectionTitle}>{t.visualReference}</Text>
             <View style={styles.uploadActions}>
               <TouchableOpacity style={styles.uploadButton} onPress={pickImage} activeOpacity={0.8}>
                 <Ionicons name="image-outline" size={24} color={C.primary} />
-                <Text style={styles.uploadBtnText}>Gallery</Text>
+                <Text style={styles.uploadBtnText}>{t.gallery}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.uploadButton} onPress={takePhoto} activeOpacity={0.8}>
                 <Ionicons name="camera-outline" size={24} color={C.primary} />
-                <Text style={styles.uploadBtnText}>Camera</Text>
+                <Text style={styles.uploadBtnText}>{t.camera}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.uploadArea}>
               <View style={styles.uploadIcon}>
                 <Ionicons name="cloud-upload-outline" size={36} color={C.gray} />
               </View>
-              <Text style={styles.uploadTitle}>Upload Reference Photo</Text>
-              <Text style={styles.uploadSubtext}>Use gallery or camera to add a visual sample.</Text>
+              <Text style={styles.uploadTitle}>{t.uploadReferencePhoto}</Text>
+              <Text style={styles.uploadSubtext}>{t.uploadReferencePhotoDesc}</Text>
             </View>
             {images.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageRow}>
@@ -406,11 +406,11 @@ export default function CreateRequestScreen() {
 
           {/* Section 2: Item Details */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Item Details</Text>
-            <Input label="Item Name" placeholder="e.g. Artisan Ceramic Vase" value={itemName} onChangeText={setItemName} />
-            <Input label="Brand (Optional)" placeholder="e.g. Studio Ghibli" value={brand} onChangeText={setBrand} />
+            <Text style={styles.sectionTitle}>{t.itemDetails}</Text>
+            <Input label={t.itemNameLabel} placeholder="e.g. Artisan Ceramic Vase" value={itemName} onChangeText={setItemName} />
+            <Input label={t.brandOptional} placeholder="e.g. Studio Ghibli" value={brand} onChangeText={setBrand} />
             <Input
-              label="Description"
+              label={t.descriptionLabel}
               placeholder="Color, size, model, specifications..."
               value={description}
               onChangeText={setDescription}
@@ -418,7 +418,7 @@ export default function CreateRequestScreen() {
               numberOfLines={3}
             />
 
-            <Text style={styles.fieldLabel}>Category</Text>
+            <Text style={styles.fieldLabel}>{t.productCategory}</Text>
             <View style={styles.chipGrid}>
               {ITEM_CATEGORIES.map((cat) => (
                 <TouchableOpacity
@@ -432,15 +432,15 @@ export default function CreateRequestScreen() {
               ))}
             </View>
 
-            <Input label="Quantity" value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
+            <Input label={t.quantity} value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
           </View>
 
           {/* Section 3: Pricing */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pricing Estimate</Text>
+            <Text style={styles.sectionTitle}>{t.pricingEstimate}</Text>
 
             {/* Currency selector */}
-            <Text style={styles.fieldLabel}>Currency</Text>
+            <Text style={styles.fieldLabel}>{t.currency}</Text>
             <View style={styles.chipGrid}>
               {CURRENCIES.map((cur) => (
                 <TouchableOpacity
@@ -472,8 +472,8 @@ export default function CreateRequestScreen() {
               icon="wallet-outline"
             />
             <Input
-              label="Additional Notes"
-              placeholder="Special instructions for the traveler..."
+              label={t.additionalNotes}
+              placeholder={t.tripNotesPlaceholder}
               value={notes}
               onChangeText={setNotes}
               multiline
@@ -483,15 +483,15 @@ export default function CreateRequestScreen() {
 
           {/* Section 4: Target Country */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Target Country</Text>
-            <Text style={styles.fieldLabel}>Where should the traveler buy this?</Text>
+            <Text style={styles.sectionTitle}>{t.targetCountrySection}</Text>
+            <Text style={styles.fieldLabel}>{t.whereToShop}</Text>
             <TouchableOpacity
               style={styles.countryDropdown}
               onPress={() => setShowCountryModal(true)}
               activeOpacity={0.8}
             >
               <Text style={styles.countryDropdownText}>
-                {targetCountry || 'Select a country...'}
+                {targetCountry || t.selectCountry}
               </Text>
               <Ionicons name="chevron-down" size={20} color={C.primary} />
             </TouchableOpacity>
@@ -500,13 +500,11 @@ export default function CreateRequestScreen() {
           {/* Info Banner */}
           <View style={styles.infoBanner}>
             <Ionicons name="shield-checkmark" size={20} color={C.primary} />
-            <Text style={styles.infoText}>
-              Funds will be held in escrow until you confirm delivery. Your purchase is protected.
-            </Text>
+            <Text style={styles.infoText}>{t.escrowInfoBanner}</Text>
           </View>
 
           <Button
-            title={triperId ? `Kirim ke ${triperName ?? 'Traveler'}` : 'Submit Request'}
+            title={triperId ? `${t.sendTo} ${triperName ?? t.traveler}` : t.submitRequest}
             onPress={handleSubmit}
             loading={loading}
             fullWidth
