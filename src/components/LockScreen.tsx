@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// src/components/LockScreen.tsx
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
@@ -24,8 +25,13 @@ export function LockScreen() {
   const [biometricType, setBiometricType] = useState('Sidik Jari');
   const [isFace, setIsFace] = useState(false);
 
+  // FIX: cegah prompt muncul dua kali di React StrictMode (dev mode double-invoke)
+  // dan cegah multiple concurrent auth calls
+  const authInProgress = useRef(false);
+
   useEffect(() => {
-    // Deteksi tipe dulu, baru trigger prompt
+    if (authInProgress.current) return;
+
     checkBiometricAvailable().then(({ type }) => {
       const face = type === 'Face ID';
       if (type) setBiometricType(type);
@@ -36,11 +42,20 @@ export function LockScreen() {
   }, []);
 
   const handleAuthenticate = async (type?: string) => {
+    // FIX: guard supaya tidak ada dua auth call berjalan bersamaan
+    if (authInProgress.current) return;
+    authInProgress.current = true;
+
     setLoading(true);
     setFailed(false);
+
     const label = type ?? biometricType;
     const success = await authenticateBiometric(`Gunakan ${label} untuk masuk ke TipL`);
+
+    // Reset flag SEBELUM update state supaya tombol Coba Lagi bisa kerja lagi
+    authInProgress.current = false;
     setLoading(false);
+
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       unlock();
@@ -64,13 +79,11 @@ export function LockScreen() {
     >
       <SafeAreaView style={st.safeArea} edges={['top', 'bottom']}>
         <View style={st.center}>
-          {/* Logo area */}
           <View style={st.logoWrap}>
             <Text style={st.logoText}>TipL</Text>
             <Text style={st.logoSub}>Jastip Marketplace</Text>
           </View>
 
-          {/* User info */}
           {user && (
             <View style={st.userInfo}>
               <Ionicons name="person-circle-outline" size={40} color="rgba(255,255,255,0.5)" />
@@ -78,7 +91,6 @@ export function LockScreen() {
             </View>
           )}
 
-          {/* Biometric icon */}
           <TouchableOpacity
             style={[st.biometricBtn, failed && st.biometricBtnFailed]}
             onPress={() => handleAuthenticate()}
@@ -111,7 +123,6 @@ export function LockScreen() {
           )}
         </View>
 
-        {/* Keluar akun */}
         <TouchableOpacity style={st.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={16} color="rgba(255,255,255,0.4)" />
           <Text style={st.logoutTxt}>Keluar & Ganti Akun</Text>
@@ -124,7 +135,10 @@ export function LockScreen() {
 const st = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject },
   safeArea: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.xl, paddingHorizontal: Spacing['2xl'] },
+  center: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.xl, paddingHorizontal: Spacing['2xl'],
+  },
 
   logoWrap: { alignItems: 'center', gap: 4 },
   logoText: {

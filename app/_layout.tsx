@@ -77,7 +77,6 @@ export default function RootLayout() {
     if (loaded) {
       SplashScreen.hideAsync();
       useSettingsStore.getState().loadSettings();
-      // Hydrate biometric preference dari AsyncStorage
       useBiometricStore.getState().hydrate();
     }
   }, [loaded]);
@@ -98,14 +97,12 @@ function RootLayoutNav() {
   const responseListener = useRef<{ remove: () => void } | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  // Kunci app saat masuk background dan kembali ke foreground
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
       if (
         appState.current === 'active' &&
         (nextState === 'background' || nextState === 'inactive')
       ) {
-        // App masuk background — tandai untuk dikunci saat kembali
         appState.current = nextState;
       } else if (
         appState.current !== 'active' &&
@@ -113,8 +110,14 @@ function RootLayoutNav() {
         isEnabled &&
         isAuthenticated
       ) {
-        // App kembali ke foreground — kunci
-        lock();
+        // Baca langsung dari store — hindari stale closure.
+        // Jangan lock kalau lock screen sudah tampil (isLocked = true),
+        // karena itu berarti biometric/passcode dialog yang bikin app inactive,
+        // bukan user yang beneran minimize app.
+        const { isLocked: currentlyLocked } = useBiometricStore.getState();
+        if (!currentlyLocked) {
+          lock();
+        }
         appState.current = nextState;
       } else {
         appState.current = nextState;
@@ -179,8 +182,6 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    // expo-notifications remote push tidak didukung Expo Go SDK 53+
-    // require() tidak dipanggil sama sekali di Expo Go
     if (!isExpoGo) {
       try {
         const Notifs = require('expo-notifications') as typeof import('expo-notifications');
@@ -200,8 +201,8 @@ function RootLayoutNav() {
     };
   }, []);
 
-  // Tampilkan lock screen di atas semua konten jika terkunci
-  const showLock = hydrated && isEnabled && isLocked && isAuthenticated;
+  const showLock = !isExpoGo && hydrated && isEnabled && isLocked && isAuthenticated;
+
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -234,10 +235,7 @@ function RootLayoutNav() {
           <Stack.Screen name="admin/orders" options={{ presentation: 'card', headerShown: false }} />
         </Stack>
 
-        {/* Lock screen overlay — muncul di atas semua konten */}
         {showLock && <LockScreen />}
-
-        {/* In-app notification banner — muncul paling atas */}
         <NotificationBanner />
       </ThemeProvider>
     </GestureHandlerRootView>

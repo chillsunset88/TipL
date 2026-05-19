@@ -1,3 +1,4 @@
+// src/lib/hooks/useBiometric.ts
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Alert } from 'react-native';
 import { useBiometricStore } from '@/src/store/biometricStore';
@@ -15,12 +16,14 @@ export async function checkBiometricAvailable(): Promise<{
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
   const hasFingerprint = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
   const hasFace = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
-  // Prioritaskan fingerprint — face unlock Android sering muncul bersama fingerprint
   const type = hasFingerprint ? 'Sidik Jari' : hasFace ? 'Face ID' : 'Biometrik';
   return { available: true, type };
 }
 
-export async function authenticateBiometric(reason = 'Konfirmasi identitas kamu'): Promise<boolean> {
+export async function authenticateBiometric(
+  reason = 'Konfirmasi identitas kamu',
+  _retryCount = 0,
+): Promise<boolean> {
   try {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: reason,
@@ -28,7 +31,22 @@ export async function authenticateBiometric(reason = 'Konfirmasi identitas kamu'
       fallbackLabel: 'Gunakan Password',
       disableDeviceFallback: false,
     });
-    return result.success;
+
+    if (result.success) return true;
+
+    // system_cancel = OS interrupt auth karena app briefly inactive
+    // (terjadi di Expo Go iOS saat passcode dialog muncul).
+    // Retry sekali otomatis dengan delay kecil supaya OS settle dulu.
+    if (result.error === 'system_cancel' && _retryCount === 0) {
+      await new Promise((r) => setTimeout(r, 400));
+      return authenticateBiometric(reason, 1);
+    }
+
+    // app_cancel = auth di-cancel secara programmatic — cukup return false
+    // user_cancel = user tap "Batal" — return false, jangan retry
+    // user_fallback = user tap "Gunakan Password" button (bukan system passcode)
+    //   → return false, biarkan user ketuk Coba Lagi manual
+    return false;
   } catch {
     return false;
   }
@@ -47,8 +65,9 @@ export function useBiometric() {
       return false;
     }
 
-    // Verifikasi biometrik dulu sebelum mengaktifkan
-    const success = await authenticateBiometric(`Konfirmasi ${type} untuk mengaktifkan kunci biometrik`);
+    const success = await authenticateBiometric(
+      `Konfirmasi ${type} untuk mengaktifkan kunci biometrik`,
+    );
     if (!success) return false;
 
     await setEnabled(true);
@@ -57,7 +76,9 @@ export function useBiometric() {
   };
 
   const disable = async (): Promise<boolean> => {
-    const success = await authenticateBiometric('Konfirmasi untuk menonaktifkan kunci biometrik');
+    const success = await authenticateBiometric(
+      'Konfirmasi untuk menonaktifkan kunci biometrik',
+    );
     if (!success) return false;
     await setEnabled(false);
     return true;
