@@ -229,8 +229,7 @@ export default function NotificationsScreen() {
   }), [C]);
 
   const renderItem = ({ item }: { item: Notification }) => {
-    const { name, colorKey } = notifIcon(item.type);
-    const color = C[colorKey];
+    const { name, color } = notifIcon(item.type);
     const isUnread = !item.read_at;
     return (
       <TouchableOpacity
