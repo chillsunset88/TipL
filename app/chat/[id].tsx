@@ -26,13 +26,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useChat } from '@/src/lib/hooks/useChat';
 import { useAuthStore } from '@/src/store/authStore';
 import { useChatStore } from '@/src/store/chatStore';
 import { getProfile } from '@/src/services/supabase/profiles';
+import { getOrderById, OrderWithProfiles } from '@/src/services/supabase/orders';
 import type { Database } from '@/src/lib/database.types';
 
 type Message = Database['public']['Tables']['messages']['Row'];
@@ -49,6 +50,54 @@ function parseProductCard(content: string | null) {
     };
   } catch {}
   return null;
+}
+
+function OrderReceiptPreview({ orderId }: { orderId: string }) {
+  const [order, setOrder] = useState<OrderWithProfiles | null>(null);
+  const [loadingOrder, setLoadingOrder] = useState(true);
+  const { t } = useSettingsStore();
+
+  useEffect(() => {
+    let mounted = true;
+    setLoadingOrder(true);
+    getOrderById(orderId)
+      .then((o) => { if (mounted) setOrder(o); })
+      .catch(() => {})
+      .finally(() => { if (mounted) setLoadingOrder(false); });
+    return () => { mounted = false; };
+  }, [orderId]);
+
+  if (loadingOrder) return (
+    <View style={styles.receiptCard}>
+      <ActivityIndicator size="small" color={Colors.primary} />
+    </View>
+  );
+  if (!order) return null;
+
+  const price = order.total_amount ?? order.agreed_price ?? 0;
+  const currency = order.currency ?? 'IDR';
+
+  const imageUrl = order.item_url;
+
+  return (
+    <TouchableOpacity style={styles.receiptCard} activeOpacity={0.85} onPress={() => router.push(`/order/${order.id}`)}>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.receiptImage} contentFit="cover" transition={200} />
+      ) : (
+        <View style={styles.receiptImagePlaceholder}>
+          <Ionicons name="receipt-outline" size={28} color={Colors.gray} />
+        </View>
+      )}
+      <View style={styles.receiptContent}>
+        <Text style={styles.receiptLabel}>{t.orderReceiptPreview || 'Receipt'}</Text>
+        <Text style={styles.receiptTitle} numberOfLines={2}>{order.item_name}</Text>
+        <Text style={styles.receiptPrice}>{price?.toLocaleString ? price.toLocaleString('id-ID', { style: 'currency', currency }) : `${currency} ${price}`}</Text>
+        <View style={styles.receiptBtn}>
+          <Text style={styles.receiptBtnText}>{t.viewReceipt || 'View Receipt'}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 }
 
 export default function ChatRoomScreen() {
@@ -188,6 +237,8 @@ export default function ChatRoomScreen() {
         )}
 
         <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
+          {/* Order receipt preview */}
+          {item.order_id ? <OrderReceiptPreview orderId={item.order_id} /> : null}
           {/* Image message */}
           {item.image_url ? (
             <TouchableOpacity activeOpacity={0.85} onPress={() => setViewingImage(item.image_url!)}>
@@ -286,6 +337,13 @@ export default function ChatRoomScreen() {
           inverted
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            orderId ? (
+              <View style={{ paddingHorizontal: Spacing.base, marginBottom: Spacing.sm }}>
+                <OrderReceiptPreview orderId={orderId} />
+              </View>
+            ) : null
+          }
           ListFooterComponent={
             loading
               ? <ActivityIndicator color={Colors.primary} style={{ margin: Spacing.base }} />
@@ -662,5 +720,71 @@ const styles = StyleSheet.create({
   imageViewerImg: {
     width: SCREEN_WIDTH,
     height: SCREEN_WIDTH * 1.2,
+  },
+  receiptCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+    marginBottom: Spacing.sm,
+    ...Shadows.sm,
+  },
+  receiptImage: {
+    width: '100%',
+    height: 140,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
+    backgroundColor: Colors.lightGray,
+  },
+  receiptImagePlaceholder: {
+    width: '100%',
+    height: 140,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.lightGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  receiptContent: {
+    flex: 1,
+  },
+  receiptLabel: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.darkGray,
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  receiptTitle: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.nearBlack,
+    marginBottom: Spacing.xs,
+  },
+  receiptSubtitle: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.darkGray,
+    marginBottom: Spacing.sm,
+  },
+  receiptPrice: {
+    fontFamily: Typography.semiBold.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.primary,
+  },
+  receiptBtn: {
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    alignSelf: 'flex-start',
+  },
+  receiptBtnText: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.white,
   },
 });

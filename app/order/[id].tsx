@@ -32,6 +32,7 @@ import { addDeliveryReminderEvent } from '@/src/services/calendar';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import type { OrderWithProfiles } from '@/src/services/supabase/orders';
+import { sendMessage } from '@/src/services/supabase/messages';
 
 // ─── Status config (computed from translations) ───────────────────────────────
 import type { Translations } from '@/src/lib/i18n';
@@ -275,13 +276,30 @@ export default function OrderDetailScreen() {
             style={styles.moreButton}
             onPress={() => {
               if (!chatPartnerId) return;
-              router.push({
-                pathname: '/chat/[id]' as any,
-                params: {
-                  id: chatPartnerId,
-                  receiverId: chatPartnerId,
-                  orderId: order.id,
-                },
+              withLoading(async () => {
+                // Send an order-linked message so the chat shows a receipt card
+                if (user) {
+                  try {
+                    await sendMessage({
+                      sender_id: user.id,
+                      receiver_id: chatPartnerId,
+                      order_id: order.id,
+                      content: `${order.item_name} — ${fmt(totalAmount)}`,
+                      message_type: 'order',
+                    });
+                  } catch (e) {
+                    // ignore send errors; still navigate to chat
+                  }
+                }
+
+                router.push({
+                  pathname: '/chat/[id]' as any,
+                  params: {
+                    id: chatPartnerId,
+                    receiverId: chatPartnerId,
+                    orderId: order.id,
+                  },
+                });
               });
             }}
           >
