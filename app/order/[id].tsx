@@ -36,7 +36,9 @@ import type { OrderWithProfiles } from '@/src/services/supabase/orders';
 // ─── Status config (computed from translations) ───────────────────────────────
 import type { Translations } from '@/src/lib/i18n';
 
-function getStatusConfig(t: Translations): Record<string, { label: string; gradient: [string, string]; sub: string }> {
+type StatusCfgMap = Record<string, { label: string; gradient: [string, string]; sub: string }>;
+
+function getStatusConfig(t: Translations): StatusCfgMap {
   return {
     pending:   { label: t.statusWaiting,       gradient: ['#E8E8E8', '#D0D0D0'], sub: t.statusWaitingDesc },
     accepted:  { label: t.statusOfferAccepted, gradient: ['#E8F4FD', '#C8E6F9'], sub: t.statusOfferAcceptedDesc },
@@ -47,6 +49,20 @@ function getStatusConfig(t: Translations): Record<string, { label: string; gradi
     completed: { label: t.statusCompleted,     gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
     cancelled: { label: t.statusCancelled,     gradient: ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
     disputed:  { label: t.statusDisputed,      gradient: ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
+  };
+}
+
+function getTriperStatusConfig(t: Translations): StatusCfgMap {
+  return {
+    pending:   { label: t.triperStatusPending,   gradient: ['#E8E8E8', '#D0D0D0'], sub: t.triperStatusPendingDesc },
+    accepted:  { label: t.triperStatusAccepted,  gradient: ['#E8F4FD', '#C8E6F9'], sub: t.triperStatusAcceptedDesc },
+    in_escrow: { label: t.triperStatusInEscrow,  gradient: ['#F5E6C8', '#EDD9A3'], sub: t.triperStatusInEscrowDesc },
+    purchased: { label: t.triperStatusPurchased, gradient: ['#F0F8E8', '#D4EDBA'], sub: t.triperStatusPurchasedDesc },
+    shipped:   { label: t.triperStatusShipped,   gradient: ['#E8F0FE', '#C5D8F8'], sub: t.triperStatusShippedDesc },
+    delivered: { label: t.triperStatusDelivered, gradient: ['#E8F9EE', '#B8ECC8'], sub: t.triperStatusDeliveredDesc },
+    completed: { label: t.statusCompleted,       gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
+    cancelled: { label: t.statusCancelled,       gradient: ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
+    disputed:  { label: t.statusDisputed,        gradient: ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
   };
 }
 
@@ -90,7 +106,8 @@ export default function OrderDetailScreen() {
   const isAdmin = user?.role === 'admin';
 
   const STATUS_CONFIG = getStatusConfig(t);
-  const statusCfg = STATUS_CONFIG[status] ?? STATUS_CONFIG['pending'];
+  const statusCfg = (isTriper && !isTiper ? getTriperStatusConfig(t) : STATUS_CONFIG)[status]
+    ?? STATUS_CONFIG['pending'];
 
   const totalAmount = order.total_amount ?? 0;
   const agreedPrice = order.agreed_price ?? 0;
@@ -310,11 +327,17 @@ export default function OrderDetailScreen() {
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{t.buyer}</Text>
-              <Text style={styles.summaryValue}>{order.tiper?.full_name ?? order.tiper_id.slice(0, 8)}</Text>
+              <Text style={styles.summaryValue}>
+                {order.tiper?.full_name ?? order.tiper_id.slice(0, 8)}
+                {isTiper ? ' (Anda)' : ''}
+              </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{t.traveler}</Text>
-              <Text style={styles.summaryValue}>{order.triper?.full_name ?? order.triper_id.slice(0, 8)}</Text>
+              <Text style={styles.summaryValue}>
+                {order.triper?.full_name ?? order.triper_id.slice(0, 8)}
+                {isTriper ? ' (Anda)' : ''}
+              </Text>
             </View>
           </View>
         </View>
@@ -505,19 +528,19 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
         </View>
       )}
 
-      {/* Triper actions */}
-      {isTriper && status === 'pending' && (
+      {/* Triper actions — only when not also the buyer */}
+      {isTriper && !isTiper && status === 'pending' && (
         <Button title={t.acceptOrder} onPress={onAccept} fullWidth size="lg" disabled={loading}
           icon={<Ionicons name="checkmark-outline" size={18} color={Colors.white} />} />
       )}
-      {isTriper && status === 'in_escrow' && (
+      {isTriper && !isTiper && status === 'in_escrow' && (
         <Button title={t.markAsShipped} onPress={onMarkShipped} fullWidth size="lg" disabled={loading}
           icon={<Ionicons name="airplane-outline" size={18} color={Colors.white} />} />
       )}
 
       {/* Waiting state */}
       {!isTiper && !isTriper && (
-        <Text style={styles.waitingText}>View only — you are not a participant in this order.</Text>
+        <Text style={styles.waitingText}>{t.viewOnly}</Text>
       )}
     </View>
   );

@@ -312,7 +312,21 @@ export interface Translations {
   statusCancelledDesc: string;
   statusDisputed: string;
   statusDisputedDesc: string;
+  // Tripper-perspective status labels
+  triperStatusPending: string;
+  triperStatusPendingDesc: string;
+  triperStatusAccepted: string;
+  triperStatusAcceptedDesc: string;
+  triperStatusInEscrow: string;
+  triperStatusInEscrowDesc: string;
+  triperStatusPurchased: string;
+  triperStatusPurchasedDesc: string;
+  triperStatusShipped: string;
+  triperStatusShippedDesc: string;
+  triperStatusDelivered: string;
+  triperStatusDeliveredDesc: string;
   orderNotFound: string;
+  viewOnly: string;
   confirmDelivery: string;
   confirmDeliveryMsg: string;
   confirmAndRelease: string;
@@ -659,7 +673,20 @@ const en: Translations = {
   statusCancelledDesc: 'This order has been cancelled.',
   statusDisputed: 'Disputed',
   statusDisputedDesc: 'A dispute has been filed. Support will contact you.',
+  triperStatusPending: 'New Order Request',
+  triperStatusPendingDesc: 'A buyer wants you to purchase something for them.',
+  triperStatusAccepted: 'Waiting for Payment',
+  triperStatusAcceptedDesc: "You've accepted this order. Waiting for the buyer to pay.",
+  triperStatusInEscrow: 'Funds Received — Ready to Buy',
+  triperStatusInEscrowDesc: "Payment is secured in escrow. Go ahead and buy the item.",
+  triperStatusPurchased: 'Item Purchased',
+  triperStatusPurchasedDesc: "You've bought the item. Pack it up and ship when ready.",
+  triperStatusShipped: 'Awaiting Delivery Confirmation',
+  triperStatusShippedDesc: 'Item is on the way. Waiting for the buyer to confirm receipt.',
+  triperStatusDelivered: 'Awaiting Buyer Confirmation',
+  triperStatusDeliveredDesc: 'Item arrived. Waiting for the buyer to confirm and release funds.',
   orderNotFound: 'Order not found.',
+  viewOnly: 'View only — you are not a participant in this order.',
   confirmDelivery: 'Confirm Delivery',
   confirmDeliveryMsg: 'This will release the escrow funds to the traveler. This cannot be undone.',
   confirmAndRelease: 'Confirm & Release',
@@ -1006,7 +1033,20 @@ const id: Translations = {
   statusCancelledDesc: 'Pesanan ini telah dibatalkan.',
   statusDisputed: 'Sengketa',
   statusDisputedDesc: 'Sengketa telah diajukan. Tim dukungan akan menghubungimu.',
+  triperStatusPending: 'Pesanan Baru',
+  triperStatusPendingDesc: 'Seorang pembeli ingin kamu membelikan barang untuknya.',
+  triperStatusAccepted: 'Menunggu Pembayaran',
+  triperStatusAcceptedDesc: 'Kamu sudah konfirmasi pesanan ini. Menunggu pembeli membayar.',
+  triperStatusInEscrow: 'Dana Masuk — Siap Beli',
+  triperStatusInEscrowDesc: 'Pembayaran sudah aman di escrow. Silakan beli barangnya sekarang.',
+  triperStatusPurchased: 'Barang Sudah Dibeli',
+  triperStatusPurchasedDesc: 'Kamu sudah membeli barangnya. Kemas dan kirimkan.',
+  triperStatusShipped: 'Menunggu Konfirmasi Pengiriman',
+  triperStatusShippedDesc: 'Barang sedang dalam perjalanan. Menunggu pembeli mengkonfirmasi.',
+  triperStatusDelivered: 'Menunggu Konfirmasi Pembeli',
+  triperStatusDeliveredDesc: 'Barang sudah tiba. Menunggu pembeli mengkonfirmasi dan melepas dana.',
   orderNotFound: 'Pesanan tidak ditemukan.',
+  viewOnly: 'Hanya lihat — kamu bukan peserta dalam pesanan ini.',
   confirmDelivery: 'Konfirmasi Penerimaan',
   confirmDeliveryMsg: 'Ini akan melepas dana escrow ke traveler. Tidak bisa dibatalkan.',
   confirmAndRelease: 'Konfirmasi & Lepas Dana',
