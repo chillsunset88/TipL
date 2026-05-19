@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +24,8 @@ export default function TabLayout() {
   const tabBarHeight = TAB_CONTENT_HEIGHT + insets.bottom;
 
   return (
-    <Tabs
+    <>
+      <Tabs
       screenListeners={{
         tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
       }}
@@ -122,7 +124,7 @@ export default function TabLayout() {
           ),
         }}
       />
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
-

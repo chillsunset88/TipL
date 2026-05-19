@@ -11,7 +11,7 @@ import { useAuthStore } from '@/src/store/authStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -229,7 +229,12 @@ export default function ProfileScreen() {
           <Text style={s.cardTitle}>{copy.helpTitle}</Text>
           <SettingRow icon="help-circle-outline" label={copy.helpCenterLabel} sub={locale === 'id' ? 'FAQ & panduan penggunaan' : 'FAQ & usage guide'} onPress={() => router.push('/help')} />
           <SettingRow icon="chatbubble-ellipses-outline" label={copy.contactUsLabel} sub={locale === 'id' ? 'Chat dengan tim TipL' : 'Chat with TipL support'} onPress={() => {}} />
-          <SettingRow icon="document-text-outline" label={copy.termsLabel} sub={copy.termsSub} onPress={() => {}} />
+          <SettingRow 
+            icon="document-text-outline" 
+            label={copy.termsLabel} 
+            sub={copy.termsSub} 
+            onPress={() => router.push('/terms')} 
+          />
           <SettingRow icon="information-circle-outline" label={copy.aboutAppLabel} sub={copy.versionLabel} onPress={() => {}} last />
         </View>
 
@@ -271,7 +276,7 @@ function VerificationPromoCard({ rejected, copy, verifyButtonLabel }: { rejected
         </View>
       )}
       <View style={s.verifyBenefits}>
-        {copy.verificationBenefits.map((b) => (
+        {copy.verificationBenefits.map((b: string) => (
           <View key={b} style={s.benefitRow}>
             <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
             <Text style={s.benefitTxt}>{b}</Text>

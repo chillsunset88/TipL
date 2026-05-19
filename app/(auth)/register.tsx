@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { signUp } from '@/src/services/supabase/auth';
+import { TermsPrivacyModal } from '@/src/components/ui/TermsPrivacyModal';
 
 export default function RegisterScreen() {
   const { t } = useSettingsStore();
@@ -26,6 +27,8 @@ export default function RegisterScreen() {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms');
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -166,7 +169,26 @@ export default function RegisterScreen() {
                 {agreed && <Ionicons name="checkmark" size={12} color={Colors.white} />}
               </View>
               <Text style={styles.termsText}>
-                {t.agreeWith}<Text style={styles.termsLink}>{t.termsConditions}</Text>{t.and}<Text style={styles.termsLink}>{t.privacyPolicy}</Text>
+                {t.agreeWith}
+                <Text 
+                  style={styles.termsLink} 
+                  onPress={() => {
+                    setModalType('terms');
+                    setModalVisible(true);
+                  }}
+                >
+                  {t.termsConditions}
+                </Text>
+                {t.and}
+                <Text 
+                  style={styles.termsLink}
+                  onPress={() => {
+                    setModalType('privacy');
+                    setModalVisible(true);
+                  }}
+                >
+                  {t.privacyPolicy}
+                </Text>
               </Text>
             </TouchableOpacity>
             {errors.terms ? <Text style={styles.errorText}>{errors.terms}</Text> : null}
@@ -199,6 +221,12 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <TermsPrivacyModal 
+        visible={modalVisible} 
+        onClose={() => setModalVisible(false)} 
+        type={modalType} 
+      />
     </SafeAreaView>
   );
 }

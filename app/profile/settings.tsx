@@ -1,6 +1,5 @@
-﻿/**
+/**
  * TipL — Settings Screen
- * Shopee-inspired flat list: gray section headers, plain dividers, no card boxes.
  */
 
 import { PageHeader } from '@/src/components/ui/PageHeader';
@@ -158,8 +157,8 @@ export default function SettingsScreen() {
         {/* ── Bantuan ── */}
         <SectionHeader label={t.support} />
         <View style={st.group}>
-          <RowItem icon="help-circle-outline" label={t.helpSupport} onPress={() => { }} />
-          <RowItem icon="document-text-outline" label={t.termsPrivacy} onPress={() => { }} />
+          <RowItem icon="help-circle-outline" label={t.helpSupport} onPress={() => router.push('/help')} />
+          <RowItem icon="document-text-outline" label={t.termsPrivacy} onPress={() => router.push('/terms')} />
           <RowItem icon="information-circle-outline" label={t.aboutApp} value="v1.0.0" onPress={() => { }} last />
         </View>
 
