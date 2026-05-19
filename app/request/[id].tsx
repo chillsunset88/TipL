@@ -210,9 +210,9 @@ export default function RequestDetailScreen() {
 
             {request.target_country ? (
               <View style={st.detailRow}>
-                <Ionicons name="location-outline" size={16} color={Colors.primary} />
-                <Text style={st.detailLabel}>Negara Tujuan</Text>
-                <Text style={st.detailValue}>{request.target_country}</Text>
+                  <Ionicons name="location-outline" size={16} color={Colors.primary} />
+                    <Text style={st.detailLabel}>Tujuan</Text>
+                    <Text style={st.detailValue}>{request.target_country}</Text>
               </View>
             ) : null}
 

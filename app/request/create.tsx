@@ -3,25 +3,10 @@
  * Opened from trip detail page with tripId + triperId params.
  * Theme-aware: supports Dark Mode & Light Mode.
  */
-
-import { Button } from '@/src/components/ui/Button';
-import { Input } from '@/src/components/ui/Input';
-import { PageHeader } from '@/src/components/ui/PageHeader';
-import { BorderRadius, ITEM_CATEGORIES, Spacing, Typography } from '@/src/lib/constants';
-import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
-import { acceptRequest, createRequest, updateRequestImageUrls, uploadRequestImage } from '@/src/services/supabase/requests';
-import { useAuthStore } from '@/src/store/authStore';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
-  FlatList,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -30,20 +15,19 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
+import { router, useLocalSearchParams } from 'expo-router';
+import { PageHeader } from '@/src/components/ui/PageHeader';
+import { Input } from '@/src/components/ui/Input';
+import { Button } from '@/src/components/ui/Button';
+import { Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
+import { useAuthStore } from '@/src/store/authStore';
+import { createRequest, uploadRequestImage, updateRequestImageUrls, acceptRequest } from '@/src/services/supabase/requests';
 
-const COUNTRIES = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
-  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
-  'Cabo Verde', 'Cambodia', 'Cameroon', 'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Costa Rica', 'Côte d’Ivoire', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic',
-  'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia',
-  'Fiji', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
-  'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan',
-  'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
-  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar',
-  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar',
-  'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
-  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
-];
 
 const CURRENCIES = [
   { code: 'IDR', label: 'IDR', symbol: 'Rp' },
@@ -82,9 +66,8 @@ export default function CreateRequestScreen() {
   const [estimatedPrice, setEstimatedPrice] = useState('');
   const [maxBudget, setMaxBudget] = useState('');
   const [notes, setNotes] = useState('');
-  const [targetCountry, setTargetCountry] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showCountryModal, setShowCountryModal] = useState(false);
+
 
   const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? currency;
 
@@ -134,7 +117,6 @@ export default function CreateRequestScreen() {
     if (!maxBudget || isNaN(rawBudget) || rawBudget <= 0) {
       Alert.alert('Info Kurang', 'Masukkan budget maksimal yang valid.'); return;
     }
-    if (!targetCountry) { Alert.alert('Info Kurang', 'Pilih negara tujuan.'); return; }
     if (!user) return;
 
     setLoading(true);
@@ -147,7 +129,6 @@ export default function CreateRequestScreen() {
         description: fullDesc || undefined,
         budget_max: rawBudget,
         currency,
-        target_country: targetCountry,
         item_url: undefined,
       });
 
@@ -265,77 +246,13 @@ export default function CreateRequestScreen() {
     chipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray },
     chipTextActive: { color: '#FFFFFF' },
 
-    countryDropdown: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.md,
-      borderRadius: BorderRadius.md,
-      borderWidth: 1,
-      borderColor: C.lightGray,
-      backgroundColor: C.white,
-    },
-    countryDropdownText: {
-      fontFamily: Typography.regular.fontFamily,
-      fontSize: Typography.sizes.base,
-      color: targetCountry ? C.nearBlack : C.gray,
-      flex: 1,
-    },
-
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
-    },
-    modalContent: {
-      backgroundColor: C.white,
-      borderTopLeftRadius: BorderRadius.xl,
-      borderTopRightRadius: BorderRadius.xl,
-      maxHeight: '80%',
-      paddingTop: Spacing.md,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: Spacing.xl,
-      paddingVertical: Spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: C.lightGray,
-    },
-    modalTitle: {
-      fontFamily: Typography.serifBold.fontFamily,
-      fontSize: Typography.sizes.lg,
-      color: C.nearBlack,
-    },
-    countryOption: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: Spacing.xl,
-      paddingVertical: Spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: C.offWhite,
-    },
-    countryOptionText: {
-      fontFamily: Typography.regular.fontFamily,
-      fontSize: Typography.sizes.base,
-      color: C.charcoal,
-      flex: 1,
-    },
-    countryOptionTextActive: {
-      fontFamily: Typography.medium.fontFamily,
-      color: C.primary,
-    },
-
     infoBanner: {
       flexDirection: 'row', alignItems: 'center', backgroundColor: C.primary + '12',
       borderRadius: BorderRadius.md, padding: Spacing.base, marginBottom: Spacing.xl,
       gap: Spacing.md, borderWidth: 1, borderColor: C.primary + '30',
     },
     infoText: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.charcoal, lineHeight: 17 },
-  }), [C, targetCountry]);
+  }), [C]);
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
@@ -481,22 +398,6 @@ export default function CreateRequestScreen() {
             />
           </View>
 
-          {/* Section 4: Target Country */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Target Country</Text>
-            <Text style={styles.fieldLabel}>Where should the traveler buy this?</Text>
-            <TouchableOpacity
-              style={styles.countryDropdown}
-              onPress={() => setShowCountryModal(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.countryDropdownText}>
-                {targetCountry || 'Select a country...'}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={C.primary} />
-            </TouchableOpacity>
-          </View>
-
           {/* Info Banner */}
           <View style={styles.infoBanner}>
             <Ionicons name="shield-checkmark" size={20} color={C.primary} />
@@ -516,50 +417,6 @@ export default function CreateRequestScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Country Selection Modal */}
-      <Modal
-        visible={showCountryModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCountryModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Country</Text>
-              <TouchableOpacity
-                onPress={() => setShowCountryModal(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="close" size={24} color={C.nearBlack} />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={COUNTRIES}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.countryOption}
-                  onPress={() => {
-                    setTargetCountry(item);
-                    setShowCountryModal(false);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                >
-                  <Text style={[styles.countryOptionText, targetCountry === item && styles.countryOptionTextActive]}>
-                    {item}
-                  </Text>
-                  {targetCountry === item && (
-                    <Ionicons name="checkmark" size={20} color={C.primary} />
-                  )}
-                </TouchableOpacity>
-              )}
-              scrollEnabled
-              bounces={false}
-            />
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
