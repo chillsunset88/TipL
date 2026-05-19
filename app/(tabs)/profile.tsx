@@ -4,17 +4,23 @@
  * transaction status shortcuts, jastip menu grid.
  */
 
-import React from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator,
-} from 'react-native';
-import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
-import { useAuthStore } from '@/src/store/authStore';
 import { signOut } from '@/src/services/supabase/auth';
+import { useAuthStore } from '@/src/store/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
@@ -146,7 +152,7 @@ export default function ProfileScreen() {
         {/* ── Help & Support ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>Bantuan</Text>
-          <SettingRow icon="help-circle-outline"         label="Pusat Bantuan"      sub="FAQ & panduan penggunaan"  onPress={() => {}} />
+          <SettingRow icon="help-circle-outline"         label="Pusat Bantuan"      sub="FAQ & panduan penggunaan"  onPress={() => router.push('/help')} />
           <SettingRow icon="chatbubble-ellipses-outline" label="Hubungi Kami"        sub="Chat dengan tim TipL"      onPress={() => {}} />
           <SettingRow icon="document-text-outline"       label="Syarat & Ketentuan"  sub="Kebijakan privasi"         onPress={() => {}} />
           <SettingRow icon="information-circle-outline"  label="Tentang TipL"        sub="Versi 1.0.0"               onPress={() => {}} last />
