@@ -14,6 +14,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -30,8 +32,17 @@ import { createRequest, uploadRequestImage, updateRequestImageUrls, acceptReques
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const COUNTRIES = [
-  'Japan', 'South Korea', 'Singapore', 'United Kingdom', 'United States',
-  'France', 'Germany', 'Australia', 'Thailand', 'Malaysia', 'Hong Kong',
+  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan',
+  'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
+  'Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Costa Rica','Côte d’Ivoire','Croatia','Cuba','Cyprus','Czech Republic',
+  'Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia',
+  'Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana',
+  'Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan',
+  'Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg',
+  'Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar',
+  'Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar',
+  'Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria',
+  'Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
 ];
 
 export default function CreateRequestScreen() {
@@ -54,15 +65,49 @@ export default function CreateRequestScreen() {
   const [notes, setNotes]                   = useState('');
   const [targetCountry, setTargetCountry]   = useState('');
   const [loading, setLoading]               = useState(false);
+  const [showCountryModal, setShowCountryModal] = useState(false);
+
+  const formatRupiah = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    return 'Rp ' + Number(digits).toLocaleString('id-ID');
+  };
+
+  const handleRupiahInput = (value: string, setter: (value: string) => void) => {
+    setter(formatRupiah(value));
+  };
 
   const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk mengunggah referensi foto.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
       quality: 0.8,
       selectionLimit: 5,
     });
-    if (!result.canceled) setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
+    if (!result.canceled) {
+      setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera untuk mengambil referensi foto.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setImages((prev) => [...prev, result.assets[0].uri]);
+    }
   };
 
   const removeImage = (index: number) => setImages(images.filter((_, i) => i !== index));
@@ -70,7 +115,8 @@ export default function CreateRequestScreen() {
   const handleSubmit = async () => {
     if (!itemName.trim()) { Alert.alert('Info Kurang', 'Masukkan nama item.'); return; }
     if (!category) { Alert.alert('Info Kurang', 'Pilih kategori.'); return; }
-    if (!maxBudget || isNaN(Number(maxBudget)) || Number(maxBudget) <= 0) {
+    const numericBudgetMax = Number(maxBudget.replace(/\D/g, ''));
+    if (!maxBudget || isNaN(numericBudgetMax) || numericBudgetMax <= 0) {
       Alert.alert('Info Kurang', 'Masukkan budget maksimal yang valid.'); return;
     }
     if (!targetCountry) { Alert.alert('Info Kurang', 'Pilih negara tujuan.'); return; }
@@ -84,7 +130,7 @@ export default function CreateRequestScreen() {
         tiper_id: user.id,
         item_name: itemName.trim(),
         description: fullDesc || undefined,
-        budget_max: Number(maxBudget),
+        budget_max: numericBudgetMax,
         currency: 'IDR',
         target_country: targetCountry,
         item_url: undefined,
@@ -159,6 +205,29 @@ export default function CreateRequestScreen() {
     sectionTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: C.nearBlack, marginBottom: Spacing.base },
     fieldLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, marginBottom: Spacing.sm },
 
+    uploadActions: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+      justifyContent: 'space-between',
+      marginBottom: Spacing.md,
+    },
+    uploadButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.xs,
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      backgroundColor: C.white,
+    },
+    uploadBtnText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.primary,
+    },
     uploadArea: {
       borderWidth: 2, borderColor: C.lightGray, borderStyle: 'dashed',
       borderRadius: BorderRadius.lg, padding: Spacing['2xl'], alignItems: 'center', backgroundColor: C.offWhite,
@@ -181,13 +250,77 @@ export default function CreateRequestScreen() {
     chipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray },
     chipTextActive: { color: '#FFFFFF' },
 
+    countryDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.md,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      backgroundColor: C.white,
+    },
+    countryDropdownText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: targetCountry ? C.nearBlack : C.gray,
+      flex: 1,
+    },
+
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: C.white,
+      borderTopLeftRadius: BorderRadius.xl,
+      borderTopRightRadius: BorderRadius.xl,
+      maxHeight: '80%',
+      paddingTop: Spacing.md,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+    },
+    modalTitle: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes.lg,
+      color: C.nearBlack,
+    },
+    countryOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: C.offWhite,
+    },
+    countryOptionText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.charcoal,
+      flex: 1,
+    },
+    countryOptionTextActive: {
+      fontFamily: Typography.medium.fontFamily,
+      color: C.primary,
+    },
+
     infoBanner: {
       flexDirection: 'row', alignItems: 'center', backgroundColor: C.primary + '12',
       borderRadius: BorderRadius.md, padding: Spacing.base, marginBottom: Spacing.xl,
       gap: Spacing.md, borderWidth: 1, borderColor: C.primary + '30',
     },
     infoText: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.charcoal, lineHeight: 17 },
-  }), [C]);
+  }), [C, targetCountry]);
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
@@ -225,13 +358,23 @@ export default function CreateRequestScreen() {
           {/* Section 1: Visual Reference */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Visual Reference</Text>
-            <TouchableOpacity style={styles.uploadArea} onPress={pickImage} activeOpacity={0.8}>
+            <View style={styles.uploadActions}>
+              <TouchableOpacity style={styles.uploadButton} onPress={pickImage} activeOpacity={0.8}>
+                <Ionicons name="image-outline" size={24} color={C.primary} />
+                <Text style={styles.uploadBtnText}>Gallery</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.uploadButton} onPress={takePhoto} activeOpacity={0.8}>
+                <Ionicons name="camera-outline" size={24} color={C.primary} />
+                <Text style={styles.uploadBtnText}>Camera</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.uploadArea}>
               <View style={styles.uploadIcon}>
                 <Ionicons name="cloud-upload-outline" size={36} color={C.gray} />
               </View>
               <Text style={styles.uploadTitle}>Upload Reference Photo</Text>
-              <Text style={styles.uploadSubtext}>Tap to browse from gallery</Text>
-            </TouchableOpacity>
+              <Text style={styles.uploadSubtext}>Use gallery or camera to add a visual sample.</Text>
+            </View>
             {images.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageRow}>
                 {images.map((uri, idx) => (
@@ -281,18 +424,18 @@ export default function CreateRequestScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Pricing Estimate</Text>
             <Input
-              label="Estimated Item Price"
-              placeholder="e.g. ¥5,000"
+              label="Estimated Item Price (IDR)"
+              placeholder="Rp 1.500.000"
               value={estimatedPrice}
-              onChangeText={setEstimatedPrice}
+              onChangeText={(value) => handleRupiahInput(value, setEstimatedPrice)}
               keyboardType="numeric"
               icon="pricetag-outline"
             />
             <Input
               label="Maximum Budget (IDR)"
-              placeholder="e.g. 1,500,000"
+              placeholder="Rp 1.500.000"
               value={maxBudget}
-              onChangeText={setMaxBudget}
+              onChangeText={(value) => handleRupiahInput(value, setMaxBudget)}
               keyboardType="numeric"
               icon="wallet-outline"
             />
@@ -310,17 +453,16 @@ export default function CreateRequestScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Target Country</Text>
             <Text style={styles.fieldLabel}>Where should the traveler buy this?</Text>
-            <View style={styles.chipGrid}>
-              {COUNTRIES.map((country) => (
-                <TouchableOpacity
-                  key={country}
-                  style={[styles.chip, targetCountry === country && styles.chipActive]}
-                  onPress={() => { setTargetCountry(country); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.chipText, targetCountry === country && styles.chipTextActive]}>{country}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity 
+              style={styles.countryDropdown} 
+              onPress={() => setShowCountryModal(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.countryDropdownText}>
+                {targetCountry || 'Select a country...'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={C.primary} />
+            </TouchableOpacity>
           </View>
 
           {/* Info Banner */}
@@ -341,6 +483,51 @@ export default function CreateRequestScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Country Selection Modal */}
+      <Modal
+        visible={showCountryModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCountryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Country</Text>
+              <TouchableOpacity 
+                onPress={() => setShowCountryModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={24} color={C.nearBlack} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={COUNTRIES}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.countryOption}
+                  onPress={() => {
+                    setTargetCountry(item);
+                    setShowCountryModal(false);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Text style={[styles.countryOptionText, targetCountry === item && styles.countryOptionTextActive]}>
+                    {item}
+                  </Text>
+                  {targetCountry === item && (
+                    <Ionicons name="checkmark" size={20} color={C.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+              scrollEnabled
+              bounces={false}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
