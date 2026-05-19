@@ -105,8 +105,13 @@ export default function ChatRoomScreen() {
   const handlePickImage = useCallback(async () => {
     if (!currentUserId || !otherUserId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk mengirim foto.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.85,
     });
