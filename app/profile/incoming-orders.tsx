@@ -257,11 +257,12 @@ const st = StyleSheet.create({
   alertTxt: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.warning },
 
   filterScroll: {
-    backgroundColor: Colors.white, borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray, maxHeight: 56,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
   },
   filterContent: {
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
     gap: Spacing.sm, alignItems: 'center',
   },
   chip: {

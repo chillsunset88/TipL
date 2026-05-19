@@ -237,6 +237,7 @@ export default function OrderDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t.orderTracking}</Text>
           <TouchableOpacity
@@ -249,41 +250,44 @@ export default function OrderDetailScreen() {
             <Text style={styles.orderNumber}>#{order.id.slice(0, 8)} ⎘</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.moreButton}
-          onPress={async () => {
-            const canShare = await Sharing.isAvailableAsync();
-            if (canShare) {
-              await Sharing.shareAsync('', {
-                dialogTitle: `Order ${order.id.slice(0, 8)}`,
-                UTI: 'public.plain-text',
-              }).catch(() => {});
-            } else {
-              await Clipboard.setStringAsync(
-                `TipL Order #${order.id.slice(0, 8)}\nItem: ${order.item_name}\nStatus: ${STATUS_CONFIG[status]?.label ?? status}`,
-              );
-              Alert.alert(t.summaryCopied, t.summaryCopiedMsg);
-            }
-          }}
-        >
-          <Ionicons name="share-outline" size={20} color={Colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.moreButton}
-          onPress={() => {
-            if (!chatPartnerId) return;
-            router.push({
-              pathname: '/chat/[id]' as any,
-              params: {
-                id: chatPartnerId,
-                receiverId: chatPartnerId,
-                orderId: order.id,
-              },
-            });
-          }}
-        >
-          <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />
-        </TouchableOpacity>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.moreButton}
+            onPress={async () => {
+              const canShare = await Sharing.isAvailableAsync();
+              if (canShare) {
+                await Sharing.shareAsync('', {
+                  dialogTitle: `Order ${order.id.slice(0, 8)}`,
+                  UTI: 'public.plain-text',
+                }).catch(() => {});
+              } else {
+                await Clipboard.setStringAsync(
+                  `TipL Order #${order.id.slice(0, 8)}\nItem: ${order.item_name}\nStatus: ${STATUS_CONFIG[status]?.label ?? status}`,
+                );
+                Alert.alert(t.summaryCopied, t.summaryCopiedMsg);
+              }
+            }}
+          >
+            <Ionicons name="share-outline" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.moreButton}
+            onPress={() => {
+              if (!chatPartnerId) return;
+              router.push({
+                pathname: '/chat/[id]' as any,
+                params: {
+                  id: chatPartnerId,
+                  receiverId: chatPartnerId,
+                  orderId: order.id,
+                },
+              });
+            }}
+          >
+            <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -574,20 +578,25 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
+    gap: Spacing.sm,
   },
   backButton: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: Colors.offWhite,
     alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
-  headerCenter: { alignItems: 'center' },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerActions: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    flexShrink: 0,
+  },
   headerTitle: {
-    fontFamily: Typography.regular.fontFamily,
+    fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.md,
     color: Colors.nearBlack,
   },
@@ -598,7 +607,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   moreButton: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
   },
 
