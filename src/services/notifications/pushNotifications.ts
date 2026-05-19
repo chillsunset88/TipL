@@ -77,6 +77,18 @@ export async function unregisterPushToken(userId: string): Promise<void> {
 }
 
 /** Local notification untuk pesan chat baru. */
+// Tambah helper di atas scheduleNewMessageNotification
+function resolveMessageBody(text: string): string {
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed._type === 'product') {
+      return `📦 ${parsed.name} · Rp ${Number(parsed.price).toLocaleString('id-ID')}`;
+    }
+  } catch {}
+  return text.length > 80 ? text.slice(0, 77) + '...' : text;
+}
+
+// Update fungsinya
 export async function scheduleNewMessageNotification(
   senderName: string,
   text: string,
@@ -85,7 +97,7 @@ export async function scheduleNewMessageNotification(
   await notifs().scheduleNotificationAsync({
     content: {
       title: senderName,
-      body: text.length > 80 ? text.slice(0, 77) + '...' : text,
+      body: resolveMessageBody(text), // ← ganti ini
       sound: true,
       data: { type: 'chat' },
     },
