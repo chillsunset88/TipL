@@ -50,6 +50,17 @@ function formatTime(iso: string | null) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+function formatNotifBody(body: string | null): string {
+  if (!body) return '';
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed._type === 'product') {
+      return `📦 ${parsed.name} · Rp ${Number(parsed.price).toLocaleString('id-ID')}`;
+    }
+  } catch {}
+  return body;
+}
+
 function notifIcon(type: string): { name: string; color: string } {
   if (type === 'order') return { name: 'receipt-outline', color: Colors.primary };
   if (type === 'chat') return { name: 'chatbubble-outline', color: Colors.secondary };
@@ -140,8 +151,10 @@ export default function NotificationsScreen() {
         <View style={styles.itemContent}>
           <Text style={[styles.itemTitle, isUnread && styles.itemTitleUnread]}>{item.title}</Text>
           {item.body ? (
-            <Text style={styles.itemBody} numberOfLines={2}>{item.body}</Text>
-          ) : null}
+  <Text style={styles.itemBody} numberOfLines={2}>
+    {formatNotifBody(item.body)}
+  </Text>
+) : null}
           <Text style={styles.itemTime}>{formatTime(item.created_at)}</Text>
         </View>
         {isUnread && <View style={styles.dot} />}
