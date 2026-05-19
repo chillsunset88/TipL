@@ -160,14 +160,34 @@ export function subscribeToOrder(orderId: string, onChange: (order: OrderWithPro
 }
 
 export function subscribeToMyOrders(userId: string, onChange: (orders: OrderWithProfiles[]) => void) {
-  const channel = supabase
-    .channel(`my-orders-${userId}-${Date.now()}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
+  const refetch = async () => {
+    try {
       const fresh = await getMyOrders(userId);
       onChange(fresh);
-    })
+    } catch {}
+  };
+
+  // Two channels needed: one as buyer (tiper), one as traveler (triper)
+  const ch1 = supabase
+    .channel(`my-orders-tiper-${userId}`)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'orders',
+      filter: `tiper_id=eq.${userId}`,
+    }, refetch)
     .subscribe();
-  return () => supabase.removeChannel(channel);
+
+  const ch2 = supabase
+    .channel(`my-orders-triper-${userId}`)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'orders',
+      filter: `triper_id=eq.${userId}`,
+    }, refetch)
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(ch1);
+    supabase.removeChannel(ch2);
+  };
 }
 
 export function subscribeToAllOrders(onChange: (orders: OrderWithProfiles[]) => void) {

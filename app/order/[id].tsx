@@ -734,6 +734,9 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
     );
   }
 
+  // ── Tripper waiting for payment — nothing to do, hide bar entirely ──────────
+  if (isTriper && !isTiper && status === 'accepted') return null;
+
   // ── Normal user bar ─────────────────────────────────────────────────────────
   if (terminal) {
     return (

@@ -4,46 +4,64 @@
  * Theme-aware: supports Dark Mode & Light Mode.
  */
 
+import { Button } from '@/src/components/ui/Button';
+import { Input } from '@/src/components/ui/Input';
+import { PageHeader } from '@/src/components/ui/PageHeader';
+import { BorderRadius, ITEM_CATEGORIES, Spacing, Typography } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
+import { acceptRequest, createRequest, updateRequestImageUrls, uploadRequestImage } from '@/src/services/supabase/requests';
+import { useAuthStore } from '@/src/store/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { PageHeader } from '@/src/components/ui/PageHeader';
-import * as ImagePicker from 'expo-image-picker';
-import * as Haptics from 'expo-haptics';
-import { Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
-import { Input } from '@/src/components/ui/Input';
-import { Button } from '@/src/components/ui/Button';
-import { useAuthStore } from '@/src/store/authStore';
-import { createRequest, uploadRequestImage, updateRequestImageUrls, acceptRequest } from '@/src/services/supabase/requests';
-import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const COUNTRIES = [
-  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan',
-  'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
-  'Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Costa Rica','Côte d’Ivoire','Croatia','Cuba','Cyprus','Czech Republic',
-  'Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia',
-  'Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana',
-  'Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan',
-  'Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg',
-  'Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar',
-  'Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar',
-  'Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria',
-  'Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
+  'Cabo Verde', 'Cambodia', 'Cameroon', 'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Costa Rica', 'Côte d’Ivoire', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic',
+  'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia',
+  'Fiji', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan',
+  'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar',
+  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar',
+  'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
 ];
+
+const CURRENCIES = [
+  { code: 'IDR', label: 'IDR', symbol: 'Rp' },
+  { code: 'USD', label: 'USD', symbol: '$' },
+  { code: 'JPY', label: 'JPY', symbol: '¥' },
+  { code: 'SGD', label: 'SGD', symbol: 'S$' },
+  { code: 'GBP', label: 'GBP', symbol: '£' },
+  { code: 'EUR', label: 'EUR', symbol: '€' },
+  { code: 'AUD', label: 'AUD', symbol: 'A$' },
+  { code: 'KRW', label: 'KRW', symbol: '₩' },
+];
+
+function fmtNum(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  return Number(digits).toLocaleString('id-ID');
+}
+function parseNum(s: string): string { return s.replace(/\D/g, ''); }
 
 export default function CreateRequestScreen() {
   const C = useThemeColors();
@@ -54,28 +72,18 @@ export default function CreateRequestScreen() {
   }>();
   const user = useAuthStore((s) => s.user);
 
-  const [images, setImages]                 = useState<string[]>([]);
-  const [itemName, setItemName]             = useState('');
-  const [brand, setBrand]                   = useState('');
-  const [description, setDescription]       = useState('');
-  const [category, setCategory]             = useState('');
-  const [quantity, setQuantity]             = useState('1');
+  const [images, setImages] = useState<string[]>([]);
+  const [itemName, setItemName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [quantity, setQuantity] = useState('1');
+  const [currency, setCurrency] = useState('IDR');
   const [estimatedPrice, setEstimatedPrice] = useState('');
-  const [maxBudget, setMaxBudget]           = useState('');
-  const [notes, setNotes]                   = useState('');
-  const [targetCountry, setTargetCountry]   = useState('');
-  const [loading, setLoading]               = useState(false);
-  const [showCountryModal, setShowCountryModal] = useState(false);
-
-  const formatRupiah = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    if (!digits) return '';
-    return 'Rp ' + Number(digits).toLocaleString('id-ID');
-  };
-
-  const handleRupiahInput = (value: string, setter: (value: string) => void) => {
-    setter(formatRupiah(value));
-  };
+  const [maxBudget, setMaxBudget] = useState('');
+  const [notes, setNotes] = useState('');
+  const [targetCountry, setTargetCountry] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -115,8 +123,7 @@ export default function CreateRequestScreen() {
   const handleSubmit = async () => {
     if (!itemName.trim()) { Alert.alert('Info Kurang', 'Masukkan nama item.'); return; }
     if (!category) { Alert.alert('Info Kurang', 'Pilih kategori.'); return; }
-    const numericBudgetMax = Number(maxBudget.replace(/\D/g, ''));
-    if (!maxBudget || isNaN(numericBudgetMax) || numericBudgetMax <= 0) {
+    if (!maxBudget || isNaN(Number(maxBudget)) || Number(maxBudget) <= 0) {
       Alert.alert('Info Kurang', 'Masukkan budget maksimal yang valid.'); return;
     }
     if (!targetCountry) { Alert.alert('Info Kurang', 'Pilih negara tujuan.'); return; }
@@ -130,7 +137,7 @@ export default function CreateRequestScreen() {
         tiper_id: user.id,
         item_name: itemName.trim(),
         description: fullDesc || undefined,
-        budget_max: numericBudgetMax,
+        budget_max: Number(maxBudget),
         currency: 'IDR',
         target_country: targetCountry,
         item_url: undefined,
@@ -453,8 +460,8 @@ export default function CreateRequestScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Target Country</Text>
             <Text style={styles.fieldLabel}>Where should the traveler buy this?</Text>
-            <TouchableOpacity 
-              style={styles.countryDropdown} 
+            <TouchableOpacity
+              style={styles.countryDropdown}
               onPress={() => setShowCountryModal(true)}
               activeOpacity={0.8}
             >
@@ -495,7 +502,7 @@ export default function CreateRequestScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Country</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowCountryModal(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
