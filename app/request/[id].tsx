@@ -83,15 +83,15 @@ export default function RequestDetailScreen() {
                 triper_id: user.id,
                 item_name: request.item_name,
                 notes: request.description ?? undefined,
-                total_amount: request.budget_max ?? 0,
+                total_amount: request.budget_max ?? undefined,
                 currency: request.currency ?? 'IDR',
-                status: 'pending',
-              } as any);
+                custom_request_id: request.id,
+              });
               await completeRequest(request.id);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               router.replace(`/order/${order.id}` as any);
-            } catch {
-              Alert.alert('Error', 'Gagal membuat pesanan. Coba lagi.');
+            } catch (e: any) {
+              Alert.alert('Gagal', e?.message ?? 'Terjadi kesalahan. Coba lagi.');
             } finally {
               setTaking(false);
             }
