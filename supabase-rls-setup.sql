@@ -123,12 +123,12 @@ CREATE POLICY "Read own orders"
   TO authenticated
   USING (tiper_id = auth.uid() OR triper_id = auth.uid());
 
--- Only buyer can create an order
+-- Buyer or tripper can create an order (tripper creates from custom request)
 DROP POLICY IF EXISTS "Insert own order" ON orders;
 CREATE POLICY "Insert own order"
   ON orders FOR INSERT
   TO authenticated
-  WITH CHECK (tiper_id = auth.uid());
+  WITH CHECK (tiper_id = auth.uid() OR triper_id = auth.uid());
 
 -- Both buyer and traveler can update the order (status transitions)
 DROP POLICY IF EXISTS "Update order participant" ON orders;

@@ -17,6 +17,7 @@ import {
   completeRequest,
   type CustomRequestWithProfile,
 } from '@/src/services/supabase/requests';
+import { createOrder } from '@/src/services/supabase/orders';
 
 const STATUS_LABEL: Record<string, string> = {
   open:      'Terbuka',
@@ -46,7 +47,7 @@ export default function RequestDetailScreen() {
   const user = useAuthStore((s) => s.user);
   const [request, setRequest] = useState<CustomRequestWithProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
+  const [taking, setTaking] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
 
   const load = useCallback(async () => {
@@ -64,37 +65,40 @@ export default function RequestDetailScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleComplete = async () => {
-    if (!request) return;
+  const handleTake = async () => {
+    if (!request || !user) return;
     Alert.alert(
-      'Tandai Selesai',
-      'Yakin request ini sudah selesai diproses?',
+      'Ambil Request',
+      `Ambil request "${request.item_name}" dan buat pesanan untuk pembeli?`,
       [
         { text: 'Batal', style: 'cancel' },
         {
-          text: 'Selesai',
+          text: 'Ambil',
           onPress: async () => {
-            setCompleting(true);
+            setTaking(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             try {
+              const order = await createOrder({
+                tiper_id: request.tiper_id,
+                triper_id: user.id,
+                item_name: request.item_name,
+                notes: request.description ?? undefined,
+                total_amount: request.budget_max ?? 0,
+                currency: request.currency ?? 'IDR',
+                status: 'pending',
+              } as any);
               await completeRequest(request.id);
-              setRequest((prev) => prev ? { ...prev, status: 'completed' } : prev);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              router.replace(`/order/${order.id}` as any);
             } catch {
-              Alert.alert('Error', 'Gagal mengupdate status.');
+              Alert.alert('Error', 'Gagal membuat pesanan. Coba lagi.');
             } finally {
-              setCompleting(false);
+              setTaking(false);
             }
           },
         },
       ],
     );
-  };
-
-  const handleChat = () => {
-    if (!request) return;
-    const buyerId = request.tiper_id;
-    router.push({ pathname: '/chat/[id]' as any, params: { id: buyerId, receiverId: buyerId } });
   };
 
   if (loading) {
@@ -186,10 +190,6 @@ export default function RequestDetailScreen() {
               <Text style={st.buyerLabel}>Diminta oleh</Text>
               <Text style={st.buyerName}>{buyer?.full_name ?? 'Pembeli'}</Text>
             </View>
-            <TouchableOpacity style={st.chatBtn} onPress={handleChat} activeOpacity={0.8}>
-              <Ionicons name="chatbubble-outline" size={16} color={Colors.primary} />
-              <Text style={st.chatBtnTxt}>Chat</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Description */}
@@ -245,16 +245,9 @@ export default function RequestDetailScreen() {
           {isTaken && isTriper && (
             <View style={st.ctaWrap}>
               <Button
-                title="Tandai Selesai"
-                onPress={handleComplete}
-                loading={completing}
-                fullWidth
-                size="lg"
-              />
-              <Button
-                title="Chat dengan Pembeli"
-                onPress={handleChat}
-                variant="secondary"
+                title="Ambil"
+                onPress={handleTake}
+                loading={taking}
                 fullWidth
                 size="lg"
               />
@@ -314,14 +307,6 @@ const st = StyleSheet.create({
   buyerInfo: { flex: 1 },
   buyerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
   buyerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  chatBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: Spacing.md, paddingVertical: 7,
-    borderRadius: BorderRadius.full, borderWidth: 1,
-    borderColor: Colors.primary, backgroundColor: `${Colors.primary}10`,
-  },
-  chatBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
-
   section: { gap: 4 },
   sectionTitle: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal },
   descText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, lineHeight: 22 },
