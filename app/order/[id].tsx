@@ -3,7 +3,7 @@
  * Role-aware action buttons, Supabase real-time data, Supabase escrow.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,11 +21,13 @@ import * as Haptics from 'expo-haptics';
 
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
+import { ReviewModal } from '@/src/components/ui/ReviewModal';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useOrder, updateOrderStatus } from '@/src/lib/hooks/useOrders';
 import { useAuthStore } from '@/src/store/authStore';
 import { createXenditInvoice } from '@/src/lib/xendit';
 import { createEscrowPayment, releaseEscrow, disputeEscrow } from '@/src/services/supabase/escrow';
+import { hasReviewed, submitReview } from '@/src/services/supabase/reviews';
 import { addDeliveryReminderEvent } from '@/src/services/calendar';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
@@ -54,7 +56,17 @@ export default function OrderDetailScreen() {
   const { order, loading } = useOrder(id);
 
   const [actionLoading, setActionLoading] = useState(false);
+  const [reviewVisible, setReviewVisible] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const { t } = useSettingsStore();
+
+  useEffect(() => {
+    if (!order || !user) return;
+    const isTiperCheck = order.tiper_id === user.id;
+    if (order.status === 'completed' && isTiperCheck) {
+      hasReviewed(order.id, user.id).then(setAlreadyReviewed).catch(() => {});
+    }
+  }, [order?.id, order?.status, user?.id]);
 
   if (loading) {
     return (
@@ -186,6 +198,18 @@ export default function OrderDetailScreen() {
 
   const escrowStatuses = ['in_escrow', 'purchased', 'shipped'];
 
+  const handleSubmitReview = async (rating: number, comment: string) => {
+    if (!user || !order) return;
+    await submitReview({
+      order_id: order.id,
+      reviewer_id: user.id,
+      reviewee_id: order.triper_id,
+      rating,
+      comment: comment || null,
+    });
+    setAlreadyReviewed(true);
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
@@ -302,12 +326,21 @@ export default function OrderDetailScreen() {
         isTriper={isTriper}
         isAdmin={isAdmin}
         loading={actionLoading}
+        alreadyReviewed={alreadyReviewed}
         onPayNow={handlePayNow}
         onAccept={handleAccept}
         onMarkShipped={handleMarkShipped}
         onConfirmReceipt={handleConfirmReceipt}
         onDispute={handleDispute}
         onAdminSetStatus={(s) => withLoading(() => updateOrderStatus(order.id, s))}
+        onLeaveReview={() => setReviewVisible(true)}
+      />
+
+      <ReviewModal
+        visible={reviewVisible}
+        travelerName={order.triper?.full_name ?? 'Traveler'}
+        onClose={() => setReviewVisible(false)}
+        onSubmit={handleSubmitReview}
       />
     </SafeAreaView>
   );
@@ -336,15 +369,17 @@ interface ActionBarProps {
   isTriper: boolean;
   isAdmin: boolean;
   loading: boolean;
+  alreadyReviewed: boolean;
   onPayNow: () => void;
   onAccept: () => void;
   onMarkShipped: () => void;
   onConfirmReceipt: () => void;
   onDispute: () => void;
   onAdminSetStatus: (s: OrderStatus) => void;
+  onLeaveReview: () => void;
 }
 
-function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute, onAdminSetStatus }: ActionBarProps) {
+function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewed, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute, onAdminSetStatus, onLeaveReview }: ActionBarProps) {
   const { t } = useSettingsStore();
   const terminal = ['completed', 'cancelled', 'disputed'].includes(status);
 
@@ -408,6 +443,23 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, onPayNow, onAc
             {status === 'completed' ? t.orderCompletedMsg : status === 'cancelled' ? t.orderCancelledMsg : t.disputeFiledStatus}
           </Text>
         </View>
+
+        {status === 'completed' && isTiper && (
+          alreadyReviewed ? (
+            <View style={styles.reviewedBadge}>
+              <Ionicons name="star" size={14} color={Colors.primary} />
+              <Text style={styles.reviewedBadgeText}>{t.alreadyReviewed}</Text>
+            </View>
+          ) : (
+            <Button
+              title={t.leaveReview}
+              onPress={onLeaveReview}
+              fullWidth
+              size="lg"
+              icon={<Ionicons name="star-outline" size={18} color={Colors.white} />}
+            />
+          )
+        )}
       </View>
     );
   }
@@ -651,6 +703,18 @@ const styles = StyleSheet.create({
   terminalText: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.sm, color: Colors.darkGray,
+  },
+  reviewedBadge: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.xs, marginTop: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.primary + '15',
+    borderRadius: BorderRadius.full,
+  },
+  reviewedBadgeText: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.primaryDark,
   },
   waitingText: {
     fontFamily: Typography.regular.fontFamily,

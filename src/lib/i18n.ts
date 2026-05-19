@@ -342,6 +342,15 @@ export interface Translations {
   orderCancelledMsg: string;
   disputeFiledStatus: string;
   priceNotSet: string;
+
+  // Review & Rating
+  leaveReview: string;
+  rateYourExperience: string;
+  submitReview: string;
+  reviewSubmitted: string;
+  reviewThankYou: string;
+  writeComment: string;
+  alreadyReviewed: string;
 }
 
 const en: Translations = {
@@ -680,6 +689,15 @@ const en: Translations = {
   orderCancelledMsg: 'Order Cancelled',
   disputeFiledStatus: 'Dispute Filed — Support will contact you',
   priceNotSet: 'Price not set',
+
+  // Review & Rating
+  leaveReview: 'Leave a Review',
+  rateYourExperience: 'Rate your experience with this traveler',
+  submitReview: 'Submit Review',
+  reviewSubmitted: 'Review Submitted!',
+  reviewThankYou: 'Thank you for your feedback.',
+  writeComment: 'Write a comment (optional)',
+  alreadyReviewed: 'Already Reviewed',
 };
 
 const id: Translations = {
@@ -1018,6 +1036,15 @@ const id: Translations = {
   orderCancelledMsg: 'Pesanan Dibatalkan',
   disputeFiledStatus: 'Sengketa Diajukan — Tim dukungan akan menghubungimu',
   priceNotSet: 'Harga belum diset',
+
+  // Review & Rating
+  leaveReview: 'Tulis Ulasan',
+  rateYourExperience: 'Beri penilaian pengalamanmu dengan traveler ini',
+  submitReview: 'Kirim Ulasan',
+  reviewSubmitted: 'Ulasan Terkirim!',
+  reviewThankYou: 'Terima kasih atas ulasanmu.',
+  writeComment: 'Tulis komentar (opsional)',
+  alreadyReviewed: 'Sudah Diulas',
 };
 
 const translations: Record<Locale, Translations> = { en, id };

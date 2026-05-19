@@ -3,7 +3,7 @@
  * Mounts auth listener, deep link handler, navigation guard, fonts, and biometric lock.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -36,6 +36,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useBiometricStore } from '@/src/store/biometricStore';
 import { LockScreen } from '@/src/components/LockScreen';
 import { NotificationBanner } from '@/src/components/ui/NotificationBanner';
+import { AnimatedSplash } from '@/src/components/AnimatedSplash';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -94,6 +95,16 @@ function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { isEnabled, isLocked, lock, hydrated } = useBiometricStore();
   const segments = useSegments();
+  const [splashDone, setSplashDone] = useState(false);
+  const prevAuthRef = useRef(false);
+
+  // Tampilkan splash lagi setiap kali user berhasil login
+  useEffect(() => {
+    if (!prevAuthRef.current && isAuthenticated) {
+      setSplashDone(false);
+    }
+    prevAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
   const responseListener = useRef<{ remove: () => void } | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
@@ -237,6 +248,12 @@ function RootLayoutNav() {
 
         {showLock && <LockScreen />}
         <NotificationBanner />
+        {!splashDone && (
+          <AnimatedSplash
+            authReady={!isLoading}
+            onDone={() => setSplashDone(true)}
+          />
+        )}
       </ThemeProvider>
     </GestureHandlerRootView>
   );
