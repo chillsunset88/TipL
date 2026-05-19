@@ -107,11 +107,12 @@ export default function NotificationsScreen() {
       const remaining = notifications.filter((n) => n.id !== notif.id && !n.read_at).length;
       setStoreCount(remaining);
     }
-    // notif.type adalah jenis notifikasi, bukan notif.data.type
-    const data = notif.data ?? {};
-    if (notif.type === 'order' && data.orderId) router.push(`/order/${data.orderId}`);
-    else if (notif.type === 'chat' && data.chatId)
-      router.push({ pathname: '/chat/[id]', params: { id: data.chatId, receiverId: data.chatId } } as any);
+    const data = notif.data ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data) : {};
+    const orderId = data?.orderId ?? data?.order_id ?? data?.orderID;
+    const chatId = data?.chatId ?? data?.chat_id ?? data?.chatID;
+    if (notif.type === 'order' && orderId) router.push(`/order/${orderId}`);
+    else if (notif.type === 'chat' && chatId)
+      router.push({ pathname: '/chat/[id]', params: { id: chatId, receiverId: chatId } } as any);
   };
 
   const handleMarkAllRead = async () => {

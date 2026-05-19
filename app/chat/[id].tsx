@@ -40,13 +40,16 @@ type Message = Database['public']['Tables']['messages']['Row'];
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ChatRoomScreen() {
-  const { id, orderId } = useLocalSearchParams<{ id: string; orderId?: string }>();
+  const { id, receiverId, orderId } = useLocalSearchParams<{
+    id?: string;
+    receiverId?: string;
+    orderId?: string;
+  }>();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id ?? '';
 
-  const { receiverId } = useLocalSearchParams<{ receiverId?: string }>();
-  const otherUserId = receiverId ?? '';
+  const otherUserId = receiverId ?? id ?? '';
 
   const { t } = useSettingsStore();
   const { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage } = useChat(currentUserId, otherUserId);
@@ -75,9 +78,9 @@ export default function ChatRoomScreen() {
 
   // Track active chat for unread management
   useEffect(() => {
-    setActiveChatId(id ?? null);
+    setActiveChatId(otherUserId || null);
     return () => setActiveChatId(null);
-  }, [id, setActiveChatId]);
+  }, [otherUserId, setActiveChatId]);
 
   // Mark messages as read when screen mounts / new messages arrive
   useEffect(() => {

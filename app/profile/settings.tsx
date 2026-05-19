@@ -49,6 +49,13 @@ export default function SettingsScreen() {
     });
   }, []);
 
+  const getBiometricLabel = React.useCallback(() => {
+    const type = biometricType.toLowerCase();
+    if (type.includes('face')) return t.faceIdLock;
+    if (type.includes('sidik') || type.includes('finger')) return t.fingerprintLock;
+    return t.biometricLock;
+  }, [biometricType, t]);
+
   const handleBiometricToggle = async (val: boolean) => {
     if (val) await enable();
     else await disable();
@@ -146,7 +153,7 @@ export default function SettingsScreen() {
           {biometricSupported && (
             <ToggleRow
               icon="finger-print"
-              label={`Kunci ${biometricType}`}
+              label={getBiometricLabel()}
               value={isEnabled}
               onToggle={handleBiometricToggle}
               last

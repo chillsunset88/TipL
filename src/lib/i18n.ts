@@ -42,6 +42,9 @@ export interface Translations {
   helpSupport: string;
   termsPrivacy: string;
   aboutApp: string;
+  fingerprintLock: string;
+  faceIdLock: string;
+  biometricLock: string;
   signOut: string;
   signOutConfirm: string;
   cancel: string;
@@ -389,6 +392,9 @@ const en: Translations = {
   helpSupport: 'Help & Support',
   termsPrivacy: 'Terms & Privacy',
   aboutApp: 'About TipL',
+  fingerprintLock: 'Fingerprint Lock',
+  faceIdLock: 'Face ID Lock',
+  biometricLock: 'Biometric Lock',
   signOut: 'Sign Out',
   signOutConfirm: 'Are you sure you want to sign out?',
   cancel: 'Cancel',
@@ -736,6 +742,9 @@ const id: Translations = {
   helpSupport: 'Bantuan & Dukungan',
   termsPrivacy: 'Syarat & Privasi',
   aboutApp: 'Tentang TipL',
+  fingerprintLock: 'Kunci Sidik Jari',
+  faceIdLock: 'Kunci Face ID',
+  biometricLock: 'Kunci Biometrik',
   signOut: 'Keluar',
   signOutConfirm: 'Apakah Anda yakin ingin keluar?',
   cancel: 'Batal',

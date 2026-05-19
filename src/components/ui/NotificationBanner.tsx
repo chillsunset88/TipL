@@ -42,7 +42,22 @@ export function NotificationBanner() {
 
   const handlePress = () => {
     slideOut();
-    if (banner.orderId) router.push(`/order/${banner.orderId}` as any);
+    if (!banner) return;
+    if (banner.orderId) {
+      router.push(`/order/${banner.orderId}` as any);
+      return;
+    }
+    if (banner.chatId) {
+      router.push({ pathname: '/chat/[id]', params: { id: banner.chatId, receiverId: banner.chatId } } as any);
+      return;
+    }
+    if (banner.tripId) {
+      router.push(`/trip/${banner.tripId}` as any);
+      return;
+    }
+    if (banner.url) {
+      router.push(banner.url as any);
+    }
   };
 
   return (
