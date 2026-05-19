@@ -118,18 +118,69 @@ export default function NotificationsScreen() {
       ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data as Record<string, string>)
       : {};
 
-    const orderId = data.orderId ?? data.order_id ?? data.orderID ?? data.id;
+    const orderId = data.orderId ?? data.order_id ?? data.orderID ?? data.orderId ?? data.id;
     const chatUserId = data.chatId ?? data.chat_id ?? data.senderId ?? data.sender_id
       ?? data.userId ?? data.user_id ?? data.receiverId;
+    const requestId = data.requestId ?? data.request_id ?? data.requestID;
+    const tripId = data.tripId ?? data.trip_id ?? data.tripID;
+    const productId = data.productId ?? data.product_id ?? data.productID;
+    const targetPath = data.path ?? data.route ?? data.url ?? data.target ?? data.link;
 
     const type = notif.type?.toLowerCase() ?? '';
     const isOrder = type.includes('order') || type === 'payment';
     const isChat = type.includes('chat') || type.includes('message');
+    const isRequest = type.includes('request');
+    const isTrip = type.includes('trip');
+    const isProduct = type.includes('product');
+
+    if (targetPath) {
+      router.push(targetPath as any);
+      return;
+    }
+
+    if (isChat && chatUserId) {
+      router.push(`/chat/${chatUserId}` as any);
+      return;
+    }
 
     if (isOrder && orderId) {
       router.push(`/order/${orderId}` as any);
-    } else if (isChat && chatUserId) {
-      router.push({ pathname: '/chat/[id]' as any, params: { id: chatUserId, receiverId: chatUserId } });
+      return;
+    }
+
+    if (isRequest && requestId) {
+      router.push(`/request/${requestId}` as any);
+      return;
+    }
+
+    if (isTrip && tripId) {
+      router.push(`/trip/${tripId}` as any);
+      return;
+    }
+
+    if (isProduct && productId) {
+      router.push(`/product/${productId}` as any);
+      return;
+    }
+
+    if (orderId) {
+      router.push(`/order/${orderId}` as any);
+      return;
+    }
+
+    if (requestId) {
+      router.push(`/request/${requestId}` as any);
+      return;
+    }
+
+    if (tripId) {
+      router.push(`/trip/${tripId}` as any);
+      return;
+    }
+
+    if (productId) {
+      router.push(`/product/${productId}` as any);
+      return;
     }
   };
 
