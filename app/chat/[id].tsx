@@ -179,7 +179,7 @@ export default function ChatRoomScreen() {
     }
   }, [inputText, sending, sendMessage, currentUserId, otherUserId]);
 
-  // ─── Send image ──────────────────────────────────────────────────────────
+  // ─── Send image from gallery ────────────────────────────────────────────
   const handlePickImage = useCallback(async () => {
     if (!currentUserId || !otherUserId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -189,6 +189,34 @@ export default function ChatRoomScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    setUploadingImage(true);
+    try {
+      const url = await uploadChatImage(result.assets[0].uri);
+      await sendImage(url);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (e: any) {
+      Alert.alert(t.failedSendImage, e?.message ?? 'Terjadi kesalahan.');
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [uploadChatImage, sendImage, currentUserId, otherUserId]);
+
+  // ─── Take photo with camera ─────────────────────────────────────────────
+  const handleTakePhoto = useCallback(async () => {
+    if (!currentUserId || !otherUserId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Izinkan akses kamera untuk mengambil foto.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.85,
@@ -372,17 +400,25 @@ export default function ChatRoomScreen() {
 
         {/* Input bar */}
         <View style={[styles.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={handlePickImage}
-            disabled={uploadingImage}
-          >
-            {uploadingImage
-              ? <ActivityIndicator size="small" color={Colors.primary} />
-              : <Ionicons name="image-outline" size={26} color={Colors.darkGray} />
-            }
-          </TouchableOpacity>
-
+          <View style={styles.attachGroup}>
+            <TouchableOpacity
+              style={styles.attachButton}
+              onPress={handlePickImage}
+              disabled={uploadingImage}
+            >
+              {uploadingImage
+                ? <ActivityIndicator size="small" color={Colors.primary} />
+                : <Ionicons name="image-outline" size={24} color={Colors.darkGray} />
+              }
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.attachButton}
+              onPress={handleTakePhoto}
+              disabled={uploadingImage}
+            >
+              <Ionicons name="camera-outline" size={24} color={Colors.darkGray} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
@@ -670,6 +706,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  attachGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
   inputContainer: {
     flex: 1,
