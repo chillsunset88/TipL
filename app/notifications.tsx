@@ -306,7 +306,7 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={st.safe} edges={[]}>
+    <SafeAreaView style={st.safe} edges={["bottom"]}>
       <PageHeader
         title={t.notifications}
         onBack={() => router.back()}

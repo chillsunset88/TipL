@@ -17,13 +17,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type FAQItem = {
   id: string;
@@ -329,7 +329,7 @@ export default function HelpScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <PageHeader title={t.helpSupport} onBack={() => router.back()} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>

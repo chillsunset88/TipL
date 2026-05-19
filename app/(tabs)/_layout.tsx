@@ -23,7 +23,7 @@ export default function TabLayout() {
   const isDark = useIsDark();
   const insets = useSafeAreaInsets();
 
-  const TAB_CONTENT_HEIGHT = Platform.OS === 'ios' ? 50 : 54;
+    const TAB_CONTENT_HEIGHT = Platform.OS === 'ios' ? 50 : 54;
   const tabBarHeight = TAB_CONTENT_HEIGHT + insets.bottom;
 
   return (
@@ -43,12 +43,16 @@ export default function TabLayout() {
           letterSpacing: 0.2,
         },
         tabBarStyle: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
           backgroundColor: C.offWhite,
           borderTopWidth: 1,
           borderTopColor: C.lightGray,
           height: tabBarHeight,
           paddingTop: 8,
-          paddingBottom: insets.bottom + (Platform.OS === 'ios' ? 0 : 6),
+          paddingBottom: insets.bottom,
           ...Shadows.sm,
         },
       }}

@@ -257,7 +257,7 @@ export default function CreateRequestScreen() {
   }), [C]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={[]}>
+    <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <PageHeader title={t.createRequest} onBack={() => router.back()} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
