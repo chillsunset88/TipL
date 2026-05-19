@@ -260,10 +260,13 @@ const st = StyleSheet.create({
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
+    maxHeight: 56,
   },
   filterContent: {
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    gap: Spacing.sm, alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
