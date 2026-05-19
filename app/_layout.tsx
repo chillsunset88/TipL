@@ -218,7 +218,7 @@ function RootLayoutNav() {
     const chatId = data.chatId ?? data.chat_id ?? data.chatID;
     const tripId = data.tripId ?? data.trip_id ?? data.tripID;
     const url = data.url ?? data.screenUrl ?? data.route;
-    const type = data.type ?? response.notification.request.content.data.type;
+    const type = data.type;
 
     if ((type === 'order' || type === 'payment') && orderId) {
       router.push(`/order/${orderId}`);

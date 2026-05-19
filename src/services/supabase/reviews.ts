@@ -11,7 +11,7 @@ export type ReviewWithProfile = Review & {
 };
 
 export async function getReviewsForUser(userId: string, limit = 20): Promise<ReviewWithProfile[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('reviews')
     .select('*, reviewer:profiles!reviews_reviewer_id_fkey(id, full_name, avatar_url)')
     .eq('reviewee_id', userId)
@@ -32,7 +32,7 @@ export async function submitReview(payload: ReviewInsert): Promise<Review> {
 }
 
 export async function hasReviewed(orderId: string, reviewerId: string): Promise<boolean> {
-  const { count } = await supabase
+  const { count } = await db
     .from('reviews')
     .select('id', { count: 'exact', head: true })
     .eq('order_id', orderId)
@@ -42,7 +42,7 @@ export async function hasReviewed(orderId: string, reviewerId: string): Promise<
 
 /** Hitung ulang rating & total_reviews di profiles setelah review baru masuk */
 export async function recalculateProfileRating(revieweeId: string): Promise<void> {
-  const { data } = await supabase
+  const { data } = await db
     .from('reviews')
     .select('rating')
     .eq('reviewee_id', revieweeId);
@@ -50,9 +50,9 @@ export async function recalculateProfileRating(revieweeId: string): Promise<void
   if (!data || data.length === 0) return;
 
   const total = data.length;
-  const avg = data.reduce((sum, r) => sum + r.rating, 0) / total;
+  const avg = data.reduce((sum: number, r: any) => sum + r.rating, 0) / total;
 
-  await (supabase as any)
+  await db
     .from('profiles')
     .update({
       rating: Math.round(avg * 10) / 10,

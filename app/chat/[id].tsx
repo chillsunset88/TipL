@@ -161,11 +161,11 @@ function OrderReceiptPreview({ orderId }: { orderId: string }) {
         </View>
       )}
       <View style={s.receiptContent}>
-        <Text style={s.receiptLabel}>{t.orderReceiptPreview || 'Receipt'}</Text>
+        <Text style={s.receiptLabel}>{(t as any).orderReceiptPreview || 'Receipt'}</Text>
         <Text style={s.receiptTitle} numberOfLines={2}>{order.item_name}</Text>
         <Text style={s.receiptPrice}>{price?.toLocaleString ? price.toLocaleString('id-ID', { style: 'currency', currency }) : `${currency} ${price}`}</Text>
         <View style={s.receiptBtn}>
-          <Text style={s.receiptBtnText}>{t.viewReceipt || 'View Receipt'}</Text>
+          <Text style={s.receiptBtnText}>{(t as any).viewReceipt || 'View Receipt'}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -515,20 +515,6 @@ export default function ChatRoomScreen() {
       alignItems: 'center',
       flex: 1,
       gap: Spacing.sm,
-    },
-    headerInfo: {
-      flex: 1,
-      marginLeft: Spacing.xs,
-    },
-    headerName: {
-      fontFamily: Typography.regular.fontFamily,
-      fontSize: Typography.sizes.base,
-      color: C.nearBlack,
-    },
-    headerStatus: {
-      fontFamily: Typography.regular.fontFamily,
-      fontSize: Typography.sizes.xs,
-      color: C.success,
     },
     productPreview: {
       flexDirection: 'row',
