@@ -9,9 +9,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Colors, Typography, Spacing, BorderRadius, Shadows, CATEGORY_MAP } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { getProfile } from '@/src/services/supabase/profiles';
 import { getMyTrips, getProductsByTriper } from '@/src/services/supabase/trips';
 import { isFavoriteTriper, toggleFavoriteTriper } from '@/src/services/supabase/favorites';
@@ -24,17 +25,6 @@ type Product = Database['public']['Tables']['products']['Row'];
 const { width: SW } = Dimensions.get('window');
 const PROD_W = (SW - Spacing.xl * 2 - Spacing.md) / 2;
 
-const CATEGORY_MAP: Record<string, { label: string; icon: string; color: string }> = {
-  luxury:      { label: 'Luxury Goods',     icon: 'diamond-outline',         color: '#A78BFA' },
-  skincare:    { label: 'Skincare',          icon: 'leaf-outline',            color: '#34D399' },
-  food:        { label: 'Food & Beverages',  icon: 'restaurant-outline',      color: '#F97316' },
-  electronics: { label: 'Electronics',       icon: 'hardware-chip-outline',   color: '#60A5FA' },
-  fashion:     { label: 'Fashion',           icon: 'shirt-outline',           color: '#F472B6' },
-  toys:        { label: 'Toys & Games',      icon: 'game-controller-outline', color: '#FBBF24' },
-  books:       { label: 'Books',             icon: 'book-outline',            color: '#6EE7B7' },
-  other:       { label: 'Other',             icon: 'grid-outline',            color: '#94A3B8' },
-};
-
 const fmtIDR = (v: number | null) => v != null ? 'Rp ' + v.toLocaleString('id-ID') : null;
 
 function fmtDate(iso: string | null | undefined) {
@@ -42,11 +32,11 @@ function fmtDate(iso: string | null | undefined) {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function fmtDateRange(dep: string | null | undefined, ret: string | null | undefined) {
+function fmtDateRange(dep: string | null | undefined, ret: string | null | undefined, departingLabel = 'Departing') {
   const d = fmtDate(dep);
   const r = fmtDate(ret);
   if (d && r) return `${d}  –  ${r}`;
-  if (d) return `Berangkat ${d}`;
+  if (d) return `${departingLabel} ${d}`;
   return null;
 }
 
@@ -55,6 +45,7 @@ export default function TriperProfileScreen() {
   const currentUser = useAuthStore((s) => s.user);
   const isOwnProfile = currentUser?.id === id;
 
+  const { t } = useSettingsStore();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -105,9 +96,9 @@ export default function TriperProfileScreen() {
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.center}>
           <Ionicons name="person-outline" size={48} color={Colors.midGray} />
-          <Text style={s.centerTxt}>Profil tidak ditemukan</Text>
+          <Text style={s.centerTxt}>{t.profileNotFound}</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={s.centerLink}>Kembali</Text>
+            <Text style={s.centerLink}>{t.back}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -156,24 +147,24 @@ export default function TriperProfileScreen() {
                 <Text style={s.ratingTxt}>{profile.rating!.toFixed(1)}</Text>
               </View>
             ) : (
-              <Text style={s.noRatingTxt}>Belum ada ulasan</Text>
+              <Text style={s.noRatingTxt}>{t.noReviews}</Text>
             )}
 
             {/* Stats */}
             <View style={s.statsCard}>
               <View style={s.statItem}>
                 <Text style={s.statNum}>{profile.total_trips ?? 0}</Text>
-                <Text style={s.statLbl}>Trips</Text>
+                <Text style={s.statLbl}>{t.tripsStatLabel}</Text>
               </View>
               <View style={s.statSep} />
               <View style={s.statItem}>
                 <Text style={s.statNum}>{visibleProducts.length}</Text>
-                <Text style={s.statLbl}>Produk</Text>
+                <Text style={s.statLbl}>{t.productsStatLabel}</Text>
               </View>
               <View style={s.statSep} />
               <View style={s.statItem}>
                 <Text style={s.statNum}>{profile.total_reviews ?? 0}</Text>
-                <Text style={s.statLbl}>Ulasan</Text>
+                <Text style={s.statLbl}>{t.reviewsStatLabel}</Text>
               </View>
             </View>
 
@@ -190,12 +181,12 @@ export default function TriperProfileScreen() {
                 ) : followed ? (
                   <>
                     <Ionicons name="heart" size={16} color={Colors.error} />
-                    <Text style={s.followTxtDone}>Mengikuti</Text>
+                    <Text style={s.followTxtDone}>{t.following}</Text>
                   </>
                 ) : (
                   <>
                     <Ionicons name="heart-outline" size={16} color={Colors.white} />
-                    <Text style={s.followTxt}>Ikuti Tripper</Text>
+                    <Text style={s.followTxt}>{t.followTriper}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -207,7 +198,7 @@ export default function TriperProfileScreen() {
         {trips.length > 0 && (
           <View style={s.section}>
             <View style={s.sectionHead}>
-              <Text style={s.sectionLabel}>TRIP AKTIF</Text>
+              <Text style={s.sectionLabel}>{t.activeTripsSectionTitle}</Text>
               <View style={s.pill}>
                 <Text style={s.pillTxt}>{trips.length}</Text>
               </View>
@@ -215,7 +206,7 @@ export default function TriperProfileScreen() {
 
             {trips.map((trip) => {
               const dest = trip.destination_city ?? trip.destination_country;
-              const dateRange = fmtDateRange(trip.departure_date, trip.return_date);
+              const dateRange = fmtDateRange(trip.departure_date, trip.return_date, t.departingOn);
               return (
                 <TouchableOpacity
                   key={trip.id}
@@ -260,7 +251,7 @@ export default function TriperProfileScreen() {
         {/* ── Produk ── */}
         <View style={s.section}>
           <View style={s.sectionHead}>
-            <Text style={s.sectionLabel}>PRODUK</Text>
+            <Text style={s.sectionLabel}>{t.productsSectionTitle}</Text>
             {visibleProducts.length > 0 && (
               <View style={s.pill}>
                 <Text style={s.pillTxt}>{visibleProducts.length}</Text>
@@ -271,7 +262,7 @@ export default function TriperProfileScreen() {
           {visibleProducts.length === 0 ? (
             <View style={s.emptyProd}>
               <Ionicons name="cube-outline" size={36} color={Colors.midGray} />
-              <Text style={s.emptyProdTxt}>Tripper belum menambahkan produk</Text>
+              <Text style={s.emptyProdTxt}>{t.triperNoProducts}</Text>
             </View>
           ) : (
             <View style={s.prodGrid}>
@@ -303,7 +294,7 @@ export default function TriperProfileScreen() {
                       <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
                       {price
                         ? <Text style={s.prodPrice}>{price}</Text>
-                        : <Text style={s.prodPriceMuted}>Harga belum diset</Text>
+                        : <Text style={s.prodPriceMuted}>{t.priceTbd}</Text>
                       }
                     </View>
                   </TouchableOpacity>

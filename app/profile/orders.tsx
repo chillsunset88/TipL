@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — My Orders
  * Riwayat order dari Supabase, difilter per status, realtime.
  */
@@ -11,7 +11,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
 import { useMyOrders } from '@/src/lib/hooks/useOrders';
@@ -112,8 +112,8 @@ export default function OrdersScreen() {
     key === 'all' ? 0 : orders.filter((o) => matchFilter(o.status ?? 'pending', key)).length;
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={st.safe} edges={[]}>
+      <PageHeader title="Pesanan Saya" onBack={() => router.back()} />
 
       {/* Filter tabs horizontal */}
       <ScrollView
@@ -240,7 +240,6 @@ const st = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
     maxHeight: 56,
-    marginTop: 56,
   },
   filterContent: {
     paddingHorizontal: Spacing.xl,
@@ -249,27 +248,28 @@ const st = StyleSheet.create({
     alignItems: 'center',
   },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: Spacing.md, paddingVertical: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: Spacing.md, paddingVertical: 7,
     borderRadius: BorderRadius.full, borderWidth: 1,
-    borderColor: Colors.midGray, backgroundColor: Colors.offWhite,
+    borderColor: Colors.lightGray, backgroundColor: Colors.white,
   },
   chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   chipTxt: {
     fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.darkGray,
+    fontSize: Typography.sizes.xs, color: Colors.charcoal,
   },
   chipTxtActive: { color: Colors.white },
   chipBadge: {
-    minWidth: 16, height: 16, borderRadius: 8,
-    backgroundColor: Colors.midGray,
+    minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: Colors.primaryPale,
     alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
+    paddingHorizontal: 4,
+    borderWidth: 1, borderColor: Colors.primaryLight,
   },
-  chipBadgeActive: { backgroundColor: 'rgba(255,255,255,0.3)' },
+  chipBadgeActive: { backgroundColor: 'rgba(255,255,255,0.25)', borderColor: 'rgba(255,255,255,0.4)' },
   chipBadgeTxt: {
     fontFamily: Typography.medium.fontFamily,
-    fontSize: 9, color: Colors.white,
+    fontSize: 9, color: Colors.primary,
   },
   chipBadgeTxtActive: { color: Colors.white },
 

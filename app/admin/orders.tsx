@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TipL — Admin: Kelola Status Paket
  * Daftar semua order dengan filter status. Admin bisa ubah status untuk demo.
  */
@@ -11,7 +11,7 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
 import { getAllOrders, type OrderWithProfiles } from '@/src/services/supabase/orders';
@@ -80,7 +80,7 @@ export default function AdminOrdersScreen() {
 
   if (user?.role !== 'admin') {
     return (
-      <SafeAreaView style={st.safe} edges={['top']}>
+      <SafeAreaView style={st.safe} edges={[]}>
         <View style={st.denied}>
           <Ionicons name="lock-closed-outline" size={48} color={Colors.midGray} />
           <Text style={st.deniedTxt}>Akses ditolak</Text>
@@ -148,8 +148,8 @@ export default function AdminOrdersScreen() {
   };
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={st.safe} edges={[]}>
+      <PageHeader title="Admin Pesanan" onBack={() => router.back()} />
 
       {/* Judul */}
       <View style={st.titleWrap}>
@@ -206,7 +206,7 @@ const st = StyleSheet.create({
   denied: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   deniedTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
 
-  titleWrap: { paddingHorizontal: Spacing.xl, paddingTop: 64, paddingBottom: Spacing.sm },
+  titleWrap: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   title: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack },
   subtitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginTop: 2 },
 

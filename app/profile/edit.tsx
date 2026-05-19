@@ -15,7 +15,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
@@ -79,8 +79,8 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <PageHeader title="Edit Profil" onBack={() => router.back()} />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Avatar */}
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center', justifyContent: 'center',
   },
-  container: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: 56 },
+  container: { flex: 1, paddingHorizontal: Spacing.xl },
   avatarSection: {
     alignItems: 'center', paddingVertical: Spacing['2xl'],
   },

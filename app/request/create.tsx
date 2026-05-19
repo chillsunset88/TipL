@@ -19,7 +19,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
@@ -122,10 +122,9 @@ export default function CreateRequestScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <PageHeader title="Buat Permintaan" onBack={() => router.back()} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <FloatingBackButton onPress={() => router.back()} />
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
@@ -288,7 +287,7 @@ const styles = StyleSheet.create({
   },
 
   scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: 40 },
+  content: { paddingHorizontal: Spacing.xl, paddingBottom: 40 },
 
   triperBanner: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,

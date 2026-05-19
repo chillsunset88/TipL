@@ -13,9 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { signUp } from '@/src/services/supabase/auth';
 
 export default function RegisterScreen() {
+  const { t } = useSettingsStore();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,13 +29,13 @@ export default function RegisterScreen() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!fullName.trim()) e.fullName = 'Nama lengkap wajib diisi';
-    if (!email.trim()) e.email = 'Email wajib diisi';
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Format email tidak valid';
-    if (!password) e.password = 'Password wajib diisi';
-    else if (password.length < 8) e.password = 'Minimal 8 karakter';
-    if (password !== confirmPassword) e.confirmPassword = 'Password tidak sama';
-    if (!agreed) e.terms = 'Harap setujui syarat & ketentuan';
+    if (!fullName.trim()) e.fullName = t.fullNameRequired;
+    if (!email.trim()) e.email = t.emailRequiredReg;
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = t.invalidEmailReg;
+    if (!password) e.password = t.passwordRequiredReg;
+    else if (password.length < 8) e.password = t.minEightChars;
+    if (password !== confirmPassword) e.confirmPassword = t.passwordsMismatch;
+    if (!agreed) e.terms = t.agreeToTerms;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -49,13 +51,13 @@ export default function RegisterScreen() {
       await signUp(email.trim(), password, fullName.trim());
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'Akun Berhasil Dibuat!',
-        'Cek email kamu untuk verifikasi akun, lalu masuk.',
-        [{ text: 'OK', onPress: () => router.back() }],
+        t.accountCreated,
+        t.accountCreatedMsg,
+        [{ text: t.ok, onPress: () => router.back() }],
       );
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Registrasi Gagal', err?.message ?? 'Silakan coba lagi.');
+      Alert.alert(t.registerFailed, err?.message ?? t.tryAgainShort);
     } finally {
       setLoading(false);
     }
@@ -71,21 +73,21 @@ export default function RegisterScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Buat Akun</Text>
+            <Text style={styles.headerTitle}>{t.createAccount}</Text>
             <View style={{ width: 38 }} />
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.subtitle}>Bergabung dengan komunitas jastip terpercaya</Text>
+            <Text style={styles.subtitle}>{t.joinCommunity}</Text>
 
             {/* Full Name */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.label}>Nama Lengkap</Text>
+              <Text style={styles.label}>{t.fullName}</Text>
               <View style={[styles.inputRow, errors.fullName && styles.inputError]}>
                 <Ionicons name="person-outline" size={18} color={errors.fullName ? Colors.error : Colors.gray} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Nama lengkap kamu"
+                  placeholder={t.fullNamePlaceholder}
                   placeholderTextColor={Colors.gray}
                   value={fullName}
                   onChangeText={(t) => { setFullName(t); setErrors((p) => ({ ...p, fullName: '' })); }}
@@ -103,7 +105,7 @@ export default function RegisterScreen() {
                 <Ionicons name="mail-outline" size={18} color={errors.email ? Colors.error : Colors.gray} />
                 <TextInput
                   style={styles.input}
-                  placeholder="kamu@email.com"
+                  placeholder={t.emailPlaceholder}
                   placeholderTextColor={Colors.gray}
                   value={email}
                   onChangeText={(t) => { setEmail(t); setErrors((p) => ({ ...p, email: '' })); }}
@@ -122,7 +124,7 @@ export default function RegisterScreen() {
                 <Ionicons name="lock-closed-outline" size={18} color={errors.password ? Colors.error : Colors.gray} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Min. 8 karakter"
+                  placeholder={t.minEightCharsPlaceholder}
                   placeholderTextColor={Colors.gray}
                   value={password}
                   onChangeText={(t) => { setPassword(t); setErrors((p) => ({ ...p, password: '' })); }}
@@ -138,12 +140,12 @@ export default function RegisterScreen() {
 
             {/* Confirm Password */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.label}>Konfirmasi Password</Text>
+              <Text style={styles.label}>{t.confirmPasswordLabel}</Text>
               <View style={[styles.inputRow, errors.confirmPassword && styles.inputError]}>
                 <Ionicons name="lock-closed-outline" size={18} color={errors.confirmPassword ? Colors.error : Colors.gray} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Ulangi password"
+                  placeholder={t.confirmPasswordPlaceholder}
                   placeholderTextColor={Colors.gray}
                   value={confirmPassword}
                   onChangeText={(t) => { setConfirmPassword(t); setErrors((p) => ({ ...p, confirmPassword: '' })); }}
@@ -164,7 +166,7 @@ export default function RegisterScreen() {
                 {agreed && <Ionicons name="checkmark" size={12} color={Colors.white} />}
               </View>
               <Text style={styles.termsText}>
-                Saya setuju dengan <Text style={styles.termsLink}>Syarat & Ketentuan</Text> dan <Text style={styles.termsLink}>Kebijakan Privasi</Text>
+                {t.agreeWith}<Text style={styles.termsLink}>{t.termsConditions}</Text>{t.and}<Text style={styles.termsLink}>{t.privacyPolicy}</Text>
               </Text>
             </TouchableOpacity>
             {errors.terms ? <Text style={styles.errorText}>{errors.terms}</Text> : null}
@@ -183,15 +185,15 @@ export default function RegisterScreen() {
               >
                 {loading
                   ? <ActivityIndicator color={Colors.white} />
-                  : <Text style={styles.submitText}>Daftar Sekarang</Text>
+                  : <Text style={styles.submitText}>{t.registerNow}</Text>
                 }
               </LinearGradient>
             </TouchableOpacity>
 
             <View style={styles.loginRow}>
-              <Text style={styles.loginPrompt}>Sudah punya akun? </Text>
+              <Text style={styles.loginPrompt}>{t.alreadyHaveAccount} </Text>
               <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}>
-                <Text style={styles.loginLink}>Masuk</Text>
+                <Text style={styles.loginLink}>{t.signIn}</Text>
               </TouchableOpacity>
             </View>
           </View>

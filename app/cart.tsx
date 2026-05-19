@@ -4,31 +4,30 @@
  */
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useCartStore } from '@/src/store/cartStore';
 import { useAuthStore } from '@/src/store/authStore';
-import { createXenditInvoice } from '@/src/lib/xendit';
-import { createOrder } from '@/src/services/supabase/orders';
+import { useCheckoutStore } from '@/src/store/checkoutStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function CartScreen() {
-  const insets = useSafeAreaInsets();
   const { items, removeItem } = useCartStore();
   const user = useAuthStore((s) => s.user);
+  const { setPendingItems, setSelectedAddress } = useCheckoutStore();
+  const { t } = useSettingsStore();
+  const insets = useSafeAreaInsets();
   const [editMode, setEditMode] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Set<string>>(new Set());
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const groupedArray = useMemo(() => {
     const map: Record<string, { travelerId: string; travelerName: string; items: typeof items }> = {};
@@ -53,8 +52,8 @@ export default function CartScreen() {
 
   const handleDeleteGroup = (groupItems: typeof items, groupPendingIds: string[]) => {
     if (groupPendingIds.length === 0) return;
-    Alert.alert('Hapus Item', `Hapus ${groupPendingIds.length} item dari keranjang?`, [
-      { text: 'Batal', style: 'cancel' },
+    Alert.alert(t.deleteConfirmTitle, `Hapus ${groupPendingIds.length} ${t.deleteConfirmMsg}`, [
+      { text: t.cancel, style: 'cancel' },
       {
         text: 'Hapus', style: 'destructive', onPress: () => {
           groupPendingIds.forEach(id => removeItem(id));
@@ -68,78 +67,47 @@ export default function CartScreen() {
     ]);
   };
 
-  const handleBuyGroup = async (groupItems: typeof items) => {
+  const handleBuyGroup = (groupItems: typeof items) => {
     if (!user) {
-      Alert.alert('Login Diperlukan', 'Silakan masuk untuk melanjutkan checkout.', [
-        { text: 'Masuk', onPress: () => router.replace('/(auth)/login' as any) },
-        { text: 'Batal', style: 'cancel' },
+      Alert.alert(t.loginRequired, t.loginRequiredDesc, [
+        { text: t.signIn, onPress: () => router.replace('/(auth)/login' as any) },
+        { text: t.cancel, style: 'cancel' },
       ]);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setCheckoutLoading(true);
-    try {
-      const subtotal = groupItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      const serviceFee = 15000;
-      const total = subtotal + serviceFee;
-      const itemDesc = groupItems.length === 1 ? groupItems[0].name : `${groupItems.length} items`;
-
-      // Create Supabase order first — its UUID is what we track
-      const order = await createOrder({
-        tiper_id: user.id,
-        triper_id: groupItems[0].travelerId,
-        trip_id: groupItems[0].tripId ?? null,
-        item_name: itemDesc,
-        agreed_price: subtotal,
-        service_fee: serviceFee,
-        total_amount: total,
-        currency: 'IDR',
-        status: 'pending',
-      } as any);
-
-      const { invoice_url } = await createXenditInvoice({
-        externalId: `tipl-order-${order.id}`,
-        amount: total,
-        payerEmail: user.email,
-        description: `TipL Order - ${itemDesc}`,
-      });
-      groupItems.forEach(i => removeItem(i.id));
-      router.push({
-        pathname: '/payment/xendit-qr',
-        params: {
-          invoiceUrl: invoice_url,
-          orderId: order.id,
-          buyerId: user.id,
-          travelerId: groupItems[0]?.travelerId ?? '',
-          amount: String(total),
-          currency: 'IDR',
-        },
-      });
-    } catch {
-      Alert.alert('Error', 'Gagal memuat halaman pembayaran. Coba lagi.');
-    } finally {
-      setCheckoutLoading(false);
-    }
+    // Store pending items and reset selected address, then go to address selection
+    setPendingItems(groupItems);
+    setSelectedAddress(null);
+    router.push('/checkout/address');
   };
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
-      {items.length > 0 && (
+    <View style={st.safe}>
+      <View style={[st.header, { paddingTop: insets.top }]}>
         <TouchableOpacity
-          style={[st.floatingEdit, { top: insets.top + 18 }]}
-          onPress={() => {
-            if (editMode) {
-              setEditMode(false);
-              setPendingDelete(new Set());
-            } else {
-              setEditMode(true);
-            }
-          }}
+          style={st.headerBtn}
+          onPress={() => router.back()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={st.editTxt}>{editMode ? 'Selesai' : 'Ubah'}</Text>
+          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
         </TouchableOpacity>
-      )}
+        <Text style={st.headerTitle}>My Cart</Text>
+        {items.length > 0 ? (
+          <TouchableOpacity
+            style={st.headerRightBtn}
+            onPress={() => {
+              if (editMode) { setEditMode(false); setPendingDelete(new Set()); }
+              else { setEditMode(true); }
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={st.headerRightTxt}>{editMode ? t.done : t.editCart}</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={st.headerBtn} />
+        )}
+      </View>
 
       <ScrollView style={st.body} showsVerticalScrollIndicator={false}>
         {items.length === 0 ? (
@@ -147,11 +115,11 @@ export default function CartScreen() {
             <View style={st.emptyIcon}>
               <Ionicons name="cart-outline" size={48} color={Colors.midGray} />
             </View>
-            <Text style={st.emptyTitle}>Keranjang kosong</Text>
-            <Text style={st.emptyDesc}>Temukan produk unik dari para traveler</Text>
+            <Text style={st.emptyTitle}>{t.emptyCart}</Text>
+            <Text style={st.emptyDesc}>{t.emptyCartDesc}</Text>
             <TouchableOpacity onPress={() => router.push('/')} style={st.shopBtn}>
               <LinearGradient colors={[Colors.primaryLight, Colors.primaryDark]} style={st.shopBtnGrad}>
-                <Text style={st.shopBtnTxt}>Jelajahi Produk</Text>
+                <Text style={st.shopBtnTxt}>{t.exploreProducts}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -229,7 +197,7 @@ export default function CartScreen() {
                   {/* Group footer */}
                   <View style={st.groupFooter}>
                     <View>
-                      <Text style={st.subtotalLbl}>Subtotal</Text>
+                      <Text style={st.subtotalLbl}>{t.subtotal}</Text>
                       <Text style={st.subtotalVal}>{fmtIDR(subtotal)}</Text>
                     </View>
 
@@ -240,23 +208,19 @@ export default function CartScreen() {
                         disabled={groupPendingIds.length === 0}
                       >
                         <Text style={[st.hapusBtnTxt, groupPendingIds.length === 0 && st.hapusBtnTxtDisabled]}>
-                          {groupPendingIds.length > 0 ? `Hapus ${groupPendingIds.length} item` : 'Pilih item'}
+                          {groupPendingIds.length > 0 ? `${t.delete} ${groupPendingIds.length} item` : t.selectItemsFirst}
                         </Text>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
                         onPress={() => handleBuyGroup(group.items)}
-                        disabled={checkoutLoading}
                         style={st.beliWrap}
                       >
                         <LinearGradient
-                          colors={checkoutLoading ? [Colors.midGray, Colors.midGray] : [Colors.primaryLight, Colors.primaryDark]}
+                          colors={[Colors.primaryLight, Colors.primaryDark]}
                           style={st.beliBtn}
                         >
-                          {checkoutLoading
-                            ? <ActivityIndicator color={Colors.white} size="small" />
-                            : <Text style={st.beliBtnTxt}>Beli sekarang</Text>
-                          }
+                          <Text style={st.beliBtnTxt}>{t.buyNow}</Text>
                         </LinearGradient>
                       </TouchableOpacity>
                     )}
@@ -269,7 +233,7 @@ export default function CartScreen() {
         )}
         <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -278,16 +242,37 @@ const PHOTO_SIZE = 120;
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
+  },
+  headerBtn: {
+    width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
   },
-  floatingEdit: {
-    position: 'absolute', top: 18, right: 20, zIndex: 10,
+  headerRightBtn: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
-  editTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, paddingHorizontal: 4 },
+  headerRightTxt: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.primary,
+  },
+  headerTitle: {
+    flex: 1,
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.base,
+    color: Colors.nearBlack,
+    textAlign: 'center',
+  },
 
   body: { flex: 1 },
 

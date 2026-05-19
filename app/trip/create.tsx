@@ -16,7 +16,8 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -227,18 +228,12 @@ export default function CreateTripScreen() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.offWhite }}>
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={[styles.floatingBack, { top: insets.top + 8 }]}
-        hitSlop={8}
-      >
-        <Ionicons name="arrow-back" size={20} color={Colors.nearBlack} />
-      </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.offWhite }} edges={[]}>
+      <PageHeader title={t.createTrip} onBack={() => router.back()} />
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 68, paddingBottom: insets.bottom + 120 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
@@ -584,7 +579,7 @@ export default function CreateTripScreen() {
           ))}
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

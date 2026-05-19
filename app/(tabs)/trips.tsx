@@ -13,6 +13,7 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/co
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useTrips, TripWithProfile } from '@/src/lib/hooks/useTrips';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { COUNTRIES_DATA } from '@/src/lib/countryData';
 
 const { width: SW } = Dimensions.get('window');
@@ -22,6 +23,7 @@ const COUNTRY_CARD_H = COUNTRY_CARD_W * 1.35;
 export default function TripsScreen() {
   const { trips, loading: tripsLoading, refetch } = useTrips();
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
+  const { t } = useSettingsStore();
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
@@ -54,36 +56,36 @@ export default function TripsScreen() {
         {/* ── Negara Tujuan ── */}
         <View style={s.section}>
           <View style={s.sectionHead}>
-            <Text style={s.sectionTitle}>Negara Tujuan</Text>
-            <Text style={s.sectionSub}>{COUNTRIES_DATA.length} negara</Text>
+            <Text style={s.sectionTitle}>{t.destinationCountries}</Text>
+            <Text style={s.sectionSub}>{COUNTRIES_DATA.length} {t.cities}</Text>
           </View>
-
-          <FlatList
-            horizontal
-            data={COUNTRIES_DATA}
-            keyExtractor={(item) => item.name}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.countryList}
-            renderItem={({ item }) => (
-              <CountryCard
-                country={item}
-                onPress={() =>
-                  router.push({
-                    pathname: '/cities/[country]',
-                    params: { country: item.name },
-                  } as any)
-                }
-              />
-            )}
-          />
         </View>
+        <FlatList
+          horizontal
+          data={COUNTRIES_DATA}
+          keyExtractor={(item) => item.name}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.countryList}
+          style={s.countryListWrap}
+          renderItem={({ item }) => (
+            <CountryCard
+              country={item}
+              onPress={() =>
+                router.push({
+                  pathname: '/cities/[country]',
+                  params: { country: item.name },
+                } as any)
+              }
+            />
+          )}
+        />
 
         {/* ── Trip Saya ── */}
         {myTrips.length > 0 && (
           <View style={s.section}>
             <View style={s.sectionHead}>
-              <Text style={s.sectionTitle}>Trip Saya</Text>
-              <Text style={s.sectionSub}>{myTrips.length} aktif</Text>
+              <Text style={s.sectionTitle}>{t.myTrips}</Text>
+              <Text style={s.sectionSub}>{myTrips.length} {t.activeTrips}</Text>
             </View>
             {myTrips.map((trip) => (
               <TripCard key={trip.id} trip={trip} isOwn />
@@ -94,8 +96,8 @@ export default function TripsScreen() {
         {/* ── Upcoming Journeys ── */}
         <View style={s.section}>
           <View style={s.sectionHead}>
-            <Text style={s.sectionTitle}>Upcoming Journeys</Text>
-            <Text style={s.sectionSub}>Berangkat paling dekat</Text>
+            <Text style={s.sectionTitle}>{t.upcomingJourneys}</Text>
+            <Text style={s.sectionSub}>{t.departingOn}</Text>
           </View>
 
           {tripsLoading ? (
@@ -103,9 +105,9 @@ export default function TripsScreen() {
           ) : upcomingTrips.length === 0 ? (
             <View style={s.empty}>
               <Ionicons name="airplane-outline" size={40} color={Colors.midGray} />
-              <Text style={s.emptyTxt}>Belum ada jastiper aktif</Text>
+              <Text style={s.emptyTxt}>{t.noActiveJastipers}</Text>
               <TouchableOpacity style={s.postBtn} onPress={() => router.push('/trip/create')}>
-                <Text style={s.postBtnTxt}>Jadi Jastiper Pertama</Text>
+                <Text style={s.postBtnTxt}>{t.becomeFirstJastiper}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -122,6 +124,7 @@ function CountryCard({ country, onPress }: {
   country: typeof COUNTRIES_DATA[0];
   onPress: () => void;
 }) {
+  const { t } = useSettingsStore();
   return (
     <TouchableOpacity style={s.countryCard} activeOpacity={0.85} onPress={onPress}>
       <Image source={{ uri: country.imageUrl }} style={s.countryImg} contentFit="cover" transition={300} />
@@ -131,7 +134,7 @@ function CountryCard({ country, onPress }: {
           <Text style={s.countryName}>{country.name}</Text>
           <View style={s.countryPill}>
             <Ionicons name="location-outline" size={9} color={Colors.primary} />
-            <Text style={s.countryPillTxt}>{country.cities.length} kota</Text>
+            <Text style={s.countryPillTxt}>{country.cities.length} {t.cities}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -141,6 +144,7 @@ function CountryCard({ country, onPress }: {
 
 // ─── Trip Card ─────────────────────────────────────────────────────────────────
 function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
+  const { t } = useSettingsStore();
   const name = trip.profiles?.full_name ?? 'Traveler';
   const avatar = trip.profiles?.avatar_url ?? null;
   const rating = trip.profiles?.rating ?? 0;
@@ -163,10 +167,10 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
       {isOwn && (
         <View style={s.ownBanner}>
           <Ionicons name="person-circle" size={13} color={Colors.primary} />
-          <Text style={s.ownBannerTxt}>Trip Saya</Text>
+          <Text style={s.ownBannerTxt}>{t.myTrips}</Text>
           <View style={{ flex: 1 }} />
           <TouchableOpacity style={s.manageBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
-            <Text style={s.manageBtnTxt}>Kelola</Text>
+            <Text style={s.manageBtnTxt}>{t.manage}</Text>
             <Ionicons name="settings-outline" size={12} color={Colors.primary} />
           </TouchableOpacity>
         </View>
@@ -179,7 +183,7 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
           <View style={s.ratingRow}>
             <Ionicons name="star" size={12} color={Colors.primary} />
             <Text style={s.ratingTxt}>{rating > 0 ? rating.toFixed(1) : '—'}</Text>
-            <Text style={s.reviewCnt}>· {totalTrips} trips</Text>
+            <Text style={s.reviewCnt}>· {totalTrips} {t.activeTrips}</Text>
           </View>
         </View>
         {trip.capacity_kg != null && (
@@ -191,7 +195,7 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
 
       <View style={[s.routeRow, isOwn && s.routeRowOwn]}>
         <View style={s.routeCity}>
-          <Text style={s.routeLbl}>FROM</Text>
+          <Text style={s.routeLbl}>{t.origin}</Text>
           <Text style={s.routeNm} numberOfLines={1}>{trip.origin_country || '—'}</Text>
         </View>
         <View style={s.routeArrow}>
@@ -202,7 +206,7 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
           <View style={[s.routeLine, isOwn && s.routeLineOwn]} />
         </View>
         <View style={[s.routeCity, { alignItems: 'flex-end' }]}>
-          <Text style={s.routeLbl}>TO</Text>
+          <Text style={s.routeLbl}>{t.destination}</Text>
           <Text style={s.routeNm} numberOfLines={1}>{trip.destination_country || '—'}</Text>
           {trip.destination_city ? (
             <Text style={s.routeSubCity} numberOfLines={1}>{trip.destination_city}</Text>
@@ -213,12 +217,12 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
       <View style={s.cardFoot}>
         <View style={s.dateRow}>
           <Ionicons name="calendar-outline" size={13} color={Colors.darkGray} />
-          <Text style={s.dateTxt}>{trip.departure_date || 'TBD'}</Text>
+          <Text style={s.dateTxt}>{trip.departure_date || t.departingOn}</Text>
         </View>
 
         {isOwn ? (
           <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
-            <Text style={s.reqBtnTxt}>Lihat Trip</Text>
+            <Text style={s.reqBtnTxt}>{t.viewTrip}</Text>
           </TouchableOpacity>
         ) : (
           <View style={s.footActions}>
@@ -226,7 +230,7 @@ function TripCard({ trip, isOwn }: { trip: TripWithProfile; isOwn: boolean }) {
               <Ionicons name="chatbubble-outline" size={17} color={Colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity style={s.reqBtn} onPress={() => router.push(`/trip/${trip.id}`)}>
-              <Text style={s.reqBtnTxt}>Lihat Katalog</Text>
+              <Text style={s.reqBtnTxt}>{t.viewCatalog}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -258,7 +262,8 @@ const s = StyleSheet.create({
   },
 
   // Country cards
-  countryList: { gap: Spacing.sm, paddingRight: Spacing.xl },
+  countryListWrap: { marginBottom: Spacing.xl },
+  countryList: { gap: Spacing.sm, paddingHorizontal: Spacing.xl },
   countryCard: {
     width: COUNTRY_CARD_W,
     height: COUNTRY_CARD_H,

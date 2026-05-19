@@ -12,9 +12,11 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography, Shadows } from '@/src/lib/constants';
 import { useChatStore } from '@/src/store/chatStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 
 export default function TabLayout() {
   const totalUnread = useChatStore((s) => s.totalUnread);
+  const { t } = useSettingsStore();
   const insets = useSafeAreaInsets();
 
   const TAB_CONTENT_HEIGHT = Platform.OS === 'ios' ? 50 : 54;
@@ -49,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t.home,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
@@ -62,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Order',
+          title: t.order,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'cube' : 'cube-outline'}
@@ -75,7 +77,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="trips"
         options={{
-          title: 'Trips',
+          title: t.trips,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'airplane' : 'airplane-outline'}
@@ -88,7 +90,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="chats"
         options={{
-          title: 'Chats',
+          title: t.chats,
           tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
           tabBarBadgeStyle: {
             backgroundColor: Colors.primary,
@@ -110,7 +112,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t.profile,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'person' : 'person-outline'}

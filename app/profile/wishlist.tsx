@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
 import { getWishlist, toggleWishlist } from '@/src/services/supabase/wishlist';
@@ -44,16 +44,16 @@ export default function WishlistScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={s.safe} edges={[]}>
+      <PageHeader title="Wishlist" onBack={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing.xl }} />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(i) => i.product_id}
-          contentContainerStyle={{ padding: Spacing.xl, paddingTop: 56, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: Spacing.xl, paddingBottom: 40 }}
           numColumns={2}
           columnWrapperStyle={{ gap: Spacing.md }}
           showsVerticalScrollIndicator={false}

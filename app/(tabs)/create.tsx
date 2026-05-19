@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import { CATEGORY_MAP, Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { searchProducts, subscribeToProducts, ProductWithTripInfo } from '@/src/services/supabase/trips';
 
 const { width: SW } = Dimensions.get('window');
@@ -16,24 +17,16 @@ const CARD_W = (SW - Spacing.xl * 2 - Spacing.md) / 2;
 const fmtIDR = (v: number | null) =>
   v != null ? 'Rp ' + v.toLocaleString('id-ID') : null;
 
-const ALL_CATEGORIES = [
-  { id: null as string | null, label: 'Semua', icon: 'apps-outline' as const },
-  ...ITEM_CATEGORIES.map((c) => ({ id: c.id as string | null, label: c.label, icon: c.icon as string })),
-];
+const ITEM_CATEGORY_LIST = ITEM_CATEGORIES.map((c) => ({ id: c.id as string | null, label: c.label, icon: c.icon as string }));
 
-const CATEGORY_MAP: Record<string, { label: string; icon: string; color: string }> = {
-  luxury:      { label: 'Luxury Goods',     icon: 'diamond-outline',       color: '#A78BFA' },
-  skincare:    { label: 'Skincare',          icon: 'leaf-outline',          color: '#34D399' },
-  food:        { label: 'Food & Beverages',  icon: 'restaurant-outline',    color: '#F97316' },
-  electronics: { label: 'Electronics',       icon: 'hardware-chip-outline', color: '#60A5FA' },
-  fashion:     { label: 'Fashion',           icon: 'shirt-outline',         color: '#F472B6' },
-  toys:        { label: 'Toys & Games',      icon: 'game-controller-outline', color: '#FBBF24' },
-  books:       { label: 'Books',             icon: 'book-outline',          color: '#6EE7B7' },
-  other:       { label: 'Other',             icon: 'grid-outline',          color: '#94A3B8' },
-};
 
 export default function OrderScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useSettingsStore();
+  const ALL_CATEGORIES = [
+    { id: null as string | null, label: t.allCategories, icon: 'apps-outline' as const },
+    ...ITEM_CATEGORY_LIST,
+  ];
   const [products, setProducts] = useState<ProductWithTripInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,14 +63,13 @@ export default function OrderScreen() {
   ).filter((p) => p.name?.trim()); // hide products with empty names
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={s.catScroll}
-        contentContainerStyle={s.catContent}
-      >
+    <View style={s.safe}>
+      <View style={[s.catBar, { paddingTop: insets.top }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.catContent}
+        >
         {ALL_CATEGORIES.map((cat) => {
           const active = selectedCategory === cat.id;
           return (
@@ -88,14 +80,15 @@ export default function OrderScreen() {
             >
               <Ionicons
                 name={cat.icon as any}
-                size={14}
+                size={16}
                 color={active ? Colors.white : Colors.darkGray}
               />
               <Text style={[s.catLabel, active && s.catLabelActive]}>{cat.label}</Text>
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {loading ? (
         <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing['2xl'] }} />
@@ -117,13 +110,13 @@ export default function OrderScreen() {
           ListEmptyComponent={
             <View style={s.empty}>
               <Ionicons name="cube-outline" size={48} color={Colors.midGray} />
-              <Text style={s.emptyTxt}>Belum ada item tersedia</Text>
+              <Text style={s.emptyTxt}>{t.noItemsAvailable}</Text>
             </View>
           }
           renderItem={({ item }) => <ProductCard item={item} />}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -189,16 +182,16 @@ const s = StyleSheet.create({
     color: Colors.darkGray,
     marginTop: 2,
   },
-  catScroll: {
+  catBar: {
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
-    maxHeight: 52,
   },
   catContent: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
     gap: Spacing.sm,
+    alignItems: 'center',
   },
   catChip: {
     flexDirection: 'row',

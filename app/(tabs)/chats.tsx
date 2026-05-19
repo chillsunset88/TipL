@@ -14,14 +14,16 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { getConversations, getUnreadCount } from '@/src/services/supabase/messages';
 import { getProfilesByIds } from '@/src/services/supabase/profiles';
+import { supabase } from '@/src/lib/supabase';
 
 interface ConversationItem {
   partnerId: string;
@@ -44,6 +46,7 @@ export default function ChatsScreen() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
   const insets = useSafeAreaInsets();
+  const { t } = useSettingsStore();
 
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +84,7 @@ export default function ChatsScreen() {
           partnerId,
           partnerName: profile?.full_name ?? 'User',
           partnerAvatar: profile?.avatar_url ?? null,
-          lastMessage: (msg.content as string) ?? ((msg as any).image_url ? '📷 Gambar' : ''),
+          lastMessage: (msg.content as string) ?? ((msg as any).image_url ? '§IMAGE§' : ''),
           lastMessageAt: msg.created_at as string,
           unread: !(msg as any).read_at && msg.receiver_id === userId,
         });
@@ -95,7 +98,23 @@ export default function ChatsScreen() {
     }
   }, [userId]);
 
-  useEffect(() => { load(); }, [load]);
+  // Reload whenever the tab comes into focus (returning from a chat room)
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Real-time: reload when a new message arrives for this user
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`chat-list-${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${userId}`,
+      }, () => { load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, load]);
 
   const onRefresh = () => { setRefreshing(true); load(); };
 
@@ -131,7 +150,7 @@ export default function ChatsScreen() {
             style={[styles.chatPreview, item.unread && styles.chatPreviewUnread]}
             numberOfLines={1}
           >
-            {item.lastMessage}
+            {item.lastMessage === '§IMAGE§' ? t.imageMessage : item.lastMessage}
           </Text>
           {item.unread && <View style={styles.unreadDot} />}
         </View>
@@ -144,9 +163,9 @@ export default function ChatsScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.centered}>
           <Ionicons name="chatbubbles-outline" size={48} color={Colors.midGray} />
-          <Text style={styles.emptyTitle}>Masuk untuk melihat pesan</Text>
+          <Text style={styles.emptyTitle}>{t.loginToViewMessages}</Text>
           <TouchableOpacity style={styles.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
-            <Text style={styles.signInText}>Masuk</Text>
+            <Text style={styles.signInText}>{t.signIn}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -164,7 +183,7 @@ export default function ChatsScreen() {
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Cari percakapan…"
+            placeholder={t.searchConversations}
             placeholderTextColor={Colors.darkGray}
           />
           {search.length > 0 && (
@@ -196,10 +215,8 @@ export default function ChatsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubbles-outline" size={56} color={Colors.midGray} />
-              <Text style={styles.emptyTitle}>Belum ada percakapan</Text>
-              <Text style={styles.emptySubtext}>
-                Mulai chat dengan jastiper dari halaman trip atau produk.
-              </Text>
+              <Text style={styles.emptyTitle}>{t.noConversations}</Text>
+              <Text style={styles.emptySubtext}>{t.noConversationsDesc}</Text>
             </View>
           }
         />

@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingBackButton } from '@/src/components/ui/FloatingBackButton';
+import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/store/authStore';
 import {
@@ -82,7 +82,7 @@ function DetailModal({ item, onClose }: {
 
   return (
     <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={d.safe} edges={['top']}>
+      <SafeAreaView style={d.safe} edges={[]}>
         <TouchableOpacity onPress={onClose} style={d.floatingClose}>
           <Ionicons name="close" size={22} color={Colors.nearBlack} />
         </TouchableOpacity>
@@ -336,8 +336,8 @@ export default function CustomRequestsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <FloatingBackButton onPress={() => router.back()} />
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <PageHeader title="Permintaan" onBack={() => router.back()} />
 
       {/* Search */}
       <View style={styles.searchBar}>
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
     marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
-    marginTop: 56,
+    marginTop: Spacing.sm,
     borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md,
     gap: Spacing.sm, borderWidth: 1, borderColor: Colors.midGray, ...Shadows.sm,
   },

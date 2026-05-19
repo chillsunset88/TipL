@@ -140,7 +140,7 @@ export default function ProductDetailScreen() {
       <SafeAreaView style={st.safe} edges={['top']}>
         <View style={st.center}>
           <Ionicons name="cube-outline" size={48} color={Colors.midGray} />
-          <Text style={st.emptyTxt}>Product not found</Text>
+          <Text style={st.emptyTxt}>{t.productNotFound}</Text>
           <TouchableOpacity style={st.backLink} onPress={() => router.back()}>
             <Text style={st.backLinkTxt}>Go back</Text>
           </TouchableOpacity>
@@ -175,7 +175,7 @@ export default function ProductDetailScreen() {
       travelerName: product.travelerName,
       tripId: product.tripId,
     });
-    Alert.alert('Added to Cart', `${product.name} has been added to your cart.`);
+    Alert.alert(t.addedToCart, `${product.name} ${t.addedToCartMsg}`);
   };
 
   const priceLabel = product.priceMax && product.priceMax !== product.priceMin
@@ -241,7 +241,7 @@ export default function ProductDetailScreen() {
             )}
             <View style={st.metaPill}>
               <Ionicons name="shield-checkmark-outline" size={14} color={Colors.success} />
-              <Text style={[st.metaTxt, { color: Colors.success }]}>Escrow Protected</Text>
+              <Text style={[st.metaTxt, { color: Colors.success }]}>{t.escrowProtected}</Text>
             </View>
           </View>
         </View>
@@ -252,7 +252,7 @@ export default function ProductDetailScreen() {
         {!!product.description && (
           <>
             <View style={st.sectionBlock}>
-              <Text style={st.sectionTitle}>Description</Text>
+              <Text style={st.sectionTitle}>{t.descriptionLabel}</Text>
               <Text style={st.desc}>{product.description}</Text>
             </View>
             <View style={st.hr} />
@@ -261,11 +261,11 @@ export default function ProductDetailScreen() {
 
         {/* Traveler Info */}
         <View style={st.sectionBlock}>
-          <Text style={st.sectionTitle}>Traveler / Jastiper</Text>
+          <Text style={st.sectionTitle}>{t.travelerJastiper}</Text>
           <TouchableOpacity
             style={st.travelerCard}
             activeOpacity={0.75}
-            onPress={() => Alert.alert('View Profile', 'Coming Soon')}
+            onPress={() => router.push(`/triper/${product.travelerId}` as any)}
           >
             {product.travelerAvatar ? (
               <Image source={{ uri: product.travelerAvatar }} style={st.travelerAvatar} contentFit="cover" />
@@ -289,7 +289,7 @@ export default function ProductDetailScreen() {
                   {product.travelerRating > 0 ? product.travelerRating.toFixed(1) : '—'}
                 </Text>
                 <Text style={st.verifiedTxt}>
-                  {product.travelerVerified ? '· Verified Traveler' : ''}
+                  {product.travelerVerified ? `· ${t.verifiedTraveler}` : ''}
                 </Text>
               </View>
             </View>
@@ -299,11 +299,11 @@ export default function ProductDetailScreen() {
 
         {/* How It Works */}
         <View style={st.howItWorksCard}>
-          <Text style={st.howTitle}>How Jastip Works</Text>
+          <Text style={st.howTitle}>{t.howItWorks}</Text>
           {[
-            { icon: 'cart-outline', text: 'Place your order & pay securely into escrow' },
-            { icon: 'airplane-outline', text: 'Traveler purchases and ships your item' },
-            { icon: 'checkmark-circle-outline', text: 'Confirm delivery to release payment' },
+            { icon: 'cart-outline', text: t.howStep1 },
+            { icon: 'airplane-outline', text: t.howStep2 },
+            { icon: 'checkmark-circle-outline', text: t.howStep3 },
           ].map((step, i) => (
             <View key={i} style={st.howStep}>
               <View style={st.howIconWrap}>
@@ -336,7 +336,7 @@ export default function ProductDetailScreen() {
             end={{ x: 1, y: 0 }}
             style={st.buyGrad}
           >
-            <Text style={st.buyTxt}>Order Now</Text>
+            <Text style={st.buyTxt}>{t.orderNow}</Text>
             <Text style={st.buyPrice}>{fmtIDR(product.priceMin)}</Text>
           </LinearGradient>
         </TouchableOpacity>

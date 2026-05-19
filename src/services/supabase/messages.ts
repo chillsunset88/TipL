@@ -132,10 +132,23 @@ export async function sendMessage(payload: MessageInsert): Promise<Message> {
 }
 
 export async function uploadChatImage(roomId: string, localUri: string): Promise<string> {
-  const response = await fetch(localUri);
-  const blob = await response.blob();
-  const path = `${roomId}/${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from('chat-images').upload(path, blob);
+  const ext = localUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+  const path = `${roomId}/${Date.now()}.${ext}`;
+
+  const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as ArrayBuffer);
+    xhr.onerror = () => reject(new Error('Failed to read local file'));
+    xhr.responseType = 'arraybuffer';
+    xhr.open('GET', localUri, true);
+    xhr.send();
+  });
+
+  const { error } = await supabase.storage.from('chat-images').upload(path, arrayBuffer, {
+    upsert: false,
+    contentType,
+  });
   if (error) throw error;
   const { data } = supabase.storage.from('chat-images').getPublicUrl(path);
   return data.publicUrl;

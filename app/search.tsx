@@ -21,8 +21,6 @@ import { JastipProduct } from '@/src/lib/types';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
-const DESTINATION_CHIPS = ['Singapore', 'Japan', 'South Korea', 'London'];
-
 type DisplayProduct = {
   id: string;
   name: string;
@@ -67,7 +65,7 @@ function fromSupabase(p: ProductWithTripInfo): DisplayProduct {
 export default function SearchScreen() {
   const { destination: destParam } = useLocalSearchParams<{ destination?: string }>();
   const [query, setQuery] = useState('');
-  const [selectedDest, setSelectedDest] = useState<string>(destParam ?? '');
+  const selectedDest = destParam ?? '';
   const [results, setResults] = useState<DisplayProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -162,41 +160,13 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {/* Destination Chips */}
-      <View style={st.chipsRow}>
-        <FlatList
-          horizontal
-          data={DESTINATION_CHIPS}
-          keyExtractor={(i) => i}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={st.chipsContent}
-          renderItem={({ item }) => {
-            const isActive = selectedDest === item;
-            return (
-              <TouchableOpacity
-                style={[st.chip, isActive && st.chipActive]}
-                onPress={() => setSelectedDest(isActive ? '' : item)}
-                activeOpacity={0.75}
-              >
-                <Ionicons
-                  name="location-outline"
-                  size={12}
-                  color={isActive ? Colors.white : Colors.darkGray}
-                />
-                <Text style={[st.chipTxt, isActive && st.chipTxtActive]}>{item}</Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-
       <View style={st.divider} />
 
       {showResults ? (
         loading ? (
           <View style={st.loadingWrap}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={st.loadingTxt}>Searching products...</Text>
+            <Text style={st.loadingTxt}>{t.searchingProducts}</Text>
           </View>
         ) : (
           <FlatList
@@ -207,7 +177,7 @@ export default function SearchScreen() {
             ListHeaderComponent={
               results.length > 0 ? (
                 <View style={st.resultsHeader}>
-                  <Text style={st.resultsCount}>{results.length} products found</Text>
+                  <Text style={st.resultsCount}>{results.length} {t.productsFound}</Text>
                   {selectedDest ? (
                     <View style={st.activeDestBadge}>
                       <Ionicons name="location" size={11} color={Colors.primary} />
@@ -222,8 +192,8 @@ export default function SearchScreen() {
                 <View style={st.emptyIcon}>
                   <Ionicons name="search-outline" size={40} color={Colors.midGray} />
                 </View>
-                <Text style={st.emptyTitle}>No products found</Text>
-                <Text style={st.emptyDesc}>Try a different keyword or destination</Text>
+                <Text style={st.emptyTitle}>{t.noProductsFound}</Text>
+                <Text style={st.emptyDesc}>{t.tryDifferentKeyword}</Text>
               </View>
             }
             renderItem={({ item }) => (
@@ -284,8 +254,8 @@ export default function SearchScreen() {
             <View style={st.emptyIcon}>
               <Ionicons name="search-outline" size={40} color={Colors.midGray} />
             </View>
-            <Text style={st.emptyTitle}>Search for products</Text>
-            <Text style={st.emptyDesc}>Find unique items from travelers around the world</Text>
+            <Text style={st.emptyTitle}>{t.searchForProducts}</Text>
+            <Text style={st.emptyDesc}>{t.findUniqueItems}</Text>
           </View>
         )
       )}

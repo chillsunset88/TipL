@@ -16,9 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/src/components/ui/Button';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { signIn } from '@/src/services/supabase/auth';
 
 export default function LoginScreen() {
+  const { t } = useSettingsStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,10 +29,10 @@ export default function LoginScreen() {
 
   const validate = () => {
     const e: typeof errors = {};
-    if (!email.trim()) e.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Invalid email format';
-    if (!password) e.password = 'Password is required';
-    else if (password.length < 6) e.password = 'Minimum 6 characters';
+    if (!email.trim()) e.email = t.emailRequired;
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = t.invalidEmail;
+    if (!password) e.password = t.passwordRequired;
+    else if (password.length < 6) e.password = t.minSixChars;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -44,16 +46,15 @@ export default function LoginScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await signIn(email.trim(), password);
-      // Auth listener in _layout.tsx will handle navigation
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      const msg = err?.message ?? 'Login failed. Please try again.';
+      const msg = err?.message ?? t.loginFailed;
       if (msg.toLowerCase().includes('email')) {
-        setErrors({ email: 'Email not found or incorrect' });
+        setErrors({ email: t.emailNotFoundError });
       } else if (msg.toLowerCase().includes('password')) {
-        setErrors({ password: 'Incorrect password' });
+        setErrors({ password: t.incorrectPassword });
       } else {
-        Alert.alert('Login Failed', msg);
+        Alert.alert(t.error, msg);
       }
     } finally {
       setLoading(false);
@@ -71,12 +72,12 @@ export default function LoginScreen() {
               <Text style={styles.logoIcon}>✈️</Text>
             </View>
             <Text style={styles.brandName}>TipL</Text>
-            <Text style={styles.brandTagline}>Your trusted jastip companion</Text>
+            <Text style={styles.brandTagline}>{t.tagline}</Text>
           </LinearGradient>
 
           <View style={styles.form}>
-            <Text style={styles.formTitle}>Welcome back</Text>
-            <Text style={styles.formSubtitle}>Sign in to continue</Text>
+            <Text style={styles.formTitle}>{t.welcomeBack}</Text>
+            <Text style={styles.formSubtitle}>{t.signInToContinue}</Text>
 
             {/* Email */}
             <View style={styles.fieldWrap}>
@@ -123,11 +124,11 @@ export default function LoginScreen() {
 
             {/* Forgot */}
             <TouchableOpacity onPress={() => router.push('/auth/reset' as any)} style={styles.forgotBtn}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text style={styles.forgotText}>{t.forgotPassword}</Text>
             </TouchableOpacity>
 
             <Button
-              title="Sign In"
+              title={t.signIn}
               onPress={handleLogin}
               loading={loading}
               fullWidth
@@ -139,7 +140,7 @@ export default function LoginScreen() {
           {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>{t.or}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -155,9 +156,9 @@ export default function LoginScreen() {
 
           {/* Register Link */}
           <View style={styles.registerRow}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
+            <Text style={styles.registerText}>{t.dontHaveAccount} </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text style={styles.registerLink}>Sign Up</Text>
+              <Text style={styles.registerLink}>{t.signUp}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
