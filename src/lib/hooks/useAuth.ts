@@ -95,10 +95,18 @@ export function useAuthListener() {
             const data = notif.data
               ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data)
               : {};
+            const orderId = data?.orderId ?? data?.order_id ?? data?.orderID;
+            const chatId = data?.chatId ?? data?.chat_id ?? data?.chatID;
+            const tripId = data?.tripId ?? data?.trip_id ?? data?.tripID;
+            const payloadUrl = data?.url ?? data?.screenUrl;
             store.showBanner({
               title: notif.title ?? 'Notifikasi baru',
               body: notif.body ?? '',
-              orderId: data?.orderId,
+              type: notif.type,
+              orderId,
+              chatId,
+              tripId,
+              url: payloadUrl,
             });
           })
           .subscribe();

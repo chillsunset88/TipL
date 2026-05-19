@@ -206,14 +206,9 @@ export async function uploadProductImage(tripId: string, localUri: string): Prom
   const contentType =
     ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
 
-  const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = () => resolve(xhr.response as ArrayBuffer);
-    xhr.onerror = () => reject(new Error('Failed to read local file'));
-    xhr.responseType = 'arraybuffer';
-    xhr.open('GET', localUri, true);
-    xhr.send();
-  });
+  const response = await fetch(localUri);
+  if (!response.ok) throw new Error('Failed to read local file');
+  const arrayBuffer = await response.arrayBuffer();
 
   const path = `${tripId}/${Date.now()}.${ext}`;
   const { error } = await supabase.storage

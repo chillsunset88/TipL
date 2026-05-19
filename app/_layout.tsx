@@ -192,18 +192,46 @@ function RootLayoutNav() {
     return () => subscription.remove();
   }, []);
 
+  const handleNotificationResponse = async (
+    response: import('expo-notifications').NotificationResponse,
+  ) => {
+    const data = response.notification.request.content.data as Record<string, any> | null;
+    if (!data) return;
+
+    const orderId = data.orderId ?? data.order_id ?? data.orderID;
+    const chatId = data.chatId ?? data.chat_id ?? data.chatID;
+    const tripId = data.tripId ?? data.trip_id ?? data.tripID;
+    const url = data.url ?? data.screenUrl ?? data.route;
+    const type = data.type ?? response.notification.request.content.data.type;
+
+    if ((type === 'order' || type === 'payment') && orderId) {
+      router.push(`/order/${orderId}`);
+      return;
+    }
+
+    if (type === 'chat' && chatId) {
+      router.push({ pathname: '/chat/[id]', params: { id: chatId, receiverId: chatId } } as any);
+      return;
+    }
+
+    if (type === 'trip' && tripId) {
+      router.push(`/trip/${tripId}`);
+      return;
+    }
+
+    if (url) {
+      router.push(url);
+    }
+  };
+
   useEffect(() => {
     if (!isExpoGo) {
       try {
         const Notifs = require('expo-notifications') as typeof import('expo-notifications');
-        responseListener.current = Notifs.addNotificationResponseReceivedListener((response) => {
-          const data = response.notification.request.content.data as Record<string, string>;
-          if (data.type === 'order' && data.orderId) {
-            router.push(`/order/${data.orderId}`);
-          } else if (data.type === 'chat' && data.chatId) {
-            router.push(`/chat/${data.chatId}`);
-          }
-        });
+        responseListener.current = Notifs.addNotificationResponseReceivedListener(handleNotificationResponse);
+        Notifs.getLastNotificationResponseAsync().then((response) => {
+          if (response) handleNotificationResponse(response);
+        }).catch(() => {});
       } catch {}
     }
 

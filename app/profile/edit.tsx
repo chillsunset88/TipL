@@ -35,6 +35,11 @@ export default function EditProfileScreen() {
   const [loading, setLoading] = useState(false);
 
   const pickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Izinkan akses galeri untuk memilih foto profil.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,

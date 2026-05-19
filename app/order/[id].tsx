@@ -104,6 +104,7 @@ export default function OrderDetailScreen() {
   const isTiper = order.tiper_id === (user?.id ?? '');
   const isTriper = order.triper_id === (user?.id ?? '');
   const isAdmin = user?.role === 'admin';
+  const chatPartnerId = isTiper ? order.triper_id : isTriper ? order.tiper_id : null;
 
   const STATUS_CONFIG = getStatusConfig(t);
   const statusCfg = (isTriper && !isTiper ? getTriperStatusConfig(t) : STATUS_CONFIG)[status]
@@ -269,7 +270,17 @@ export default function OrderDetailScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.moreButton}
-          onPress={() => router.push({ pathname: '/chat/[id]' as any, params: { id: order.id, orderId: order.id } })}
+          onPress={() => {
+            if (!chatPartnerId) return;
+            router.push({
+              pathname: '/chat/[id]' as any,
+              params: {
+                id: chatPartnerId,
+                receiverId: chatPartnerId,
+                orderId: order.id,
+              },
+            });
+          }}
         >
           <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />
         </TouchableOpacity>

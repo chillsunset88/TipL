@@ -8,7 +8,11 @@ import { create } from 'zustand';
 export interface BannerPayload {
   title: string;
   body: string;
+  type?: string;
   orderId?: string;
+  chatId?: string;
+  tripId?: string;
+  url?: string;
 }
 
 interface NotificationState {

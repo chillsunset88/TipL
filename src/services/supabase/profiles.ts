@@ -33,17 +33,11 @@ export async function updateProfile(userId: string, updates: ProfileUpdate): Pro
 export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
   const ext = (localUri.split('.').pop() ?? 'jpg').split('?')[0].toLowerCase();
   const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  // fetch().blob() returns empty blobs for local URIs in React Native — use XHR instead
-  const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = () => resolve(xhr.response as ArrayBuffer);
-    xhr.onerror = () => reject(new Error('Failed to read local file'));
-    xhr.responseType = 'arraybuffer';
-    xhr.open('GET', localUri, true);
-    xhr.send();
-  });
+  const response = await fetch(localUri);
+  if (!response.ok) throw new Error('Failed to read local file');
+  const arrayBuffer = await response.arrayBuffer();
   const path = `${userId}/avatar_${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from('avatars').upload(path, arrayBuffer, { upsert: false, contentType });
+  const { error } = await supabase.storage.from('avatars').upload(path, arrayBuffer, { upsert: true, contentType });
   if (error) throw error;
   const { data } = supabase.storage.from('avatars').getPublicUrl(path);
   return data.publicUrl;
