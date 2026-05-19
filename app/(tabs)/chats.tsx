@@ -42,6 +42,16 @@ function formatTime(iso: string) {
   return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
 }
 
+// ─── Helper: format last message for preview ──────────────────────────────────
+function formatLastMessage(content: string): string {
+  if (content === '§IMAGE§') return content;
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed._type === 'product') return `🛍️ ${parsed.name}`;
+  } catch {}
+  return content;
+}
+
 export default function ChatsScreen() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
@@ -80,11 +90,12 @@ export default function ChatsScreen() {
       const items: ConversationItem[] = [];
       for (const [partnerId, msg] of byPartner) {
         const profile = profileMap.get(partnerId) as any;
+        const rawContent = (msg.content as string) ?? ((msg as any).image_url ? '§IMAGE§' : '');
         items.push({
           partnerId,
           partnerName: profile?.full_name ?? 'User',
           partnerAvatar: profile?.avatar_url ?? null,
-          lastMessage: (msg.content as string) ?? ((msg as any).image_url ? '§IMAGE§' : ''),
+          lastMessage: formatLastMessage(rawContent),
           lastMessageAt: msg.created_at as string,
           unread: !(msg as any).read_at && msg.receiver_id === userId,
         });
