@@ -192,3 +192,29 @@ CREATE POLICY "Item image read"
   ON storage.objects FOR SELECT
   TO public
   USING (bucket_id = 'item-images');
+
+-- ────────────────────────────────────────────────────────────
+-- notifications
+-- ────────────────────────────────────────────────────────────
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Users can only read their own notifications
+DROP POLICY IF EXISTS "Read own notifications" ON notifications;
+CREATE POLICY "Read own notifications"
+  ON notifications FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- Any authenticated user can insert a notification for someone else (e.g. chat messages)
+DROP POLICY IF EXISTS "Insert notification" ON notifications;
+CREATE POLICY "Insert notification"
+  ON notifications FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+-- Users can only update (mark read) their own notifications
+DROP POLICY IF EXISTS "Update own notifications" ON notifications;
+CREATE POLICY "Update own notifications"
+  ON notifications FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid());

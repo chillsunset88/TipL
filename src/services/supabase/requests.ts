@@ -42,6 +42,24 @@ export async function getRequestsForTriper(triperId: string): Promise<CustomRequ
   return (data ?? []) as CustomRequestWithProfile[];
 }
 
+export async function getRequestById(id: string): Promise<CustomRequestWithProfile | null> {
+  const { data, error } = await db
+    .from('custom_requests')
+    .select('*, profiles!tiper_id(id, full_name, avatar_url)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data as CustomRequestWithProfile | null;
+}
+
+export async function completeRequest(requestId: string): Promise<void> {
+  const { error } = await db
+    .from('custom_requests')
+    .update({ status: 'completed', updated_at: new Date().toISOString() })
+    .eq('id', requestId);
+  if (error) throw error;
+}
+
 export async function createRequest(payload: CustomRequestInsert): Promise<CustomRequest> {
   const { data, error } = await db
     .from('custom_requests')
