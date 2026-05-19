@@ -26,8 +26,20 @@ import { useSettingsStore } from '@/src/store/settingsStore';
 import { Badge } from '@/src/components/ui/Badge';
 import { Skeleton } from '@/src/components/ui/Skeleton';
 import { useTrip } from '@/src/lib/hooks/useTrips';
-import { deleteTrip } from '@/src/services/supabase/trips';
+import { deleteTrip, deleteProduct } from '@/src/services/supabase/trips';
 import { useAuthStore } from '@/src/store/authStore';
+import { supabase } from '@/src/lib/supabase';
+
+const ACTIVE_ORDER_STATUSES = ['pending', 'accepted', 'in_escrow', 'purchased', 'shipped', 'delivered'];
+
+async function getActiveOrderCountForProduct(productId: string): Promise<number> {
+  const { count } = await supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('product_id', productId)
+    .in('status', ACTIVE_ORDER_STATUSES);
+  return count ?? 0;
+}
 import * as Haptics from 'expo-haptics';
 
 const { width: W } = Dimensions.get('window');
@@ -57,6 +69,7 @@ export default function TripDetailScreen() {
   const user = useAuthStore((s) => s.user);
   const { t } = useSettingsStore();
   const [deleting, setDeleting] = useState(false);
+  const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(new Set());
 
   const handleDelete = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -254,10 +267,10 @@ export default function TripDetailScreen() {
         )}
 
         {/* Products */}
-        {products.length > 0 && (
+        {products.filter((p) => !deletedProductIds.has(p.id)).length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t.availableProducts}</Text>
-            {products.map((p) => (
+            {products.filter((p) => !deletedProductIds.has(p.id)).map((p) => (
               <View key={p.id} style={styles.productRow}>
                 {p.image_urls && p.image_urls.length > 0 ? (
                   <Image
@@ -281,6 +294,60 @@ export default function TripDetailScreen() {
                     </Text>
                   )}
                 </View>
+
+                {isSelf && (
+                  <View style={styles.productActions}>
+                    <TouchableOpacity
+                      style={styles.productActionBtn}
+                      onPress={() => router.push({
+                        pathname: '/product/create',
+                        params: {
+                          productId: p.id,
+                          tripId: id,
+                          productName: p.name,
+                          productCategory: p.category ?? '',
+                          productPriceMin: p.price_min ? String(p.price_min) : '',
+                          productPriceMax: p.price_max ? String(p.price_max) : '',
+                          productDescription: p.description ?? '',
+                          productImages: JSON.stringify(p.image_urls ?? []),
+                        },
+                      })}
+                    >
+                      <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.productActionBtn}
+                      onPress={async () => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        const activeCount = await getActiveOrderCountForProduct(p.id);
+                        if (activeCount > 0) {
+                          Alert.alert(
+                            'Tidak Bisa Dihapus',
+                            `Ada ${activeCount} pesanan aktif untuk produk ini. Selesaikan semua pesanan terlebih dahulu.`,
+                          );
+                          return;
+                        }
+                        Alert.alert('Hapus Produk', `Hapus "${p.name}"?`, [
+                          { text: 'Batal', style: 'cancel' },
+                          {
+                            text: 'Hapus',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                await deleteProduct(p.id);
+                                setDeletedProductIds((prev) => new Set([...prev, p.id]));
+                              } catch {
+                                Alert.alert(t.error, 'Gagal menghapus produk.');
+                              }
+                            },
+                          },
+                        ]);
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={Colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -473,6 +540,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   productInfo: { flex: 1 },
+  productActions: { flexDirection: 'row', gap: Spacing.xs },
+  productActionBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.offWhite, borderWidth: 1, borderColor: Colors.lightGray,
+    alignItems: 'center', justifyContent: 'center',
+  },
   productName: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.base,

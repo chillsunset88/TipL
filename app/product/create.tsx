@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
   TouchableOpacity, Alert, ActivityIndicator,
@@ -10,21 +10,65 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import * as Haptics from 'expo-haptics';
+import { Colors, Typography, Spacing, BorderRadius, ITEM_CATEGORIES } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
-import { createProduct, uploadProductImage } from '@/src/services/supabase/trips';
+import {
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  uploadProductImage,
+} from '@/src/services/supabase/trips';
+import { supabase } from '@/src/lib/supabase';
+
+const ACTIVE_ORDER_STATUSES = ['pending', 'accepted', 'in_escrow', 'purchased', 'shipped', 'delivered'];
+
+async function getActiveOrderCountForProduct(productId: string): Promise<number> {
+  const { count } = await supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('product_id', productId)
+    .in('status', ACTIVE_ORDER_STATUSES);
+  return count ?? 0;
+}
 
 export default function AddProductScreen() {
-  const { tripId } = useLocalSearchParams<{ tripId: string }>();
+  const {
+    tripId,
+    productId,
+    productName,
+    productCategory,
+    productPriceMin,
+    productPriceMax,
+    productDescription,
+    productImages,
+  } = useLocalSearchParams<{
+    tripId?: string;
+    productId?: string;
+    productName?: string;
+    productCategory?: string;
+    productPriceMin?: string;
+    productPriceMax?: string;
+    productDescription?: string;
+    productImages?: string;
+  }>();
+
+  const isEditMode = !!productId;
   const user = useAuthStore((s) => s.user);
 
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [priceMin, setPriceMin] = useState('');
-  const [priceMax, setPriceMax] = useState('');
-  const [description, setDescription] = useState('');
-  const [imageUris, setImageUris] = useState<string[]>([]);
+  const [name, setName] = useState(productName ?? '');
+  const [category, setCategory] = useState(productCategory ?? '');
+  const [priceMin, setPriceMin] = useState(productPriceMin ?? '');
+  const [priceMax, setPriceMax] = useState(productPriceMax ?? '');
+  const [description, setDescription] = useState(productDescription ?? '');
+  const [imageUris, setImageUris] = useState<string[]>(() => {
+    if (productImages) {
+      try { return JSON.parse(productImages); } catch { return []; }
+    }
+    return [];
+  });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -39,10 +83,6 @@ export default function AddProductScreen() {
     }
   };
 
-  const removeImage = (uri: string) => {
-    setImageUris((prev) => prev.filter((u) => u !== uri));
-  };
-
   const validate = (): string | null => {
     if (!name.trim()) return 'Nama produk wajib diisi';
     if (!category) return 'Pilih kategori produk';
@@ -52,39 +92,112 @@ export default function AddProductScreen() {
   const handleSave = async () => {
     const err = validate();
     if (err) { Alert.alert('Lengkapi Form', err); return; }
-    if (!user || !tripId) return;
+    if (!user) return;
 
     try {
       setSaving(true);
-      let uploadedUrls: string[] = [];
-      if (imageUris.length > 0) {
-        uploadedUrls = await Promise.all(imageUris.map((uri) => uploadProductImage(tripId, uri)));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Split existing uploaded URLs vs new local URIs
+      const alreadyUploaded = imageUris.filter((u) => u.startsWith('http'));
+      const toUpload = imageUris.filter((u) => !u.startsWith('http'));
+      const refId = tripId ?? productId!;
+      const newUrls = toUpload.length > 0
+        ? await Promise.all(toUpload.map((uri) => uploadProductImage(refId, uri)))
+        : [];
+      const allUrls = [...alreadyUploaded, ...newUrls];
+
+      if (isEditMode) {
+        await updateProduct(productId!, {
+          name: name.trim(),
+          category: category || null,
+          description: description.trim() || null,
+          price_min: priceMin ? parseInt(priceMin, 10) : null,
+          price_max: priceMax ? parseInt(priceMax, 10) : null,
+          image_urls: allUrls.length > 0 ? allUrls : null,
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Berhasil', 'Produk berhasil diperbarui!', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      } else {
+        if (!tripId) return;
+        await createProduct({
+          trip_id: tripId,
+          triper_id: user.id,
+          name: name.trim(),
+          category: category || null,
+          description: description.trim() || null,
+          price_min: priceMin ? parseInt(priceMin, 10) : null,
+          price_max: priceMax ? parseInt(priceMax, 10) : null,
+          currency: 'IDR',
+          image_urls: allUrls.length > 0 ? allUrls : null,
+          is_available: true,
+        } as any);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Berhasil', 'Produk berhasil ditambahkan ke trip!', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
       }
-      await createProduct({
-        trip_id: tripId,
-        triper_id: user.id,
-        name: name.trim(),
-        category: category || null,
-        description: description.trim() || null,
-        price_min: priceMin ? parseInt(priceMin, 10) : null,
-        price_max: priceMax ? parseInt(priceMax, 10) : null,
-        currency: 'IDR',
-        image_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
-        is_available: true,
-      } as any);
-      Alert.alert('Berhasil', 'Produk berhasil ditambahkan ke trip!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
     } catch (e: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Gagal', e?.message ?? 'Gagal menyimpan produk. Coba lagi.');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleDelete = async () => {
+    if (!productId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      setDeleting(true);
+      const activeCount = await getActiveOrderCountForProduct(productId);
+      if (activeCount > 0) {
+        Alert.alert(
+          'Tidak Bisa Dihapus',
+          `Ada ${activeCount} pesanan aktif untuk produk ini. Selesaikan semua pesanan terlebih dahulu sebelum menghapus produk.`,
+        );
+        return;
+      }
+
+      Alert.alert(
+        'Hapus Produk',
+        'Produk ini akan dihapus permanen. Yakin?',
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Hapus',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteProduct(productId);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                router.back();
+              } catch (e: any) {
+                Alert.alert('Gagal', e?.message ?? 'Gagal menghapus produk.');
+              }
+            },
+          },
+        ],
+      );
+    } catch {
+      Alert.alert('Error', 'Gagal memeriksa pesanan aktif.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <SafeAreaView style={s.safe} edges={[]}>
-      <PageHeader title="Tambah Produk" onBack={() => router.back()} />
+      <PageHeader
+        title={isEditMode ? 'Edit Produk' : 'Tambah Produk'}
+        onBack={() => router.back()}
+        rightIcon={isEditMode ? (deleting ? undefined : 'trash-outline') : undefined}
+        rightIconColor={Colors.error}
+        onRightPress={isEditMode ? handleDelete : undefined}
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Images */}
@@ -94,7 +207,10 @@ export default function AddProductScreen() {
               {imageUris.map((uri) => (
                 <View key={uri} style={s.imgWrap}>
                   <Image source={{ uri }} style={s.imgThumb} contentFit="cover" />
-                  <TouchableOpacity style={s.imgRemove} onPress={() => removeImage(uri)}>
+                  <TouchableOpacity
+                    style={s.imgRemove}
+                    onPress={() => setImageUris((prev) => prev.filter((u) => u !== uri))}
+                  >
                     <Ionicons name="close" size={14} color={Colors.white} />
                   </TouchableOpacity>
                 </View>
@@ -191,13 +307,13 @@ export default function AddProductScreen() {
 
         {/* Save button */}
         <View style={s.footer}>
-          <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
+          <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving || deleting} activeOpacity={0.85}>
             {saving ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color={Colors.white} />
-                <Text style={s.saveTxt}>Simpan Produk</Text>
+                <Text style={s.saveTxt}>{isEditMode ? 'Simpan Perubahan' : 'Simpan Produk'}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -209,13 +325,6 @@ export default function AddProductScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-
   scroll: { flex: 1, paddingHorizontal: Spacing.xl },
   section: { marginTop: Spacing.xl },
   label: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },

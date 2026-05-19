@@ -75,8 +75,11 @@ export default function CartScreen() {
       ]);
       return;
     }
+    if (groupItems.some((i) => i.travelerId === user.id)) {
+      Alert.alert('Tidak Bisa Memesan', 'Kamu tidak bisa memesan produkmu sendiri.');
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Store pending items and reset selected address, then go to address selection
     setPendingItems(groupItems);
     setSelectedAddress(null);
     router.push('/checkout/address');

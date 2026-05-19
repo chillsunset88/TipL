@@ -149,12 +149,14 @@ export default function ProductDetailScreen() {
     );
   }
 
+  const isOwnProduct = !!currentUserId && currentUserId === product.travelerId;
+
   const handleChat = () => {
     if (!product || !product.tripId || !product.travelerId) {
       Alert.alert('Chat', 'Info triper tidak tersedia.');
       return;
     }
-    if (currentUserId === product.travelerId) {
+    if (isOwnProduct) {
       Alert.alert('Chat', 'Ini adalah item milikmu sendiri.');
       return;
     }
@@ -165,6 +167,10 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = () => {
+    if (isOwnProduct) {
+      Alert.alert('Produk Sendiri', 'Kamu tidak bisa memesan produkmu sendiri.');
+      return;
+    }
     addItem({
       id: product.id,
       name: product.name,
@@ -319,27 +325,36 @@ export default function ProductDetailScreen() {
 
       {/* Bottom CTA */}
       <View style={st.bottomBar}>
-        <TouchableOpacity style={st.iconCta} onPress={handleChat}>
-          <Ionicons name="chatbubble-outline" size={22} color={Colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={st.iconCta} onPress={handleAddToCart}>
-          <Ionicons name="cart-outline" size={22} color={Colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={st.buyBtn}
-          activeOpacity={0.85}
-          onPress={() => { handleAddToCart(); router.push('/cart'); }}
-        >
-          <LinearGradient
-            colors={[Colors.primaryLight, Colors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={st.buyGrad}
-          >
-            <Text style={st.buyTxt}>{t.orderNow}</Text>
-            <Text style={st.buyPrice}>{fmtIDR(product.priceMin)}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        {isOwnProduct ? (
+          <View style={st.ownProductBanner}>
+            <Ionicons name="person-circle-outline" size={20} color={Colors.darkGray} />
+            <Text style={st.ownProductTxt}>Ini produk milikmu sendiri</Text>
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity style={st.iconCta} onPress={handleChat}>
+              <Ionicons name="chatbubble-outline" size={22} color={Colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={st.iconCta} onPress={handleAddToCart}>
+              <Ionicons name="cart-outline" size={22} color={Colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={st.buyBtn}
+              activeOpacity={0.85}
+              onPress={() => { handleAddToCart(); router.push('/cart'); }}
+            >
+              <LinearGradient
+                colors={[Colors.primaryLight, Colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={st.buyGrad}
+              >
+                <Text style={st.buyTxt}>{t.orderNow}</Text>
+                <Text style={st.buyPrice}>{fmtIDR(product.priceMin)}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
@@ -413,4 +428,6 @@ const st = StyleSheet.create({
   buyGrad: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
   buyTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
   buyPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.85)' },
+  ownProductBanner: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, backgroundColor: Colors.offWhite, borderRadius: BorderRadius.md, paddingVertical: Spacing.md, borderWidth: 1, borderColor: Colors.lightGray },
+  ownProductTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
 });
