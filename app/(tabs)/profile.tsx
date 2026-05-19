@@ -34,9 +34,10 @@ export default function ProfileScreen() {
   const logout = useAuthStore((s) => s.logout);
   const { t } = useSettingsStore();
 
-  const verifyButtonLabel = user?.verificationStatus === 'rejected'
-    ? t.verificationReapply
-    : t.verificationStart;
+  const verifyButtonLabel =
+    user?.verificationStatus === "rejected"
+      ? t.verificationReapply
+      : t.verificationStart;
 
   const handleSignOut = () => {
     Alert.alert(t.signOut, t.signOutConfirm, [
@@ -392,7 +393,10 @@ export default function ProfileScreen() {
           <Ionicons name="person-circle-outline" size={64} color={C.midGray} />
           <Text style={s.authTitle}>{t.signedOutTitle}</Text>
           <Text style={s.authSub}>{t.signedOutDesc}</Text>
-          <TouchableOpacity style={s.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
+          <TouchableOpacity
+            style={s.signInBtn}
+            onPress={() => router.push("/(auth)/login" as any)}
+          >
             <Text style={s.signInTxt}>{t.signInSignUp}</Text>
           </TouchableOpacity>
         </View>
@@ -488,17 +492,40 @@ export default function ProfileScreen() {
         {/* ── Jastip card ── */}
         {user.verificationStatus === "approved" || user.role === "admin" ? (
           <View style={s.card}>
-            <Text style={s.cardTitle}>{t.jastipSection}</Text>
+            {/* <Text style={s.cardTitle}>{t.jastipSection}</Text> */}
             <View style={s.gridRow}>
-              <GridItem icon="airplane-outline" label={t.myTrips} color={C.info} onPress={() => router.push('/profile/trips')} s={s} />
-              <GridItem icon="add-circle-outline" label={t.createTrip} color={C.primary} onPress={() => router.push('/trip/create')} s={s} />
-              <GridItem icon="cube-outline" label={t.incomingOrders} color={C.success} onPress={() => router.push('/profile/incoming-orders' as any)} s={s} />
+              <GridItem
+                icon="airplane-outline"
+                label={t.myTrips}
+                color={C.info}
+                onPress={() => router.push("/profile/trips")}
+                s={s}
+              />
+              <GridItem
+                icon="add-circle-outline"
+                label={t.createTrip}
+                color={C.primary}
+                onPress={() => router.push("/trip/create")}
+                s={s}
+              />
+              <GridItem
+                icon="cube-outline"
+                label={t.incomingOrders}
+                color={C.success}
+                onPress={() => router.push("/profile/incoming-orders" as any)}
+                s={s}
+              />
             </View>
           </View>
-        ) : user.verificationStatus === 'pending' ? (
+        ) : user.verificationStatus === "pending" ? (
           <VerificationPendingCard s={s} C={C} />
         ) : (
-          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} verifyButtonLabel={verifyButtonLabel} s={s} C={C} />
+          <VerificationPromoCard
+            rejected={user.verificationStatus === "rejected"}
+            verifyButtonLabel={verifyButtonLabel}
+            s={s}
+            C={C}
+          />
         )}
 
         {/* ── Admin panel ── */}
@@ -527,17 +554,39 @@ export default function ProfileScreen() {
         {/* ── Help & Support ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>{t.helpSection}</Text>
-          <SettingRow icon="help-circle-outline" label={t.helpCenter} sub={t.helpCenterSub} onPress={() => router.push('/help')} s={s} C={C} />
-          <SettingRow icon="chatbubble-ellipses-outline" label={t.contactUs} sub={t.contactUsSub} onPress={() => {}} s={s} C={C} />
+          <SettingRow
+            icon="help-circle-outline"
+            label={t.helpCenter}
+            sub={t.helpCenterSub}
+            onPress={() => router.push("/help")}
+            s={s}
+            C={C}
+          />
+          <SettingRow
+            icon="chatbubble-ellipses-outline"
+            label={t.contactUs}
+            sub={t.contactUsSub}
+            onPress={() => {}}
+            s={s}
+            C={C}
+          />
           <SettingRow
             icon="document-text-outline"
             label={t.termsPrivacy}
             sub={t.privacyPolicySub}
-            onPress={() => router.push('/terms')}
+            onPress={() => router.push("/terms")}
             s={s}
             C={C}
           />
-          <SettingRow icon="information-circle-outline" label={t.aboutApp} sub={t.appVersion} onPress={() => {}} last s={s} C={C} />
+          <SettingRow
+            icon="information-circle-outline"
+            label={t.aboutApp}
+            sub={t.appVersion}
+            onPress={() => {}}
+            last
+            s={s}
+            C={C}
+          />
         </View>
 
         {/* ── Sign out ── */}
@@ -561,7 +610,12 @@ export default function ProfileScreen() {
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
-function VerificationPromoCard({ rejected, verifyButtonLabel, s, C }: {
+function VerificationPromoCard({
+  rejected,
+  verifyButtonLabel,
+  s,
+  C,
+}: {
   rejected: boolean;
   verifyButtonLabel: string;
   s: any;
@@ -592,7 +646,11 @@ function VerificationPromoCard({ rejected, verifyButtonLabel, s, C }: {
         </View>
       )}
       <View style={s.verifyBenefits}>
-        {[t.verificationBenefit1, t.verificationBenefit2, t.verificationBenefit3].map((b) => (
+        {[
+          t.verificationBenefit1,
+          t.verificationBenefit2,
+          t.verificationBenefit3,
+        ].map((b) => (
           <View key={b} style={s.benefitRow}>
             <Ionicons name="checkmark-circle" size={14} color={C.success} />
             <Text style={s.benefitTxt}>{b}</Text>
@@ -610,7 +668,13 @@ function VerificationPromoCard({ rejected, verifyButtonLabel, s, C }: {
   );
 }
 
-function VerificationPendingCard({ s, C }: { s: any; C: ReturnType<typeof useThemeColors> }) {
+function VerificationPendingCard({
+  s,
+  C,
+}: {
+  s: any;
+  C: ReturnType<typeof useThemeColors>;
+}) {
   const { t } = useSettingsStore();
   return (
     <View style={[s.verifyCard, s.pendingCard]}>
@@ -624,7 +688,11 @@ function VerificationPendingCard({ s, C }: { s: any; C: ReturnType<typeof useThe
         </View>
       </View>
       <View style={s.pendingPill}>
-        <ActivityIndicator size="small" color={C.warning} style={{ transform: [{ scale: 0.7 }] }} />
+        <ActivityIndicator
+          size="small"
+          color={C.warning}
+          style={{ transform: [{ scale: 0.7 }] }}
+        />
         <Text style={s.pendingPillTxt}>{t.pendingVerificationStatus}</Text>
       </View>
     </View>
