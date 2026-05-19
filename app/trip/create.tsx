@@ -682,8 +682,8 @@ function Calendar({ value, minDate, onChange }: CalendarProps) {
             key={idx}
             style={[
               calStyles.dayCell,
-              isSelected(day) && calStyles.daySelected,
-              isDisabled(day) && calStyles.dayDisabled,
+              isSelected(day) ? calStyles.daySelected : null,
+              isDisabled(day) ? calStyles.dayDisabled : null,
             ]}
             onPress={() => handleDayPress(day)}
             disabled={isDisabled(day)}
@@ -691,8 +691,8 @@ function Calendar({ value, minDate, onChange }: CalendarProps) {
             <Text
               style={[
                 calStyles.dayText,
-                isSelected(day) && calStyles.dayTextSelected,
-                isDisabled(day) && calStyles.dayTextDisabled,
+                isSelected(day) ? calStyles.dayTextSelected : null,
+                isDisabled(day) ? calStyles.dayTextDisabled : null,
               ]}
             >
               {day}

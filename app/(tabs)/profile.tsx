@@ -1,11 +1,11 @@
 /**
  * TipL — Profile / Account Tab
- * Tokopedia-inspired layout: left-aligned profile strip, wallet card,
- * transaction status shortcuts, jastip menu grid.
+ * Theme-aware: supports Dark Mode & Light Mode via useThemeColors.
  */
 
 import { Avatar } from '@/src/components/ui/Avatar';
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
+import { BorderRadius, Shadows, Spacing, Typography } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 import { signOut } from '@/src/services/supabase/auth';
 import { useAuthStore } from '@/src/store/authStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
@@ -24,6 +24,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const { t, locale } = useSettingsStore();
@@ -62,7 +63,6 @@ export default function ProfileScreen() {
     manageVerification: 'Kelola Verifikasi',
     manageOrders: 'Kelola Paket (Demo)',
   } : {
-
     signedOutTitle: 'Not signed in',
     signedOutDesc: 'Sign in to view your profile and orders',
     signInSignUp: 'Sign In / Sign Up',
@@ -116,11 +116,127 @@ export default function ProfileScreen() {
     ]);
   };
 
+  // Dynamic styles based on active theme
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+    scroll: { flex: 1 },
+
+    authRequired: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
+    authTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: C.nearBlack, marginTop: Spacing.md },
+    authSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
+    signInBtn: { marginTop: Spacing.xl, backgroundColor: C.primary, paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.md, borderRadius: BorderRadius.full },
+    signInTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+
+    profileStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.xl,
+      backgroundColor: C.white,
+      gap: Spacing.base,
+      marginHorizontal: Spacing.xl,
+      marginTop: Spacing.md,
+      borderRadius: BorderRadius.lg,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      ...Shadows.sm,
+    },
+    profileInfo: { flex: 1 },
+    profileName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: C.nearBlack },
+    profileEmail: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, marginTop: 2 },
+    editBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+      marginTop: Spacing.xs, backgroundColor: C.primaryPale,
+      paddingHorizontal: Spacing.sm, paddingVertical: 3,
+      borderRadius: BorderRadius.full, borderWidth: 1, borderColor: C.primaryLight,
+    },
+    editBadgeTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 11, color: C.primary },
+    topActions: { flexDirection: 'row', gap: Spacing.xs },
+    topIconBtn: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: C.offWhite,
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    card: {
+      backgroundColor: C.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,
+      borderRadius: BorderRadius.lg, padding: Spacing.base,
+      borderWidth: 1, borderColor: C.lightGray, ...Shadows.sm,
+    },
+    cardTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack, marginBottom: Spacing.md },
+    actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
+    actionRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.lightGray },
+    actionIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    actionLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    actionSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray, marginTop: 1 },
+    actionDivider: { height: 1, backgroundColor: C.lightGray },
+
+    gridRow: { flexDirection: 'row', justifyContent: 'space-around' },
+    gridDivider: { height: 1, backgroundColor: C.lightGray, marginVertical: Spacing.sm },
+    gridItem: { alignItems: 'center', flex: 1, paddingVertical: Spacing.xs },
+    gridIcon: { width: 54, height: 54, borderRadius: BorderRadius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
+    gridLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.charcoal, textAlign: 'center' },
+
+    settingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
+    settingRowBorder: { borderBottomWidth: 1, borderBottomColor: C.lightGray },
+    settingIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, backgroundColor: C.offWhite, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    settingInfo: { flex: 1 },
+    settingLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    settingSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray, marginTop: 2 },
+
+    verifyCard: {
+      backgroundColor: C.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,
+      borderRadius: BorderRadius.lg, padding: Spacing.base,
+      borderWidth: 1.5, borderColor: C.primaryLight, ...Shadows.sm, gap: Spacing.md,
+    },
+    pendingCard: { borderColor: `${C.warning}60` },
+    verifyTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
+    verifyIconWrap: {
+      width: 52, height: 52, borderRadius: BorderRadius.md,
+      backgroundColor: C.primaryPale, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    },
+    verifyTextWrap: { flex: 1, gap: 3 },
+    verifyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    verifySub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray, lineHeight: 17 },
+    rejectedPill: {
+      flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
+      backgroundColor: `${C.error}12`, paddingHorizontal: Spacing.sm, paddingVertical: 4,
+      borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${C.error}30`,
+    },
+    rejectedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 11, color: C.error },
+    verifyBenefits: { gap: 5 },
+    benefitRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    benefitTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.charcoal },
+    verifyBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+      backgroundColor: C.primary, paddingVertical: Spacing.md,
+      borderRadius: BorderRadius.full,
+    },
+    verifyBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+    pendingPill: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, alignSelf: 'flex-start',
+      backgroundColor: `${C.warning}14`, paddingHorizontal: Spacing.md, paddingVertical: 6,
+      borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${C.warning}40`,
+    },
+    pendingPillTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.warning },
+
+    signOutWrap: { alignItems: 'center', marginHorizontal: Spacing.xl, marginTop: Spacing.md, gap: Spacing.md },
+    signOutRow: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+      paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.md, borderWidth: 1,
+      borderColor: C.errorLight, backgroundColor: C.errorLight,
+      alignSelf: 'stretch', justifyContent: 'center',
+    },
+    signOutTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.error },
+    versionTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.gray },
+  }), [C]);
+
   if (!user) {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.authRequired}>
-          <Ionicons name="person-circle-outline" size={64} color={Colors.midGray} />
+          <Ionicons name="person-circle-outline" size={64} color={C.midGray} />
           <Text style={s.authTitle}>{copy.signedOutTitle}</Text>
           <Text style={s.authSub}>{copy.signedOutDesc}</Text>
           <TouchableOpacity style={s.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
@@ -148,19 +264,19 @@ export default function ProfileScreen() {
               activeOpacity={0.75}
               onPress={() => router.push('/profile/edit')}
             >
-              <Ionicons name="pencil-outline" size={11} color={Colors.primary} />
+              <Ionicons name="pencil-outline" size={11} color={C.primary} />
               <Text style={s.editBadgeTxt}>{t.editProfile}</Text>
             </TouchableOpacity>
           </View>
           <View style={s.topActions}>
             <TouchableOpacity style={s.topIconBtn} onPress={() => router.push('/cart')}>
-              <Ionicons name="cart-outline" size={22} color={Colors.nearBlack} />
+              <Ionicons name="cart-outline" size={22} color={C.nearBlack} />
             </TouchableOpacity>
             <TouchableOpacity style={s.topIconBtn} onPress={() => router.push('/notifications')}>
-              <Ionicons name="notifications-outline" size={22} color={Colors.nearBlack} />
+              <Ionicons name="notifications-outline" size={22} color={C.nearBlack} />
             </TouchableOpacity>
             <TouchableOpacity style={s.topIconBtn} onPress={() => router.push('/profile/settings')}>
-              <Ionicons name="settings-outline" size={22} color={Colors.nearBlack} />
+              <Ionicons name="settings-outline" size={22} color={C.nearBlack} />
             </TouchableOpacity>
           </View>
         </View>
@@ -171,55 +287,62 @@ export default function ProfileScreen() {
             <GridItem
               icon="receipt-outline"
               label={copy.orderGridLabel}
-              color={Colors.primary}
+              color={C.primary}
               onPress={() => router.push('/profile/orders')}
+              s={s}
             />
             <GridItem
               icon="heart-outline"
               label={copy.wishlistGridLabel}
-              color={Colors.error}
+              color={C.error}
               onPress={() => router.push('/profile/wishlist')}
+              s={s}
             />
             <GridItem
               icon="star-outline"
               label={copy.favoritesGridLabel}
-              color={Colors.warning}
+              color={C.warning}
               onPress={() => router.push('/profile/favorites' as any)}
+              s={s}
             />
           </View>
         </View>
 
-        {/* ── Jastip card (hanya jika sudah terverifikasi) ── */}
+        {/* ── Jastip card ── */}
         {(user.verificationStatus === 'approved' || user.role === 'admin') ? (
           <View style={s.card}>
             <Text style={s.cardTitle}>{copy.jastipTitle}</Text>
             <View style={s.gridRow}>
-              <GridItem icon="airplane-outline" label={t.myTrips} color={Colors.info} onPress={() => router.push('/profile/trips')} />
-              <GridItem icon="add-circle-outline" label={t.createTrip} color={Colors.primary} onPress={() => router.push('/trip/create')} />
-              <GridItem icon="cube-outline" label={copy.incomingOrdersLabel} color={Colors.success} onPress={() => router.push('/profile/incoming-orders' as any)} />
+              <GridItem icon="airplane-outline" label={t.myTrips} color={C.info} onPress={() => router.push('/profile/trips')} s={s} />
+              <GridItem icon="add-circle-outline" label={t.createTrip} color={C.primary} onPress={() => router.push('/trip/create')} s={s} />
+              <GridItem icon="cube-outline" label={copy.incomingOrdersLabel} color={C.success} onPress={() => router.push('/profile/incoming-orders' as any)} s={s} />
             </View>
           </View>
         ) : user.verificationStatus === 'pending' ? (
-          <VerificationPendingCard copy={copy} />
+          <VerificationPendingCard copy={copy} s={s} C={C} />
         ) : (
-          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} copy={copy} verifyButtonLabel={verifyButtonLabel} />
+          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} copy={copy} verifyButtonLabel={verifyButtonLabel} s={s} C={C} />
         )}
 
-        {/* ── Admin panel (hanya untuk role admin) ── */}
+        {/* ── Admin panel ── */}
         {user.role === 'admin' && (
           <View style={s.card}>
             <Text style={s.cardTitle}>{copy.adminPanelLabel}</Text>
             <ActionRow
               icon="shield-checkmark-outline"
               label={copy.manageVerification}
-              color={Colors.info}
+              color={C.info}
               onPress={() => router.push('/admin/verifications' as any)}
+              s={s}
+              C={C}
             />
             <ActionRow
               icon="cube-outline"
               label={copy.manageOrders}
-              color={Colors.warning}
+              color={C.warning}
               onPress={() => router.push('/admin/orders' as any)}
+              s={s}
+              C={C}
             />
           </View>
         )}
@@ -227,21 +350,23 @@ export default function ProfileScreen() {
         {/* ── Help & Support ── */}
         <View style={s.card}>
           <Text style={s.cardTitle}>{copy.helpTitle}</Text>
-          <SettingRow icon="help-circle-outline" label={copy.helpCenterLabel} sub={locale === 'id' ? 'FAQ & panduan penggunaan' : 'FAQ & usage guide'} onPress={() => router.push('/help')} />
-          <SettingRow icon="chatbubble-ellipses-outline" label={copy.contactUsLabel} sub={locale === 'id' ? 'Chat dengan tim TipL' : 'Chat with TipL support'} onPress={() => {}} />
-          <SettingRow 
-            icon="document-text-outline" 
-            label={copy.termsLabel} 
-            sub={copy.termsSub} 
-            onPress={() => router.push('/terms')} 
+          <SettingRow icon="help-circle-outline" label={copy.helpCenterLabel} sub={locale === 'id' ? 'FAQ & panduan penggunaan' : 'FAQ & usage guide'} onPress={() => router.push('/help')} s={s} C={C} />
+          <SettingRow icon="chatbubble-ellipses-outline" label={copy.contactUsLabel} sub={locale === 'id' ? 'Chat dengan tim TipL' : 'Chat with TipL support'} onPress={() => {}} s={s} C={C} />
+          <SettingRow
+            icon="document-text-outline"
+            label={copy.termsLabel}
+            sub={copy.termsSub}
+            onPress={() => router.push('/terms')}
+            s={s}
+            C={C}
           />
-          <SettingRow icon="information-circle-outline" label={copy.aboutAppLabel} sub={copy.versionLabel} onPress={() => {}} last />
+          <SettingRow icon="information-circle-outline" label={copy.aboutAppLabel} sub={copy.versionLabel} onPress={() => {}} last s={s} C={C} />
         </View>
 
         {/* ── Sign out ── */}
         <View style={s.signOutWrap}>
           <TouchableOpacity style={s.signOutRow} activeOpacity={0.7} onPress={handleSignOut}>
-            <Ionicons name="log-out-outline" size={20} color={Colors.error} />
+            <Ionicons name="log-out-outline" size={20} color={C.error} />
             <Text style={s.signOutTxt}>{t.signOut}</Text>
           </TouchableOpacity>
           <Text style={s.versionTxt}>{copy.versionLabel}</Text>
@@ -253,14 +378,20 @@ export default function ProfileScreen() {
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── Sub-components ──────────────────────────────────────────────────────────────
 
-function VerificationPromoCard({ rejected, copy, verifyButtonLabel }: { rejected: boolean; copy: any; verifyButtonLabel: string }) {
+function VerificationPromoCard({ rejected, copy, verifyButtonLabel, s, C }: {
+  rejected: boolean;
+  copy: any;
+  verifyButtonLabel: string;
+  s: any;
+  C: ReturnType<typeof useThemeColors>;
+}) {
   return (
     <View style={s.verifyCard}>
       <View style={s.verifyTop}>
         <View style={s.verifyIconWrap}>
-          <Ionicons name="shield-checkmark-outline" size={28} color={Colors.primary} />
+          <Ionicons name="shield-checkmark-outline" size={28} color={C.primary} />
         </View>
         <View style={s.verifyTextWrap}>
           <Text style={s.verifyTitle}>{copy.verificationTitle}</Text>
@@ -271,32 +402,32 @@ function VerificationPromoCard({ rejected, copy, verifyButtonLabel }: { rejected
       </View>
       {rejected && (
         <View style={s.rejectedPill}>
-          <Ionicons name="close-circle" size={13} color={Colors.error} />
+          <Ionicons name="close-circle" size={13} color={C.error} />
           <Text style={s.rejectedTxt}>{copy.verificationRejectedBadge}</Text>
         </View>
       )}
       <View style={s.verifyBenefits}>
         {copy.verificationBenefits.map((b: string) => (
           <View key={b} style={s.benefitRow}>
-            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+            <Ionicons name="checkmark-circle" size={14} color={C.success} />
             <Text style={s.benefitTxt}>{b}</Text>
           </View>
         ))}
       </View>
       <TouchableOpacity style={s.verifyBtn} onPress={() => router.push('/verification' as any)}>
-        <Ionicons name="shield-checkmark" size={16} color={Colors.white} />
+        <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
         <Text style={s.verifyBtnTxt}>{verifyButtonLabel}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function VerificationPendingCard({ copy }: { copy: any }) {
+function VerificationPendingCard({ copy, s, C }: { copy: any; s: any; C: ReturnType<typeof useThemeColors> }) {
   return (
     <View style={[s.verifyCard, s.pendingCard]}>
       <View style={s.verifyTop}>
-        <View style={[s.verifyIconWrap, { backgroundColor: `${Colors.warning}18` }]}>
-          <Ionicons name="time-outline" size={28} color={Colors.warning} />
+        <View style={[s.verifyIconWrap, { backgroundColor: `${C.warning}18` }]}>
+          <Ionicons name="time-outline" size={28} color={C.warning} />
         </View>
         <View style={s.verifyTextWrap}>
           <Text style={s.verifyTitle}>{copy.pendingTitle}</Text>
@@ -304,20 +435,22 @@ function VerificationPendingCard({ copy }: { copy: any }) {
         </View>
       </View>
       <View style={s.pendingPill}>
-        <ActivityIndicator size="small" color={Colors.warning} style={{ transform: [{ scale: 0.7 }] }} />
+        <ActivityIndicator size="small" color={C.warning} style={{ transform: [{ scale: 0.7 }] }} />
         <Text style={s.pendingPillTxt}>{copy.pendingStatus}</Text>
       </View>
     </View>
   );
 }
 
-function ActionRow({ icon, label, sub, color, onPress, last = false }: {
+function ActionRow({ icon, label, sub, color, onPress, last = false, s, C }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   sub?: string;
   color: string;
   onPress: () => void;
   last?: boolean;
+  s: any;
+  C: ReturnType<typeof useThemeColors>;
 }) {
   return (
     <TouchableOpacity
@@ -332,16 +465,17 @@ function ActionRow({ icon, label, sub, color, onPress, last = false }: {
         <Text style={s.actionLabel}>{label}</Text>
         {sub ? <Text style={s.actionSub}>{sub}</Text> : null}
       </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.gray} />
+      <Ionicons name="chevron-forward" size={16} color={C.gray} />
     </TouchableOpacity>
   );
 }
 
-function GridItem({ icon, label, color, onPress }: {
+function GridItem({ icon, label, color, onPress, s }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   color: string;
   onPress: () => void;
+  s: any;
 }) {
   return (
     <TouchableOpacity style={s.gridItem} activeOpacity={0.7} onPress={onPress}>
@@ -353,12 +487,14 @@ function GridItem({ icon, label, color, onPress }: {
   );
 }
 
-function SettingRow({ icon, label, sub, onPress, last = false }: {
+function SettingRow({ icon, label, sub, onPress, last = false, s, C }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   sub: string;
   onPress: () => void;
   last?: boolean;
+  s: any;
+  C: ReturnType<typeof useThemeColors>;
 }) {
   return (
     <TouchableOpacity
@@ -367,130 +503,13 @@ function SettingRow({ icon, label, sub, onPress, last = false }: {
       onPress={onPress}
     >
       <View style={s.settingIconBox}>
-        <Ionicons name={icon} size={20} color={Colors.charcoal} />
+        <Ionicons name={icon} size={20} color={C.charcoal} />
       </View>
       <View style={s.settingInfo}>
         <Text style={s.settingLabel}>{label}</Text>
         <Text style={s.settingSub}>{sub}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.gray} />
+      <Ionicons name="chevron-forward" size={16} color={C.gray} />
     </TouchableOpacity>
   );
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  scroll: { flex: 1 },
-
-  authRequired: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  authTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack, marginTop: Spacing.md },
-  authSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
-  signInBtn: { marginTop: Spacing.xl, backgroundColor: Colors.primary, paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.md, borderRadius: BorderRadius.full },
-  signInTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-
-  profileStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.xl,
-    backgroundColor: Colors.white,
-    gap: Spacing.base,
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    ...Shadows.sm,
-  },
-  profileInfo: { flex: 1 },
-  profileName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  profileEmail: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginTop: 2 },
-  editBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-    marginTop: Spacing.xs, backgroundColor: Colors.primaryPale,
-    paddingHorizontal: Spacing.sm, paddingVertical: 3,
-    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primaryLight,
-  },
-  editBadgeTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 11, color: Colors.primary },
-  topActions: { flexDirection: 'row', gap: Spacing.xs },
-  topIconBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  card: {
-    backgroundColor: Colors.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg, padding: Spacing.base,
-    borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm,
-  },
-  cardTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.md },
-  actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
-  actionRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.lightGray },
-  actionIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  actionLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  actionSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
-  actionDivider: { height: 1, backgroundColor: Colors.lightGray },
-
-  gridRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  gridDivider: { height: 1, backgroundColor: Colors.lightGray, marginVertical: Spacing.sm },
-  gridItem: { alignItems: 'center', flex: 1, paddingVertical: Spacing.xs },
-  gridIcon: { width: 54, height: 54, borderRadius: BorderRadius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
-  gridLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, textAlign: 'center' },
-
-  settingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.md },
-  settingRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
-  settingIconBox: { width: 38, height: 38, borderRadius: BorderRadius.sm, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  settingInfo: { flex: 1 },
-  settingLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  settingSub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 2 },
-
-  verifyCard: {
-    backgroundColor: Colors.white, marginHorizontal: Spacing.xl, marginTop: Spacing.md,
-    borderRadius: BorderRadius.lg, padding: Spacing.base,
-    borderWidth: 1.5, borderColor: Colors.primaryLight, ...Shadows.sm, gap: Spacing.md,
-  },
-  pendingCard: { borderColor: `${Colors.warning}60` },
-  verifyTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
-  verifyIconWrap: {
-    width: 52, height: 52, borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primaryPale, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  verifyTextWrap: { flex: 1, gap: 3 },
-  verifyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  verifySub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, lineHeight: 17 },
-  rejectedPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
-    backgroundColor: `${Colors.error}12`, paddingHorizontal: Spacing.sm, paddingVertical: 4,
-    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${Colors.error}30`,
-  },
-  rejectedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 11, color: Colors.error },
-  verifyBenefits: { gap: 5 },
-  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  benefitTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal },
-  verifyBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.primary, paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-  },
-  verifyBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-  pendingPill: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, alignSelf: 'flex-start',
-    backgroundColor: `${Colors.warning}14`, paddingHorizontal: Spacing.md, paddingVertical: 6,
-    borderRadius: BorderRadius.full, borderWidth: 1, borderColor: `${Colors.warning}40`,
-  },
-  pendingPillTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.warning },
-
-  signOutWrap: { alignItems: 'center', marginHorizontal: Spacing.xl, marginTop: Spacing.md, gap: Spacing.md },
-  signOutRow: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.md, borderWidth: 1,
-    borderColor: Colors.errorLight, backgroundColor: Colors.errorLight,
-    alignSelf: 'stretch', justifyContent: 'center',
-  },
-  signOutTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.error },
-  versionTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
-});

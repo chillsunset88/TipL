@@ -1,6 +1,7 @@
-﻿/**
+/**
  * TipL — Cart Page
  * Prelove-style grouped cart: horizontal photo cards per seller, edit mode with X buttons.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 import React, { useMemo, useState } from 'react';
 import {
@@ -12,15 +13,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useCartStore } from '@/src/store/cartStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { useCheckoutStore } from '@/src/store/checkoutStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function CartScreen() {
+  const C = useThemeColors();
   const { items, removeItem } = useCartStore();
   const user = useAuthStore((s) => s.user);
   const { setPendingItems, setSelectedAddress } = useCheckoutStore();
@@ -39,8 +42,6 @@ export default function CartScreen() {
     }
     return Object.values(map);
   }, [items]);
-
-  const totalPending = pendingDelete.size;
 
   const togglePendingDelete = (id: string) => {
     setPendingDelete(prev => {
@@ -85,6 +86,145 @@ export default function CartScreen() {
     router.push('/checkout/address');
   };
 
+  const st = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.md,
+      paddingBottom: Spacing.sm,
+      backgroundColor: C.white,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+    },
+    headerBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    headerRightBtn: {
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    headerRightTxt: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.primary,
+    },
+    headerTitle: {
+      flex: 1,
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+      textAlign: 'center',
+    },
+
+    body: { flex: 1 },
+
+    empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingHorizontal: Spacing['2xl'], gap: Spacing.md },
+    emptyIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: C.offWhite, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
+    emptyTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: C.nearBlack },
+    emptyDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.darkGray, textAlign: 'center', lineHeight: 22 },
+    shopBtn: { marginTop: Spacing.md, borderRadius: BorderRadius.full, overflow: 'hidden' },
+    shopBtnGrad: { paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.base },
+    shopBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+
+    cartList: { paddingTop: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.md },
+
+    groupCard: {
+      backgroundColor: C.white,
+      marginHorizontal: Spacing.base,
+      borderRadius: BorderRadius.xl,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      overflow: 'hidden',
+      ...Shadows.sm,
+    },
+
+    sellerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.md,
+      gap: Spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+    },
+    sellerAvatar: {
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: C.primary + '15',
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1.5, borderColor: C.primary,
+    },
+    sellerAvatarTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.primary },
+    sellerInfo: { flex: 1 },
+    sellerNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    sellerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    verifiedBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 2,
+      backgroundColor: C.success + '15',
+      paddingHorizontal: Spacing.xs, paddingVertical: 2,
+      borderRadius: BorderRadius.full,
+    },
+    verifiedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: C.success },
+    itemCountTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray, marginTop: 1 },
+
+    photoScroll: { paddingVertical: Spacing.md },
+    photoScrollContent: { paddingHorizontal: Spacing.md, gap: Spacing.sm, alignItems: 'flex-start' },
+
+    photoCard: {
+      width: 120, height: 144,
+      borderRadius: BorderRadius.lg,
+      overflow: 'hidden',
+      backgroundColor: C.offWhite,
+    },
+    photoCardMarked: { opacity: 0.55 },
+    photoImg: { width: '100%', height: '100%' },
+    photoOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'flex-end',
+      padding: Spacing.sm,
+    },
+    photoName: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: '#FFFFFF', lineHeight: 12 },
+    photoPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: '#FFFFFF', marginTop: 1 },
+    photoQty: { fontFamily: Typography.regular.fontFamily, fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
+
+    deleteX: {
+      position: 'absolute', top: 5, right: 5,
+      width: 20, height: 20, borderRadius: 10,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    deleteXActive: { backgroundColor: C.error },
+
+    groupFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+    },
+    subtotalLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: C.darkGray },
+    subtotalVal: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack, marginTop: 1 },
+
+    beliWrap: { borderRadius: BorderRadius.full, overflow: 'hidden' },
+    beliBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
+    beliBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: '#FFFFFF' },
+
+    hapusBtn: {
+      paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1.5, borderColor: C.error,
+    },
+    hapusBtnDisabled: { borderColor: C.midGray },
+    hapusBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.error },
+    hapusBtnTxtDisabled: { color: C.midGray },
+  }), [C]);
+
   return (
     <View style={st.safe}>
       <View style={[st.header, { paddingTop: insets.top }]}>
@@ -93,7 +233,7 @@ export default function CartScreen() {
           onPress={() => router.back()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
+          <Ionicons name="arrow-back" size={22} color={C.nearBlack} />
         </TouchableOpacity>
         <Text style={st.headerTitle}>My Cart</Text>
         {items.length > 0 ? (
@@ -116,12 +256,12 @@ export default function CartScreen() {
         {items.length === 0 ? (
           <View style={st.empty}>
             <View style={st.emptyIcon}>
-              <Ionicons name="cart-outline" size={48} color={Colors.midGray} />
+              <Ionicons name="cart-outline" size={48} color={C.midGray} />
             </View>
             <Text style={st.emptyTitle}>{t.emptyCart}</Text>
             <Text style={st.emptyDesc}>{t.emptyCartDesc}</Text>
             <TouchableOpacity onPress={() => router.push('/')} style={st.shopBtn}>
-              <LinearGradient colors={[Colors.primaryLight, Colors.primaryDark]} style={st.shopBtnGrad}>
+              <LinearGradient colors={[C.primary, C.primary]} style={st.shopBtnGrad}>
                 <Text style={st.shopBtnTxt}>{t.exploreProducts}</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -151,13 +291,13 @@ export default function CartScreen() {
                       <View style={st.sellerNameRow}>
                         <Text style={st.sellerName}>{group.travelerName}</Text>
                         <View style={st.verifiedBadge}>
-                          <Ionicons name="shield-checkmark" size={10} color={Colors.success} />
+                          <Ionicons name="shield-checkmark" size={10} color={C.success} />
                           <Text style={st.verifiedTxt}>Terverifikasi</Text>
                         </View>
                       </View>
                       <Text style={st.itemCountTxt}>{group.items.length} produk</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color={Colors.midGray} />
+                    <Ionicons name="chevron-forward" size={16} color={C.midGray} />
                   </TouchableOpacity>
 
                   {/* Horizontal product photos */}
@@ -173,7 +313,7 @@ export default function CartScreen() {
                         <View key={item.id} style={[st.photoCard, marked && st.photoCardMarked]}>
                           <Image source={{ uri: item.imageUrl }} style={st.photoImg} contentFit="cover" />
                           <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.72)']}
+                            colors={['transparent', 'rgba(0,0,0,0.85)']}
                             style={st.photoOverlay}
                           >
                             <Text style={st.photoName} numberOfLines={1}>{item.name}</Text>
@@ -188,7 +328,7 @@ export default function CartScreen() {
                               onPress={() => togglePendingDelete(item.id)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Ionicons name="close" size={12} color={Colors.white} />
+                              <Ionicons name="close" size={12} color="#FFFFFF" />
                             </TouchableOpacity>
                           )}
                         </View>
@@ -220,7 +360,7 @@ export default function CartScreen() {
                         style={st.beliWrap}
                       >
                         <LinearGradient
-                          colors={[Colors.primaryLight, Colors.primaryDark]}
+                          colors={[C.primary, C.primary]}
                           style={st.beliBtn}
                         >
                           <Text style={st.beliBtnTxt}>{t.buyNow}</Text>
@@ -239,145 +379,3 @@ export default function CartScreen() {
     </View>
   );
 }
-
-const PHOTO_SIZE = 120;
-
-const st = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.sm,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  headerBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerRightBtn: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  headerRightTxt: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.primary,
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    textAlign: 'center',
-  },
-
-  body: { flex: 1 },
-
-  empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingHorizontal: Spacing['2xl'], gap: Spacing.md },
-  emptyIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
-  emptyTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.xl, color: Colors.nearBlack },
-  emptyDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray, textAlign: 'center', lineHeight: 22 },
-  shopBtn: { marginTop: Spacing.md, borderRadius: BorderRadius.full, overflow: 'hidden' },
-  shopBtnGrad: { paddingHorizontal: Spacing['2xl'], paddingVertical: Spacing.base },
-  shopBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-
-  cartList: { paddingTop: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.md },
-
-  groupCard: {
-    backgroundColor: Colors.white,
-    marginHorizontal: Spacing.base,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    overflow: 'hidden',
-    ...Shadows.sm,
-  },
-
-  sellerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    gap: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  sellerAvatar: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.primaryPale,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: Colors.primaryLight,
-  },
-  sellerAvatarTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
-  sellerInfo: { flex: 1 },
-  sellerNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  sellerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  verifiedBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
-    backgroundColor: Colors.successLight,
-    paddingHorizontal: Spacing.xs, paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  verifiedTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.success },
-  itemCountTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 1 },
-
-  photoScroll: { paddingVertical: Spacing.md },
-  photoScrollContent: { paddingHorizontal: Spacing.md, gap: Spacing.sm, alignItems: 'flex-start' },
-
-  photoCard: {
-    width: PHOTO_SIZE, height: PHOTO_SIZE + 24,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    backgroundColor: Colors.cream,
-  },
-  photoCardMarked: { opacity: 0.55 },
-  photoImg: { width: '100%', height: '100%' },
-  photoOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    padding: Spacing.sm,
-  },
-  photoName: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.white, lineHeight: 12 },
-  photoPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.white, marginTop: 1 },
-  photoQty: { fontFamily: Typography.regular.fontFamily, fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
-
-  deleteX: {
-    position: 'absolute', top: 5, right: 5,
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  deleteXActive: { backgroundColor: Colors.error },
-
-  groupFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-  },
-  subtotalLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.darkGray },
-  subtotalVal: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginTop: 1 },
-
-  beliWrap: { borderRadius: BorderRadius.full, overflow: 'hidden' },
-  beliBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
-  beliBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.white },
-
-  hapusBtn: {
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5, borderColor: Colors.error,
-  },
-  hapusBtnDisabled: { borderColor: Colors.midGray },
-  hapusBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error },
-  hapusBtnTxtDisabled: { color: Colors.midGray },
-
-});

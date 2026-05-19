@@ -368,6 +368,11 @@ export interface Translations {
   reviewThankYou: string;
   writeComment: string;
   alreadyReviewed: string;
+
+  // Theme
+  appearance: string;
+  darkMode: string;
+  lightMode: string;
 }
 
 const en: Translations = {
@@ -731,6 +736,11 @@ const en: Translations = {
   reviewThankYou: 'Thank you for your feedback.',
   writeComment: 'Write a comment (optional)',
   alreadyReviewed: 'Already Reviewed',
+
+  // Theme
+  appearance: 'APPEARANCE',
+  darkMode: 'Dark Mode',
+  lightMode: 'Light Mode',
 };
 
 const id: Translations = {
@@ -1094,6 +1104,11 @@ const id: Translations = {
   reviewThankYou: 'Terima kasih atas ulasanmu.',
   writeComment: 'Tulis komentar (opsional)',
   alreadyReviewed: 'Sudah Diulas',
+
+  // Theme
+  appearance: 'TAMPILAN',
+  darkMode: 'Mode Gelap',
+  lightMode: 'Mode Terang',
 };
 
 const translations: Record<Locale, Translations> = { en, id };

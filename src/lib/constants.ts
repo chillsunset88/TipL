@@ -65,6 +65,72 @@ export const Colors = {
   statusDangerText: '#8A2A1E',
 } as const;
 
+/**
+ * Dark-mode overrides — same semantic keys as Colors.
+ * Brand gold accent stays the same; surfaces flip to dark charcoal.
+ */
+export const DarkColors = {
+  // ── Brand — same gold ────────────────────────────────────────────────
+  primary: '#C5A267',
+  primaryDark: '#A8893E',
+  primaryLight: '#D4B87D',
+  primaryPale: '#3D2F10',
+  primaryGradientStart: '#D4B87D',
+  primaryGradientEnd: '#A8893E',
+
+  // ── Secondary ──────────────────────────────────────────────────────
+  secondary: '#F9F7F2',
+  secondaryLight: '#2C2520',
+
+  // ── Neutrals ──────────────────────────────────────────────────────
+  white: '#2C2520',            // card / input surface
+  offWhite: '#1A1510',         // page background
+  cream: '#251E18',            // subtle surface
+  lightGray: '#3D3328',        // dividers
+  midGray: '#5C5044',          // inactive elements
+  gray: '#8E8E8E',             // placeholders
+  darkGray: '#B0A899',         // secondary text
+  charcoal: '#D4CAC0',         // primary body text
+  nearBlack: '#F9F7F2',        // headings
+  black: '#FFFFFF',
+
+  // ── Semantic ───────────────────────────────────────────────────────
+  success: '#4E9E6C',
+  successLight: '#1A3328',
+  warning: '#C5A267',
+  warningLight: '#3D2F10',
+  error: '#E05050',
+  errorLight: '#3D1A1A',
+  info: '#5B8DB8',
+  infoLight: '#1A2D40',
+
+  // ── Dark surfaces (same as base — already dark) ────────────────────
+  darkBg: '#181310',
+  darkCard: '#2C2520',
+  darkCardLight: '#3D3328',
+  darkBorder: '#4D4039',
+  darkTextPrimary: '#F9F7F2',
+  darkTextSecondary: '#8E8E8E',
+
+  // ── Glass ──────────────────────────────────────────────────────────
+  glassBg: 'rgba(26,21,16,0.95)',
+  glassBorder: 'rgba(197,162,103,0.3)',
+
+  // ── Overlays ───────────────────────────────────────────────────────
+  overlay: 'rgba(0,0,0,0.7)',
+  overlayLight: 'rgba(0,0,0,0.4)',
+
+  // ── Status chips ───────────────────────────────────────────────────
+  statusPending: '#3D2F10',
+  statusPendingText: '#D4B87D',
+  statusActive: '#1A3328',
+  statusActiveText: '#4E9E6C',
+  statusDone: '#1A2D40',
+  statusDoneText: '#5B8DB8',
+  statusDanger: '#3D1A1A',
+  statusDangerText: '#E05050',
+} as const;
+
 export const Typography = {
   serif: { fontFamily: 'PlayfairDisplay' },
   serifBold: { fontFamily: 'PlayfairDisplay-Bold' },

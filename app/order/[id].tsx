@@ -1,6 +1,7 @@
 /**
  * TipL — Order Detail / Escrow State Machine
  * Role-aware action buttons, Supabase real-time data, Supabase escrow.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -19,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
 import { ReviewModal } from '@/src/components/ui/ReviewModal';
 import { useSettingsStore } from '@/src/store/settingsStore';
@@ -33,41 +34,44 @@ import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import type { OrderWithProfiles } from '@/src/services/supabase/orders';
 import { sendMessage } from '@/src/services/supabase/messages';
+import { useThemeColors, useIsDark } from '@/src/lib/hooks/useThemeColors';
 
 // ─── Status config (computed from translations) ───────────────────────────────
 import type { Translations } from '@/src/lib/i18n';
 
 type StatusCfgMap = Record<string, { label: string; gradient: [string, string]; sub: string }>;
 
-function getStatusConfig(t: Translations): StatusCfgMap {
+function getStatusConfig(t: Translations, isDark: boolean): StatusCfgMap {
   return {
-    pending:   { label: t.statusWaiting,       gradient: ['#E8E8E8', '#D0D0D0'], sub: t.statusWaitingDesc },
-    accepted:  { label: t.statusOfferAccepted, gradient: ['#E8F4FD', '#C8E6F9'], sub: t.statusOfferAcceptedDesc },
-    in_escrow: { label: t.statusInEscrow,      gradient: ['#F5E6C8', '#EDD9A3'], sub: t.statusInEscrowDesc },
-    purchased: { label: t.statusItemPurchased, gradient: ['#F0F8E8', '#D4EDBA'], sub: t.statusItemPurchasedDesc },
-    shipped:   { label: t.statusInTransit,     gradient: ['#E8F0FE', '#C5D8F8'], sub: t.statusInTransitDesc },
-    delivered: { label: t.statusDelivered,     gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusDeliveredDesc },
-    completed: { label: t.statusCompleted,     gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
-    cancelled: { label: t.statusCancelled,     gradient: ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
-    disputed:  { label: t.statusDisputed,      gradient: ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
+    pending:   { label: t.statusWaiting,       gradient: isDark ? ['#2D2D2D', '#1A1A1A'] : ['#E8E8E8', '#D0D0D0'], sub: t.statusWaitingDesc },
+    accepted:  { label: t.statusOfferAccepted, gradient: isDark ? ['#1A364A', '#0D1E2D'] : ['#E8F4FD', '#C8E6F9'], sub: t.statusOfferAcceptedDesc },
+    in_escrow: { label: t.statusInEscrow,      gradient: isDark ? ['#3D2E14', '#261C0A'] : ['#F5E6C8', '#EDD9A3'], sub: t.statusInEscrowDesc },
+    purchased: { label: t.statusItemPurchased, gradient: isDark ? ['#1F3A15', '#10200A'] : ['#F0F8E8', '#D4EDBA'], sub: t.statusItemPurchasedDesc },
+    shipped:   { label: t.statusInTransit,     gradient: isDark ? ['#1B2E4F', '#0E1D36'] : ['#E8F0FE', '#C5D8F8'], sub: t.statusInTransitDesc },
+    delivered: { label: t.statusDelivered,     gradient: isDark ? ['#123A21', '#092010'] : ['#E8F9EE', '#B8ECC8'], sub: t.statusDeliveredDesc },
+    completed: { label: t.statusCompleted,     gradient: isDark ? ['#123A21', '#092010'] : ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
+    cancelled: { label: t.statusCancelled,     gradient: isDark ? ['#4C1F1B', '#2E100D'] : ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
+    disputed:  { label: t.statusDisputed,      gradient: isDark ? ['#472E0F', '#2C1B06'] : ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
   };
 }
 
-function getTriperStatusConfig(t: Translations): StatusCfgMap {
+function getTriperStatusConfig(t: Translations, isDark: boolean): StatusCfgMap {
   return {
-    pending:   { label: t.triperStatusPending,   gradient: ['#E8E8E8', '#D0D0D0'], sub: t.triperStatusPendingDesc },
-    accepted:  { label: t.triperStatusAccepted,  gradient: ['#E8F4FD', '#C8E6F9'], sub: t.triperStatusAcceptedDesc },
-    in_escrow: { label: t.triperStatusInEscrow,  gradient: ['#F5E6C8', '#EDD9A3'], sub: t.triperStatusInEscrowDesc },
-    purchased: { label: t.triperStatusPurchased, gradient: ['#F0F8E8', '#D4EDBA'], sub: t.triperStatusPurchasedDesc },
-    shipped:   { label: t.triperStatusShipped,   gradient: ['#E8F0FE', '#C5D8F8'], sub: t.triperStatusShippedDesc },
-    delivered: { label: t.triperStatusDelivered, gradient: ['#E8F9EE', '#B8ECC8'], sub: t.triperStatusDeliveredDesc },
-    completed: { label: t.statusCompleted,       gradient: ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
-    cancelled: { label: t.statusCancelled,       gradient: ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
-    disputed:  { label: t.statusDisputed,        gradient: ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
+    pending:   { label: t.triperStatusPending,   gradient: isDark ? ['#2D2D2D', '#1A1A1A'] : ['#E8E8E8', '#D0D0D0'], sub: t.triperStatusPendingDesc },
+    accepted:  { label: t.triperStatusAccepted,  gradient: isDark ? ['#1A364A', '#0D1E2D'] : ['#E8F4FD', '#C8E6F9'], sub: t.triperStatusAcceptedDesc },
+    in_escrow: { label: t.triperStatusInEscrow,  gradient: isDark ? ['#3D2E14', '#261C0A'] : ['#F5E6C8', '#EDD9A3'], sub: t.triperStatusInEscrowDesc },
+    purchased: { label: t.triperStatusPurchased, gradient: isDark ? ['#1F3A15', '#10200A'] : ['#F0F8E8', '#D4EDBA'], sub: t.triperStatusPurchasedDesc },
+    shipped:   { label: t.triperStatusShipped,   gradient: isDark ? ['#1B2E4F', '#0E1D36'] : ['#E8F0FE', '#C5D8F8'], sub: t.triperStatusShippedDesc },
+    delivered: { label: t.triperStatusDelivered, gradient: isDark ? ['#123A21', '#092010'] : ['#E8F9EE', '#B8ECC8'], sub: t.triperStatusDeliveredDesc },
+    completed: { label: t.statusCompleted,       gradient: isDark ? ['#123A21', '#092010'] : ['#E8F9EE', '#B8ECC8'], sub: t.statusCompletedDesc },
+    cancelled: { label: t.statusCancelled,       gradient: isDark ? ['#4C1F1B', '#2E100D'] : ['#FFEBE9', '#FFD0CC'], sub: t.statusCancelledDesc },
+    disputed:  { label: t.statusDisputed,        gradient: isDark ? ['#472E0F', '#2C1B06'] : ['#FFF4E5', '#FFE0A8'], sub: t.statusDisputedDesc },
   };
 }
 
 export default function OrderDetailScreen() {
+  const C = useThemeColors();
+  const isDark = useIsDark();
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
   const { order, loading } = useOrder(id);
@@ -85,18 +89,240 @@ export default function OrderDetailScreen() {
     }
   }, [order?.id, order?.status, user?.id]);
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+      backgroundColor: C.white,
+    },
+    backButton: {
+      width: 44, height: 44, borderRadius: 22,
+      backgroundColor: C.offWhite,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    headerCenter: { alignItems: 'center' },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+    },
+    headerTitle: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.md,
+      color: C.nearBlack,
+    },
+    orderNumber: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.darkGray,
+      marginTop: 2,
+    },
+    moreButton: {
+      width: 44, height: 44, borderRadius: 22,
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    container: { flex: 1, paddingHorizontal: Spacing.xl, backgroundColor: C.offWhite },
+
+    statusCard: {
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.xl,
+      marginTop: Spacing.lg,
+      marginBottom: Spacing.lg,
+      alignItems: 'center',
+      ...Shadows.md,
+    },
+    statusLabel: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: 10, color: isDark ? '#FFFFFF88' : C.charcoal,
+      letterSpacing: 1.5, marginBottom: Spacing.sm,
+    },
+    statusTitle: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes['2xl'],
+      color: isDark ? '#FFFFFF' : C.nearBlack, textAlign: 'center',
+    },
+    statusSubtext: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: isDark ? '#FFFFFFDD' : C.charcoal, marginTop: Spacing.sm,
+      textAlign: 'center',
+    },
+    escrowBadge: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: 'rgba(196,162,101,0.15)',
+      borderRadius: BorderRadius.full,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      marginTop: Spacing.md,
+      gap: Spacing.xs,
+    },
+    escrowBadgeText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.primary,
+    },
+
+    itemCard: {
+      flexDirection: 'row',
+      backgroundColor: C.white,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.base,
+      marginBottom: Spacing.xl,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      alignItems: 'center',
+    },
+    itemImage: {
+      width: 70, height: 70,
+      borderRadius: BorderRadius.md,
+    },
+    itemImagePlaceholder: {
+      backgroundColor: C.lightGray,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    itemInfo: { flex: 1, marginLeft: Spacing.md },
+    itemName: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base, color: C.nearBlack,
+    },
+    itemDesc: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs, color: C.darkGray, marginTop: 2,
+    },
+    itemQty: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs, color: C.gray, marginTop: 4,
+    },
+    itemPrice: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.nearBlack,
+    },
+
+    section: { marginBottom: Spacing.xl },
+    sectionTitle: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes.lg, color: C.nearBlack,
+      marginBottom: Spacing.base,
+    },
+
+    summaryCard: {
+      backgroundColor: C.white,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.base,
+      borderWidth: 1, borderColor: C.lightGray,
+    },
+    summaryRow: {
+      flexDirection: 'row', justifyContent: 'space-between',
+      paddingVertical: Spacing.sm,
+    },
+    summaryLabel: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.darkGray,
+    },
+    summaryValue: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.nearBlack,
+    },
+    summaryBold: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base, color: C.nearBlack,
+    },
+    summaryDivider: {
+      height: 1, backgroundColor: C.midGray,
+      marginVertical: Spacing.sm,
+    },
+
+    actionBar: {
+      backgroundColor: C.white,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.xl,
+      marginTop: Spacing.xl,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+      borderRadius: BorderRadius.lg,
+      marginBottom: Spacing.xl,
+    },
+
+    adminHeader: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+      marginBottom: Spacing.sm,
+    },
+    adminHeaderTxt: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.primary, letterSpacing: 0.5,
+    },
+    adminGrid: {
+      flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm,
+    },
+    adminBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.full, borderWidth: 1,
+      backgroundColor: C.white, position: 'relative',
+    },
+    adminBtnTxt: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs, color: C.charcoal,
+    },
+    activeDot: {
+      width: 6, height: 6, borderRadius: 3,
+      position: 'absolute', top: 4, right: 4,
+    },
+    terminalBadge: {
+      flexDirection: 'row', alignItems: 'center',
+      justifyContent: 'center', gap: Spacing.sm,
+      paddingVertical: Spacing.md,
+    },
+    terminalText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.darkGray,
+    },
+    adminReviewDivider: {
+      marginTop: Spacing.md,
+      paddingTop: Spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+    },
+    reviewedBadge: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: Spacing.xs, marginTop: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      backgroundColor: C.primary + '15',
+      borderRadius: BorderRadius.full,
+    },
+    reviewedBadgeText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.primary,
+    },
+    waitingText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.gray,
+      textAlign: 'center',
+    },
+  }), [C, isDark]);
+
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+      <SafeAreaView style={[styles.safeLoader, { backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={C.primary} />
       </SafeAreaView>
     );
   }
 
   if (!order) {
     return (
-      <SafeAreaView style={[styles.safe, { alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={{ color: Colors.darkGray }}>{t.orderNotFound}</Text>
+      <SafeAreaView style={[styles.safeLoader, { backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={{ color: C.darkGray }}>{t.orderNotFound}</Text>
       </SafeAreaView>
     );
   }
@@ -107,8 +333,8 @@ export default function OrderDetailScreen() {
   const isAdmin = user?.role === 'admin';
   const chatPartnerId = isTiper ? order.triper_id : isTriper ? order.tiper_id : null;
 
-  const STATUS_CONFIG = getStatusConfig(t);
-  const statusCfg = (isTriper && !isTiper ? getTriperStatusConfig(t) : STATUS_CONFIG)[status]
+  const STATUS_CONFIG = getStatusConfig(t, isDark);
+  const statusCfg = (isTriper && !isTiper ? getTriperStatusConfig(t, isDark) : STATUS_CONFIG)[status]
     ?? STATUS_CONFIG['pending'];
 
   const totalAmount = order.total_amount ?? 0;
@@ -226,21 +452,19 @@ export default function OrderDetailScreen() {
       rating,
       comment: comment || null,
     });
-    // Update rating & total_reviews di profil jastiper secara langsung
     await recalculateProfileRating(order.triper_id).catch(() => {});
     setAlreadyReviewed(true);
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={s.safe} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.nearBlack} />
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
+          <Ionicons name="arrow-back" size={24} color={C.nearBlack} />
         </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t.orderTracking}</Text>
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>{t.orderTracking}</Text>
           <TouchableOpacity
             onPress={async () => {
               await Clipboard.setStringAsync(order.id);
@@ -248,13 +472,12 @@ export default function OrderDetailScreen() {
               Alert.alert(t.orderIdCopied, t.orderIdCopiedMsg);
             }}
           >
-            <Text style={styles.orderNumber}>#{order.id.slice(0, 8)} ⎘</Text>
+            <Text style={s.orderNumber}>#{order.id.slice(0, 8)} ⎘</Text>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.headerActions}>
+        <View style={s.headerActions}>
           <TouchableOpacity
-            style={styles.moreButton}
+            style={s.moreButton}
             onPress={async () => {
               const canShare = await Sharing.isAvailableAsync();
               if (canShare) {
@@ -270,10 +493,10 @@ export default function OrderDetailScreen() {
               }
             }}
           >
-            <Ionicons name="share-outline" size={20} color={Colors.primary} />
+            <Ionicons name="share-outline" size={20} color={C.primary} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.moreButton}
+            style={s.moreButton}
             onPress={() => {
               if (!chatPartnerId) return;
               withLoading(async () => {
@@ -303,71 +526,71 @@ export default function OrderDetailScreen() {
               });
             }}
           >
-            <Ionicons name="chatbubble-outline" size={20} color={Colors.primary} />
+            <Ionicons name="chatbubble-outline" size={20} color={C.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={s.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Status Card */}
         <LinearGradient
           colors={statusCfg.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.statusCard}
+          style={s.statusCard}
         >
-          <Text style={styles.statusLabel}>{t.currentStatus}</Text>
-          <Text style={styles.statusTitle}>{statusCfg.label}</Text>
-          <Text style={styles.statusSubtext}>{statusCfg.sub}</Text>
+          <Text style={s.statusLabel}>{t.currentStatus}</Text>
+          <Text style={s.statusTitle}>{statusCfg.label}</Text>
+          <Text style={s.statusSubtext}>{statusCfg.sub}</Text>
 
           {escrowStatuses.includes(status) && (
-            <View style={styles.escrowBadge}>
-              <Ionicons name="shield-checkmark" size={14} color={Colors.primary} />
-              <Text style={styles.escrowBadgeText}>{t.fundsInEscrowBadge}</Text>
+            <View style={s.escrowBadge}>
+              <Ionicons name="shield-checkmark" size={14} color={C.primary} />
+              <Text style={s.escrowBadgeText}>{t.fundsInEscrowBadge}</Text>
             </View>
           )}
         </LinearGradient>
 
         {/* Item card */}
-        <View style={styles.itemCard}>
-          <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
-            <Ionicons name="cube-outline" size={28} color={Colors.gray} />
+        <View style={s.itemCard}>
+          <View style={[s.itemImage, s.itemImagePlaceholder]}>
+            <Ionicons name="cube-outline" size={28} color={C.gray} />
           </View>
-          <View style={styles.itemInfo}>
-            <Text style={styles.itemName} numberOfLines={2}>{order.item_name}</Text>
+          <View style={s.itemInfo}>
+            <Text style={s.itemName} numberOfLines={2}>{order.item_name}</Text>
             {order.notes ? (
-              <Text style={styles.itemDesc} numberOfLines={2}>{order.notes}</Text>
+              <Text style={s.itemDesc} numberOfLines={2}>{order.notes}</Text>
             ) : null}
-            <Text style={styles.itemQty}>Qty: {order.quantity ?? 1}</Text>
+            <Text style={s.itemQty}>Qty: {order.quantity ?? 1}</Text>
           </View>
-          <Text style={styles.itemPrice}>{fmt(totalAmount)}</Text>
+          <Text style={s.itemPrice}>{fmt(totalAmount)}</Text>
         </View>
 
         {/* Payment Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.paymentSummary}</Text>
-          <View style={styles.summaryCard}>
-            <SummaryRow label={t.itemPrice} value={fmt(agreedPrice)} />
-            <SummaryRow label={t.serviceFee} value={fmt(serviceFee)} />
-            <View style={styles.summaryDivider} />
-            <SummaryRow label={t.total} value={fmt(totalAmount)} bold />
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>{t.paymentSummary}</Text>
+          <View style={s.summaryCard}>
+            <SummaryRow label={t.itemPrice} value={fmt(agreedPrice)} styles={s} />
+            <SummaryRow label={t.serviceFee} value={fmt(serviceFee)} styles={s} />
+            <View style={s.summaryDivider} />
+            <SummaryRow label={t.total} value={fmt(totalAmount)} bold styles={s} />
           </View>
         </View>
 
         {/* Participants */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.participants}</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t.buyer}</Text>
-              <Text style={styles.summaryValue}>
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>{t.participants}</Text>
+          <View style={s.summaryCard}>
+            <View style={s.summaryRow}>
+              <Text style={s.summaryLabel}>{t.buyer}</Text>
+              <Text style={s.summaryValue}>
                 {order.tiper?.full_name ?? order.tiper_id.slice(0, 8)}
                 {isTiper ? ' (Anda)' : ''}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t.traveler}</Text>
-              <Text style={styles.summaryValue}>
+            <View style={s.summaryRow}>
+              <Text style={s.summaryLabel}>{t.traveler}</Text>
+              <Text style={s.summaryValue}>
                 {order.triper?.full_name ?? order.triper_id.slice(0, 8)}
                 {isTriper ? ' (Anda)' : ''}
               </Text>
@@ -389,8 +612,10 @@ export default function OrderDetailScreen() {
           onMarkShipped={handleMarkShipped}
           onConfirmReceipt={handleConfirmReceipt}
           onDispute={handleDispute}
-          onAdminSetStatus={(s) => withLoading(() => updateOrderStatus(order.id, s))}
+          onAdminSetStatus={(stVal) => withLoading(() => updateOrderStatus(order.id, stVal))}
           onLeaveReview={() => setReviewVisible(true)}
+          styles={s}
+          C={C}
         />
       </ScrollView>
 
@@ -435,9 +660,11 @@ interface ActionBarProps {
   onDispute: () => void;
   onAdminSetStatus: (s: OrderStatus) => void;
   onLeaveReview: () => void;
+  styles: any;
+  C: ReturnType<typeof useThemeColors>;
 }
 
-function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewed, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute, onAdminSetStatus, onLeaveReview }: ActionBarProps) {
+function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewed, onPayNow, onAccept, onMarkShipped, onConfirmReceipt, onDispute, onAdminSetStatus, onLeaveReview, styles, C }: ActionBarProps) {
   const { t } = useSettingsStore();
   const terminal = ['completed', 'cancelled', 'disputed'].includes(status);
 
@@ -445,20 +672,20 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
   if (isAdmin) {
     return (
       <View style={styles.actionBar}>
-        {loading && <ActivityIndicator color={Colors.primary} style={{ marginBottom: Spacing.sm }} />}
+        {loading && <ActivityIndicator color={C.primary} style={{ marginBottom: Spacing.sm }} />}
         <View style={styles.adminHeader}>
-          <Ionicons name="shield-checkmark" size={14} color={Colors.primary} />
+          <Ionicons name="shield-checkmark" size={14} color={C.primary} />
           <Text style={styles.adminHeaderTxt}>Admin Controls (Demo)</Text>
         </View>
         <View style={styles.adminGrid}>
-          {ADMIN_STATUSES.map(({ status: s, label, color, icon }) => {
-            const isCurrent = status === s;
+          {ADMIN_STATUSES.map(({ status: stVal, label, color, icon }) => {
+            const isCurrent = status === stVal;
             return (
               <TouchableOpacity
-                key={s}
+                key={stVal}
                 style={[
                   styles.adminBtn,
-                  { borderColor: isCurrent ? color : Colors.lightGray },
+                  { borderColor: isCurrent ? color : C.lightGray },
                   isCurrent && { backgroundColor: `${color}15` },
                 ]}
                 activeOpacity={0.7}
@@ -469,12 +696,12 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
                     `Set status ke "${label}"?`,
                     [
                       { text: 'Batal', style: 'cancel' },
-                      { text: 'Ya, Ubah', onPress: () => onAdminSetStatus(s) },
+                      { text: 'Ya, Ubah', onPress: () => onAdminSetStatus(stVal) },
                     ],
                   );
                 }}
               >
-                <Ionicons name={icon as any} size={16} color={isCurrent ? color : Colors.charcoal} />
+                <Ionicons name={icon as any} size={16} color={isCurrent ? color : C.charcoal} />
                 <Text style={[styles.adminBtnTxt, isCurrent && { color }]}>{label}</Text>
                 {isCurrent && (
                   <View style={[styles.activeDot, { backgroundColor: color }]} />
@@ -489,7 +716,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
           <View style={styles.adminReviewDivider}>
             {alreadyReviewed ? (
               <View style={styles.reviewedBadge}>
-                <Ionicons name="star" size={14} color={Colors.primary} />
+                <Ionicons name="star" size={14} color={C.primary} />
                 <Text style={styles.reviewedBadgeText}>{t.alreadyReviewed}</Text>
               </View>
             ) : (
@@ -498,7 +725,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
                 onPress={onLeaveReview}
                 fullWidth
                 size="lg"
-                icon={<Ionicons name="star-outline" size={18} color={Colors.white} />}
+                icon={<Ionicons name="star-outline" size={18} color="#FFFFFF" />}
               />
             )}
           </View>
@@ -515,7 +742,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
           <Ionicons
             name={status === 'completed' ? 'checkmark-circle' : status === 'cancelled' ? 'close-circle' : 'alert-circle'}
             size={18}
-            color={status === 'completed' ? Colors.success : status === 'cancelled' ? Colors.error : Colors.warning}
+            color={status === 'completed' ? C.success : status === 'cancelled' ? C.error : C.warning}
           />
           <Text style={styles.terminalText}>
             {status === 'completed' ? t.orderCompletedMsg : status === 'cancelled' ? t.orderCancelledMsg : t.disputeFiledStatus}
@@ -525,7 +752,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
         {status === 'completed' && isTiper && (
           alreadyReviewed ? (
             <View style={styles.reviewedBadge}>
-              <Ionicons name="star" size={14} color={Colors.primary} />
+              <Ionicons name="star" size={14} color={C.primary} />
               <Text style={styles.reviewedBadgeText}>{t.alreadyReviewed}</Text>
             </View>
           ) : (
@@ -534,7 +761,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
               onPress={onLeaveReview}
               fullWidth
               size="lg"
-              icon={<Ionicons name="star-outline" size={18} color={Colors.white} />}
+              icon={<Ionicons name="star-outline" size={18} color="#FFFFFF" />}
             />
           )
         )}
@@ -544,31 +771,31 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
 
   return (
     <View style={styles.actionBar}>
-      {loading && <ActivityIndicator color={Colors.primary} style={{ marginBottom: Spacing.sm }} />}
+      {loading && <ActivityIndicator color={C.primary} style={{ marginBottom: Spacing.sm }} />}
 
       {/* Tiper actions */}
       {isTiper && (status === 'pending' || status === 'accepted') && (
         <Button title={t.payNow} onPress={onPayNow} fullWidth size="lg" disabled={loading}
-          icon={<Ionicons name="card-outline" size={18} color={Colors.white} />} />
+          icon={<Ionicons name="card-outline" size={18} color="#FFFFFF" />} />
       )}
       {isTiper && status === 'shipped' && (
         <View style={{ gap: Spacing.sm }}>
           <Button title={t.confirmReceipt} onPress={onConfirmReceipt} fullWidth size="lg" disabled={loading}
-            icon={<Ionicons name="checkmark-circle-outline" size={18} color={Colors.white} />} />
+            icon={<Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />} />
           <Button title={t.fileDispute} onPress={onDispute} variant="secondary" fullWidth disabled={loading}
-            icon={<Ionicons name="alert-circle-outline" size={18} color={Colors.error} />}
-            style={{ borderColor: Colors.error }} />
+            icon={<Ionicons name="alert-circle-outline" size={18} color={C.error} />}
+            style={{ borderColor: C.error }} />
         </View>
       )}
 
       {/* Triper actions — only when not also the buyer */}
       {isTriper && !isTiper && status === 'pending' && (
         <Button title={t.acceptOrder} onPress={onAccept} fullWidth size="lg" disabled={loading}
-          icon={<Ionicons name="checkmark-outline" size={18} color={Colors.white} />} />
+          icon={<Ionicons name="checkmark-outline" size={18} color="#FFFFFF" />} />
       )}
       {isTriper && !isTiper && status === 'in_escrow' && (
         <Button title={t.markAsShipped} onPress={onMarkShipped} fullWidth size="lg" disabled={loading}
-          icon={<Ionicons name="airplane-outline" size={18} color={Colors.white} />} />
+          icon={<Ionicons name="airplane-outline" size={18} color="#FFFFFF" />} />
       )}
 
       {/* Waiting state */}
@@ -580,7 +807,7 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function SummaryRow({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) {
+function SummaryRow({ label, value, bold = false, styles }: { label: string; value: string; bold?: boolean; styles: any }) {
   return (
     <View style={styles.summaryRow}>
       <Text style={[styles.summaryLabel, bold && styles.summaryBold]}>{label}</Text>
@@ -589,223 +816,6 @@ function SummaryRow({ label, value, bold = false }: { label: string; value: stri
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.sm,
-  },
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerActions: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
-    flexShrink: 0,
-  },
-  headerTitle: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-  },
-  orderNumber: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginTop: 2,
-  },
-  moreButton: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  container: { flex: 1, paddingHorizontal: Spacing.xl },
-
-  statusCard: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.lg,
-    alignItems: 'center',
-    ...Shadows.md,
-  },
-  statusLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 10, color: Colors.charcoal,
-    letterSpacing: 1.5, marginBottom: Spacing.sm,
-  },
-  statusTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes['2xl'],
-    color: Colors.nearBlack, textAlign: 'center',
-  },
-  statusSubtext: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.charcoal, marginTop: Spacing.sm,
-    textAlign: 'center',
-  },
-  escrowBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(196,162,101,0.15)',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginTop: Spacing.md,
-    gap: Spacing.xs,
-  },
-  escrowBadgeText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.primaryDark,
-  },
-
-  itemCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
-    marginBottom: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    alignItems: 'center',
-  },
-  itemImage: {
-    width: 70, height: 70,
-    borderRadius: BorderRadius.md,
-  },
-  itemImagePlaceholder: {
-    backgroundColor: Colors.lightGray,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  itemInfo: { flex: 1, marginLeft: Spacing.md },
-  itemName: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base, color: Colors.nearBlack,
-  },
-  itemDesc: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 2,
-  },
-  itemQty: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.gray, marginTop: 4,
-  },
-  itemPrice: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.nearBlack,
-  },
-
-  section: { marginBottom: Spacing.xl },
-  sectionTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.lg, color: Colors.nearBlack,
-    marginBottom: Spacing.base,
-  },
-
-  summaryCard: {
-    backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
-    borderWidth: 1, borderColor: Colors.lightGray,
-  },
-  summaryRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: Spacing.sm,
-  },
-  summaryLabel: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.darkGray,
-  },
-  summaryValue: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.nearBlack,
-  },
-  summaryBold: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base, color: Colors.nearBlack,
-  },
-  summaryDivider: {
-    height: 1, backgroundColor: Colors.midGray,
-    marginVertical: Spacing.sm,
-  },
-
-  actionBar: {
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.xl,
-    marginTop: Spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-    borderRadius: 0,
-  },
-
-  adminHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
-    marginBottom: Spacing.sm,
-  },
-  adminHeaderTxt: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.primary, letterSpacing: 0.5,
-  },
-  adminGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm,
-  },
-  adminBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full, borderWidth: 1,
-    backgroundColor: Colors.white, position: 'relative',
-  },
-  adminBtnTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.charcoal,
-  },
-  activeDot: {
-    width: 6, height: 6, borderRadius: 3,
-    position: 'absolute', top: 4, right: 4,
-  },
-  terminalBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-  },
-  terminalText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.darkGray,
-  },
-  adminReviewDivider: {
-    marginTop: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-  },
-  reviewedBadge: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: Spacing.xs, marginTop: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.primary + '15',
-    borderRadius: BorderRadius.full,
-  },
-  reviewedBadgeText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.primaryDark,
-  },
-  waitingText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.gray,
-    textAlign: 'center',
-  },
+  safeLoader: { flex: 1 },
 });

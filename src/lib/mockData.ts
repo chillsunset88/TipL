@@ -17,6 +17,8 @@ export const MOCK_USERS: User[] = [
     reviewCount: 23,
     verified: true,
     createdAt: Date.now() - 86400000 * 90,
+    role: 'triper',
+    verificationStatus: 'approved',
   },
   {
     id: 'u2',
@@ -28,6 +30,8 @@ export const MOCK_USERS: User[] = [
     reviewCount: 47,
     verified: true,
     createdAt: Date.now() - 86400000 * 180,
+    role: 'tiper',
+    verificationStatus: 'approved',
   },
   {
     id: 'u3',
@@ -39,6 +43,8 @@ export const MOCK_USERS: User[] = [
     reviewCount: 15,
     verified: true,
     createdAt: Date.now() - 86400000 * 60,
+    role: 'triper',
+    verificationStatus: 'approved',
   },
 ];
 

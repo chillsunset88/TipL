@@ -1,6 +1,7 @@
-﻿/**
+/**
  * TipL — Address Management Screen
  * List, add, edit, delete, and set default shipping addresses.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -23,7 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { PageHeader } from '@/src/components/ui/PageHeader';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import {
@@ -33,6 +34,7 @@ import {
   setDefaultAddress,
   type UserAddress,
 } from '@/src/services/supabase/addresses';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const EMPTY_FORM = {
   label: 'Rumah',
@@ -46,6 +48,7 @@ const EMPTY_FORM = {
 };
 
 export default function AddressesScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
 
@@ -127,6 +130,98 @@ export default function AddressesScreen() {
     load();
   };
 
+  const st = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
+    list: { padding: Spacing.base, paddingBottom: 40 },
+
+    card: {
+      backgroundColor: C.white,
+      borderRadius: BorderRadius.xl,
+      padding: Spacing.base,
+      marginBottom: Spacing.md,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      ...Shadows.sm,
+    },
+    cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
+    labelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    labelPill: {
+      backgroundColor: C.primary + '15',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.primary,
+    },
+    labelTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.primary },
+    defaultPill: {
+      backgroundColor: C.success + '15',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+    },
+    defaultTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.success },
+    cardActions: { flexDirection: 'row', gap: Spacing.base },
+    name: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    phone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, marginTop: 2 },
+    address: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.charcoal, marginTop: 4, lineHeight: 18 },
+    setDefaultBtn: {
+      marginTop: Spacing.md,
+      alignSelf: 'flex-start',
+      borderWidth: 1,
+      borderColor: C.primary,
+      borderRadius: BorderRadius.full,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: 4,
+    },
+    setDefaultTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.primary },
+
+    emptyWrap: { alignItems: 'center', paddingTop: Spacing['5xl'], paddingHorizontal: Spacing['2xl'] },
+    emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: C.nearBlack, marginTop: Spacing.base },
+    emptySub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
+    addBtn: { marginTop: Spacing.xl, backgroundColor: C.primary, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg },
+    addBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+
+    modalSafe: { flex: 1, backgroundColor: C.white },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.base,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+    },
+    modalTitle: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.md, color: C.nearBlack },
+    modalBody: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: Spacing.base },
+
+    fieldWrap: { marginBottom: Spacing.base },
+    fieldLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.charcoal, marginBottom: Spacing.xs },
+    fieldInput: {
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+      backgroundColor: C.offWhite,
+    },
+
+    defaultToggle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xl },
+    defaultToggleTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+
+    saveBtn: {
+      backgroundColor: C.primary,
+      borderRadius: BorderRadius.lg,
+      paddingVertical: Spacing.base,
+      alignItems: 'center',
+    },
+    saveBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+  }), [C]);
+
   const renderItem = ({ item }: { item: UserAddress }) => (
     <View style={st.card}>
       <View style={st.cardTop}>
@@ -142,10 +237,10 @@ export default function AddressesScreen() {
         </View>
         <View style={st.cardActions}>
           <TouchableOpacity onPress={() => openEdit(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="pencil-outline" size={18} color={Colors.primary} />
+            <Ionicons name="pencil-outline" size={18} color={C.primary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <Ionicons name="trash-outline" size={18} color={C.error} />
           </TouchableOpacity>
         </View>
       </View>
@@ -162,11 +257,11 @@ export default function AddressesScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={[]}>
-      <PageHeader title={t.myAddresses} onBack={() => router.back()} rightIcon="add" rightIconColor={Colors.primary} onRightPress={openAdd} />
+      <PageHeader title={t.myAddresses} onBack={() => router.back()} rightIcon="add" rightIconColor={C.primary} onRightPress={openAdd} />
 
       {loading ? (
         <View style={st.centered}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : (
         <FlatList
@@ -177,7 +272,7 @@ export default function AddressesScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={st.emptyWrap}>
-              <Ionicons name="location-outline" size={56} color={Colors.midGray} />
+              <Ionicons name="location-outline" size={56} color={C.midGray} />
               <Text style={st.emptyTitle}>{t.noAddresses}</Text>
               <Text style={st.emptySub}>Tambahkan alamat pengiriman untuk mempermudah checkout.</Text>
               <TouchableOpacity style={st.addBtn} onPress={openAdd}>
@@ -195,30 +290,30 @@ export default function AddressesScreen() {
             <View style={st.modalHeader}>
               <Text style={st.modalTitle}>{editingId ? t.edit + ' Alamat' : t.addAddress}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={Colors.nearBlack} />
+                <Ionicons name="close" size={24} color={C.nearBlack} />
               </TouchableOpacity>
             </View>
             <ScrollView style={st.modalBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Field label={t.addressLabel} value={form.label} onChangeText={(v) => setForm(f => ({ ...f, label: v }))} />
-              <Field label={t.recipientName} value={form.recipient_name} onChangeText={(v) => setForm(f => ({ ...f, recipient_name: v }))} />
-              <Field label={t.phoneNumber} value={form.phone} onChangeText={(v) => setForm(f => ({ ...f, phone: v }))} keyboardType="phone-pad" />
-              <Field label={t.fullAddress} value={form.full_address} onChangeText={(v) => setForm(f => ({ ...f, full_address: v }))} multiline />
-              <Field label={t.city} value={form.city} onChangeText={(v) => setForm(f => ({ ...f, city: v }))} />
-              <Field label={t.province} value={form.province} onChangeText={(v) => setForm(f => ({ ...f, province: v }))} />
-              <Field label={t.postalCode} value={form.postal_code} onChangeText={(v) => setForm(f => ({ ...f, postal_code: v }))} keyboardType="number-pad" />
+              <Field st={st} label={t.addressLabel} value={form.label} onChangeText={(v) => setForm(f => ({ ...f, label: v }))} />
+              <Field st={st} label={t.recipientName} value={form.recipient_name} onChangeText={(v) => setForm(f => ({ ...f, recipient_name: v }))} />
+              <Field st={st} label={t.phoneNumber} value={form.phone} onChangeText={(v) => setForm(f => ({ ...f, phone: v }))} keyboardType="phone-pad" />
+              <Field st={st} label={t.fullAddress} value={form.full_address} onChangeText={(v) => setForm(f => ({ ...f, full_address: v }))} multiline />
+              <Field st={st} label={t.city} value={form.city} onChangeText={(v) => setForm(f => ({ ...f, city: v }))} />
+              <Field st={st} label={t.province} value={form.province} onChangeText={(v) => setForm(f => ({ ...f, province: v }))} />
+              <Field st={st} label={t.postalCode} value={form.postal_code} onChangeText={(v) => setForm(f => ({ ...f, postal_code: v }))} keyboardType="number-pad" />
 
               <TouchableOpacity style={st.defaultToggle} onPress={() => setForm(f => ({ ...f, is_default: !f.is_default }))}>
                 <Ionicons
                   name={form.is_default ? 'checkbox' : 'square-outline'}
                   size={22}
-                  color={form.is_default ? Colors.primary : Colors.darkGray}
+                  color={form.is_default ? C.primary : C.darkGray}
                 />
                 <Text style={st.defaultToggleTxt}>{t.setAsDefault}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={st.saveBtn} onPress={handleSave} disabled={saving}>
                 {saving
-                  ? <ActivityIndicator color={Colors.white} />
+                  ? <ActivityIndicator color="#FFFFFF" />
                   : <Text style={st.saveBtnTxt}>{t.saveAddress}</Text>
                 }
               </TouchableOpacity>
@@ -232,12 +327,14 @@ export default function AddressesScreen() {
 }
 
 function Field({
+  st,
   label,
   value,
   onChangeText,
   keyboardType = 'default',
   multiline = false,
 }: {
+  st: any;
   label: string;
   value: string;
   onChangeText: (v: string) => void;
@@ -253,100 +350,8 @@ function Field({
         onChangeText={onChangeText}
         keyboardType={keyboardType}
         multiline={multiline}
-        placeholderTextColor={Colors.darkGray}
+        placeholderTextColor="#8E8E93"
       />
     </View>
   );
 }
-
-const st = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  list: { padding: Spacing.base, paddingBottom: 40 },
-
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.base,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    ...Shadows.sm,
-  },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  labelPill: {
-    backgroundColor: Colors.primaryPale,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-  },
-  labelTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
-  defaultPill: {
-    backgroundColor: Colors.successLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-  },
-  defaultTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.success },
-  cardActions: { flexDirection: 'row', gap: Spacing.base },
-  name: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  phone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginTop: 2 },
-  address: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginTop: 4, lineHeight: 18 },
-  setDefaultBtn: {
-    marginTop: Spacing.md,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-  },
-  setDefaultTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.primary },
-
-  emptyWrap: { alignItems: 'center', paddingTop: Spacing['5xl'], paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack, marginTop: Spacing.base },
-  emptySub: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
-  addBtn: { marginTop: Spacing.xl, backgroundColor: Colors.primary, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg },
-  addBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-
-  modalSafe: { flex: 1, backgroundColor: Colors.white },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  modalTitle: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack },
-  modalBody: { flex: 1, paddingHorizontal: Spacing.xl, paddingTop: Spacing.base },
-
-  fieldWrap: { marginBottom: Spacing.base },
-  fieldLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.xs },
-  fieldInput: {
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    backgroundColor: Colors.cream,
-  },
-
-  defaultToggle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xl },
-  defaultToggleTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-
-  saveBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.base,
-    alignItems: 'center',
-  },
-  saveBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-});

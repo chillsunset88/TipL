@@ -1,6 +1,7 @@
-﻿/**
+/**
  * TipL — Checkout Address Selection
  * Pick a saved address or add a new one before proceeding to payment.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -18,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { PageHeader } from '@/src/components/ui/PageHeader';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { useCheckoutStore } from '@/src/store/checkoutStore';
@@ -26,10 +27,12 @@ import { useCartStore } from '@/src/store/cartStore';
 import { getAddresses, type UserAddress } from '@/src/services/supabase/addresses';
 import { createOrder } from '@/src/services/supabase/orders';
 import { createXenditInvoice } from '@/src/lib/xendit';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const fmtIDR = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
 
 export default function CheckoutAddressScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
   const { t } = useSettingsStore();
@@ -45,7 +48,6 @@ export default function CheckoutAddressScreen() {
     try {
       const data = await getAddresses(userId);
       setAddresses(data);
-      // Auto-select default address if none selected
       if (!selectedAddress) {
         const def = data.find((a) => a.is_default) ?? data[0] ?? null;
         if (def) setSelectedAddress(def);
@@ -109,6 +111,89 @@ export default function CheckoutAddressScreen() {
     }
   };
 
+  const st = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    list: { padding: Spacing.base, paddingBottom: 16 },
+
+    card: {
+      backgroundColor: C.white,
+      borderRadius: BorderRadius.xl,
+      padding: Spacing.base,
+      marginBottom: Spacing.md,
+      borderWidth: 1.5,
+      borderColor: C.lightGray,
+      ...Shadows.sm,
+    },
+    cardSelected: { borderColor: C.primary },
+    cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
+    labelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    labelPill: {
+      backgroundColor: C.offWhite,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+    },
+    labelPillSelected: { backgroundColor: C.primary + '18', borderColor: C.primary },
+    labelTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.charcoal },
+    labelTxtSelected: { color: C.primary },
+    defaultPill: {
+      backgroundColor: C.success + '15',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+    },
+    defaultTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.success },
+    name: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    phone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, marginTop: 2 },
+    address: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.charcoal, marginTop: 4, lineHeight: 18 },
+
+    addNewBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      paddingVertical: Spacing.base,
+      marginBottom: Spacing.md,
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: C.primary,
+      borderRadius: BorderRadius.xl,
+      backgroundColor: C.primary + '12',
+    },
+    addNewTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.primary },
+
+    emptyWrap: { alignItems: 'center', paddingTop: Spacing['5xl'], paddingHorizontal: Spacing['2xl'] },
+    emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: C.nearBlack, marginTop: Spacing.base },
+    addBtn: { marginTop: Spacing.xl, backgroundColor: C.primary, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg },
+    addBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+
+    footer: {
+      backgroundColor: C.white,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+      padding: Spacing.xl,
+      gap: Spacing.sm,
+    },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    summaryLbl: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray },
+    summaryVal: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    totalRow: { marginTop: Spacing.xs, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: C.lightGray },
+    totalLbl: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    totalVal: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.md, color: C.primary },
+    payBtn: {
+      marginTop: Spacing.sm,
+      backgroundColor: C.primary,
+      borderRadius: BorderRadius.lg,
+      paddingVertical: Spacing.base,
+      alignItems: 'center',
+    },
+    payBtnDisabled: { backgroundColor: C.midGray },
+    payBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+  }), [C]);
+
   const renderItem = ({ item }: { item: UserAddress }) => {
     const selected = selectedAddress?.id === item.id;
     return (
@@ -131,7 +216,7 @@ export default function CheckoutAddressScreen() {
           <Ionicons
             name={selected ? 'radio-button-on' : 'radio-button-off'}
             size={22}
-            color={selected ? Colors.primary : Colors.midGray}
+            color={selected ? C.primary : C.midGray}
           />
         </View>
         <Text style={st.name}>{item.recipient_name}</Text>
@@ -150,7 +235,7 @@ export default function CheckoutAddressScreen() {
 
       {loading ? (
         <View style={st.centered}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : (
         <FlatList
@@ -160,19 +245,19 @@ export default function CheckoutAddressScreen() {
           contentContainerStyle={st.list}
           showsVerticalScrollIndicator={false}
           ListFooterComponent={
-  addresses.length > 0 ? (
-    <TouchableOpacity
-      style={st.addNewBtn}
-      onPress={() => router.push('/profile/addresses')}
-    >
-      <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-      <Text style={st.addNewTxt}>{t.addNewAddress}</Text>
-    </TouchableOpacity>
-  ) : null
-}
+            addresses.length > 0 ? (
+              <TouchableOpacity
+                style={st.addNewBtn}
+                onPress={() => router.push('/profile/addresses')}
+              >
+                <Ionicons name="add-circle-outline" size={20} color={C.primary} />
+                <Text style={st.addNewTxt}>{t.addNewAddress}</Text>
+              </TouchableOpacity>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={st.emptyWrap}>
-              <Ionicons name="location-outline" size={56} color={Colors.midGray} />
+              <Ionicons name="location-outline" size={56} color={C.midGray} />
               <Text style={st.emptyTitle}>{t.noAddresses}</Text>
               <TouchableOpacity style={st.addBtn} onPress={() => router.push('/profile/addresses')}>
                 <Text style={st.addBtnTxt}>{t.addAddressFirst}</Text>
@@ -202,7 +287,7 @@ export default function CheckoutAddressScreen() {
           disabled={!selectedAddress || paying}
         >
           {paying
-            ? <ActivityIndicator color={Colors.white} />
+            ? <ActivityIndicator color="#FFFFFF" />
             : <Text style={st.payBtnTxt}>{t.proceedPayment}</Text>
           }
         </TouchableOpacity>
@@ -210,86 +295,3 @@ export default function CheckoutAddressScreen() {
     </SafeAreaView>
   );
 }
-
-const st = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { padding: Spacing.base, paddingBottom: 16 },
-
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.base,
-    marginBottom: Spacing.md,
-    borderWidth: 1.5,
-    borderColor: Colors.lightGray,
-    ...Shadows.sm,
-  },
-  cardSelected: { borderColor: Colors.primary },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  labelPill: {
-    backgroundColor: Colors.cream,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-  },
-  labelPillSelected: { backgroundColor: Colors.primaryPale, borderColor: Colors.primaryLight },
-  labelTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal },
-  labelTxtSelected: { color: Colors.primary },
-  defaultPill: {
-    backgroundColor: Colors.successLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-  },
-  defaultTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.success },
-  name: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  phone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginTop: 2 },
-  address: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginTop: 4, lineHeight: 18 },
-
-  addNewBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.base,
-    marginBottom: Spacing.md,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: Colors.primaryLight,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.primaryPale,
-  },
-  addNewTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-
-  emptyWrap: { alignItems: 'center', paddingTop: Spacing['5xl'], paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.md, color: Colors.nearBlack, marginTop: Spacing.base },
-  addBtn: { marginTop: Spacing.xl, backgroundColor: Colors.primary, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg },
-  addBtnTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-
-  footer: {
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-    padding: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  summaryLbl: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
-  summaryVal: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  totalRow: { marginTop: Spacing.xs, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray },
-  totalLbl: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  totalVal: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.md, color: Colors.primary },
-  payBtn: {
-    marginTop: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.base,
-    alignItems: 'center',
-  },
-  payBtnDisabled: { backgroundColor: Colors.midGray },
-  payBtnTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-});

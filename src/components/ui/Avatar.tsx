@@ -1,13 +1,15 @@
 /**
  * TipL — Avatar Component
  * Circular avatar with verified badge, online indicator, and fallback initials.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, BorderRadius } from '@/src/lib/constants';
+import { Typography, BorderRadius } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -35,6 +37,7 @@ export function Avatar({
   online,
   style,
 }: AvatarProps) {
+  const C = useThemeColors();
   const dim = SIZE_MAP[size];
   const [imgError, setImgError] = useState(false);
   useEffect(() => { setImgError(false); }, [uri]);
@@ -47,13 +50,44 @@ export function Avatar({
 
   const badgeSize = size === 'sm' ? 14 : size === 'md' ? 18 : 22;
 
+  const s = React.useMemo(() => StyleSheet.create({
+    image: {
+      borderWidth: 2,
+      borderColor: C.white,
+    },
+    fallback: {
+      backgroundColor: C.offWhite,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: C.lightGray,
+    },
+    initials: {
+      fontFamily: Typography.semiBold.fontFamily,
+      color: C.darkGray,
+    },
+    badge: {
+      position: 'absolute',
+      backgroundColor: C.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: C.white,
+    },
+    onlineIndicator: {
+      position: 'absolute',
+      borderWidth: 2,
+      borderColor: C.white,
+    },
+  }), [C]);
+
   return (
     <View style={[{ width: dim, height: dim }, style]}>
       {uri && !imgError ? (
         <Image
           source={{ uri }}
           style={[
-            styles.image,
+            s.image,
             { width: dim, height: dim, borderRadius: dim / 2 },
           ]}
           contentFit="cover"
@@ -63,13 +97,13 @@ export function Avatar({
       ) : (
         <View
           style={[
-            styles.fallback,
+            s.fallback,
             { width: dim, height: dim, borderRadius: dim / 2 },
           ]}
         >
           <Text
             style={[
-              styles.initials,
+              s.initials,
               { fontSize: dim * 0.35 },
             ]}
           >
@@ -81,7 +115,7 @@ export function Avatar({
       {verified && (
         <View
           style={[
-            styles.badge,
+            s.badge,
             {
               width: badgeSize,
               height: badgeSize,
@@ -91,19 +125,19 @@ export function Avatar({
             },
           ]}
         >
-          <Ionicons name="checkmark" size={badgeSize * 0.65} color={Colors.white} />
+          <Ionicons name="checkmark" size={badgeSize * 0.65} color="#FFFFFF" />
         </View>
       )}
 
       {online !== undefined && (
         <View
           style={[
-            styles.onlineIndicator,
+            s.onlineIndicator,
             {
               width: badgeSize * 0.6,
               height: badgeSize * 0.6,
               borderRadius: badgeSize * 0.3,
-              backgroundColor: online ? Colors.success : Colors.gray,
+              backgroundColor: online ? C.success : C.gray,
               top: 0,
               right: 0,
             },
@@ -113,34 +147,3 @@ export function Avatar({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  image: {
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  fallback: {
-    backgroundColor: Colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.midGray,
-  },
-  initials: {
-    fontFamily: Typography.semiBold.fontFamily,
-    color: Colors.darkGray,
-  },
-  badge: {
-    position: 'absolute',
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-});

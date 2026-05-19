@@ -1,7 +1,7 @@
-﻿/**
+/**
  * TipL — Create Request (tripper-specific)
  * Opened from trip detail page with tripId + triperId params.
- * Same UI style as the Order tab form.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState } from 'react';
@@ -22,11 +22,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
 import { useAuthStore } from '@/src/store/authStore';
 import { createRequest, uploadRequestImage, updateRequestImageUrls, acceptRequest } from '@/src/services/supabase/requests';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const COUNTRIES = [
   'Japan', 'South Korea', 'Singapore', 'United Kingdom', 'United States',
@@ -34,6 +35,7 @@ const COUNTRIES = [
 ];
 
 export default function CreateRequestScreen() {
+  const C = useThemeColors();
   const { tripId, triperId, triperName } = useLocalSearchParams<{
     tripId?: string;
     triperId?: string;
@@ -121,6 +123,72 @@ export default function CreateRequestScreen() {
     }
   };
 
+  const styles = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+    floatingBack: {
+      position: 'absolute', top: 12, left: 20, zIndex: 10,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    scroll: { flex: 1 },
+    content: { paddingHorizontal: Spacing.xl, paddingBottom: 40 },
+
+    triperBanner: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+      backgroundColor: C.primary + '12', borderRadius: BorderRadius.lg,
+      padding: Spacing.md, marginTop: Spacing.base,
+      borderWidth: 1, borderColor: C.primary + '30',
+    },
+    triperAvatarCircle: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: C.primary + '25', alignItems: 'center', justifyContent: 'center',
+    },
+    triperInitial: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.primary },
+    triperBannerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.gray },
+    triperBannerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+
+    pageDescription: {
+      fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+      color: C.darkGray, lineHeight: 20, marginTop: Spacing.base,
+      marginBottom: Spacing.xl, textAlign: 'center',
+    },
+
+    section: { marginBottom: Spacing['2xl'] },
+    sectionTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: C.nearBlack, marginBottom: Spacing.base },
+    fieldLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, marginBottom: Spacing.sm },
+
+    uploadArea: {
+      borderWidth: 2, borderColor: C.lightGray, borderStyle: 'dashed',
+      borderRadius: BorderRadius.lg, padding: Spacing['2xl'], alignItems: 'center', backgroundColor: C.offWhite,
+    },
+    uploadIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
+    uploadTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack, marginBottom: Spacing.xs },
+    uploadSubtext: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.gray },
+    imageRow: { marginTop: Spacing.md },
+    previewContainer: { marginRight: Spacing.sm, position: 'relative' },
+    previewImage: { width: 80, height: 80, borderRadius: BorderRadius.md },
+    removeImage: { position: 'absolute', top: -6, right: -6, backgroundColor: C.white, borderRadius: 11 },
+
+    chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.base },
+    chip: {
+      flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm, borderRadius: BorderRadius.full, borderWidth: 1,
+      borderColor: C.lightGray, backgroundColor: C.offWhite, gap: 6,
+    },
+    chipActive: { backgroundColor: C.primary, borderColor: C.primary },
+    chipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray },
+    chipTextActive: { color: '#FFFFFF' },
+
+    infoBanner: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: C.primary + '12',
+      borderRadius: BorderRadius.md, padding: Spacing.base, marginBottom: Spacing.xl,
+      gap: Spacing.md, borderWidth: 1, borderColor: C.primary + '30',
+    },
+    infoText: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.charcoal, lineHeight: 17 },
+  }), [C]);
+
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
       <PageHeader title="Buat Permintaan" onBack={() => router.back()} />
@@ -143,7 +211,7 @@ export default function CreateRequestScreen() {
                 <Text style={styles.triperBannerLabel}>Requesting to</Text>
                 <Text style={styles.triperBannerName}>{triperName ?? 'Traveler'}</Text>
               </View>
-              <Ionicons name="airplane" size={20} color={Colors.primary} />
+              <Ionicons name="airplane" size={20} color={C.primary} />
             </View>
           )}
 
@@ -159,7 +227,7 @@ export default function CreateRequestScreen() {
             <Text style={styles.sectionTitle}>Visual Reference</Text>
             <TouchableOpacity style={styles.uploadArea} onPress={pickImage} activeOpacity={0.8}>
               <View style={styles.uploadIcon}>
-                <Ionicons name="cloud-upload-outline" size={36} color={Colors.gray} />
+                <Ionicons name="cloud-upload-outline" size={36} color={C.gray} />
               </View>
               <Text style={styles.uploadTitle}>Upload Reference Photo</Text>
               <Text style={styles.uploadSubtext}>Tap to browse from gallery</Text>
@@ -170,7 +238,7 @@ export default function CreateRequestScreen() {
                   <View key={idx} style={styles.previewContainer}>
                     <Image source={{ uri }} style={styles.previewImage} contentFit="cover" />
                     <TouchableOpacity style={styles.removeImage} onPress={() => removeImage(idx)}>
-                      <Ionicons name="close-circle" size={22} color={Colors.error} />
+                      <Ionicons name="close-circle" size={22} color={C.error} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -200,7 +268,7 @@ export default function CreateRequestScreen() {
                   style={[styles.chip, category === cat.id && styles.chipActive]}
                   onPress={() => { setCategory(cat.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                 >
-                  <Ionicons name={cat.icon as any} size={15} color={category === cat.id ? Colors.white : Colors.darkGray} />
+                  <Ionicons name={cat.icon as any} size={15} color={category === cat.id ? '#FFFFFF' : C.darkGray} />
                   <Text style={[styles.chipText, category === cat.id && styles.chipTextActive]}>{cat.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -257,7 +325,7 @@ export default function CreateRequestScreen() {
 
           {/* Info Banner */}
           <View style={styles.infoBanner}>
-            <Ionicons name="shield-checkmark" size={20} color={Colors.primary} />
+            <Ionicons name="shield-checkmark" size={20} color={C.primary} />
             <Text style={styles.infoText}>
               Funds will be held in escrow until you confirm delivery. Your purchase is protected.
             </Text>
@@ -276,69 +344,3 @@ export default function CreateRequestScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.xl, paddingBottom: 40 },
-
-  triperBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    backgroundColor: Colors.primary + '12', borderRadius: BorderRadius.lg,
-    padding: Spacing.md, marginTop: Spacing.base,
-    borderWidth: 1, borderColor: Colors.primary + '30',
-  },
-  triperAvatarCircle: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center',
-  },
-  triperInitial: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
-  triperBannerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
-  triperBannerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-
-  pageDescription: {
-    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
-    color: Colors.darkGray, lineHeight: 20, marginTop: Spacing.base,
-    marginBottom: Spacing.xl, textAlign: 'center',
-  },
-
-  section: { marginBottom: Spacing['2xl'] },
-  sectionTitle: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack, marginBottom: Spacing.base },
-  fieldLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, marginBottom: Spacing.sm },
-
-  uploadArea: {
-    borderWidth: 2, borderColor: Colors.midGray, borderStyle: 'dashed',
-    borderRadius: BorderRadius.lg, padding: Spacing['2xl'], alignItems: 'center', backgroundColor: Colors.offWhite,
-  },
-  uploadIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
-  uploadTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: Spacing.xs },
-  uploadSubtext: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
-  imageRow: { marginTop: Spacing.md },
-  previewContainer: { marginRight: Spacing.sm, position: 'relative' },
-  previewImage: { width: 80, height: 80, borderRadius: BorderRadius.md },
-  removeImage: { position: 'absolute', top: -6, right: -6, backgroundColor: Colors.white, borderRadius: 11 },
-
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.base },
-  chip: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm, borderRadius: BorderRadius.full, borderWidth: 1,
-    borderColor: Colors.midGray, backgroundColor: Colors.offWhite, gap: 6,
-  },
-  chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
-  chipTextActive: { color: Colors.white },
-
-  infoBanner: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryPale,
-    borderRadius: BorderRadius.md, padding: Spacing.base, marginBottom: Spacing.xl,
-    gap: Spacing.md, borderWidth: 1, borderColor: Colors.primaryLight,
-  },
-  infoText: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, lineHeight: 17 },
-});

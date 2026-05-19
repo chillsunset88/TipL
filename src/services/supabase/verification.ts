@@ -46,7 +46,7 @@ export async function getSignedUrls(
   if (error) throw error;
   const map: Record<string, string> = {};
   for (const item of data ?? []) {
-    if (item.signedUrl) map[item.path] = item.signedUrl;
+    if (item.signedUrl && item.path) map[item.path] = item.signedUrl;
   }
   return map;
 }
@@ -117,7 +117,7 @@ export async function getPendingVerifications(): Promise<VerificationWithProfile
     .in('id', userIds);
 
   const profileMap: Record<string, any> = {};
-  for (const p of profiles ?? []) profileMap[p.id] = p;
+  for (const p of (profiles as any[]) ?? []) profileMap[p.id] = p;
 
   return verifs.map((v: any) => ({
     ...v,

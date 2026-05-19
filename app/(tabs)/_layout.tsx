@@ -12,12 +12,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography, Shadows } from '@/src/lib/constants';
+import { useThemeColors, useIsDark } from '@/src/lib/hooks/useThemeColors';
 import { useChatStore } from '@/src/store/chatStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
 
 export default function TabLayout() {
   const totalUnread = useChatStore((s) => s.totalUnread);
   const { t } = useSettingsStore();
+  const C = useThemeColors();
+  const isDark = useIsDark();
   const insets = useSafeAreaInsets();
 
   const TAB_CONTENT_HEIGHT = Platform.OS === 'ios' ? 50 : 54;
@@ -32,7 +35,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.midGray,
+        tabBarInactiveTintColor: isDark ? C.midGray : Colors.midGray,
         tabBarLabelStyle: {
           fontFamily: Typography.medium.fontFamily,
           fontSize: 11,
@@ -40,9 +43,9 @@ export default function TabLayout() {
           letterSpacing: 0.2,
         },
         tabBarStyle: {
-          backgroundColor: Colors.offWhite,
+          backgroundColor: C.offWhite,
           borderTopWidth: 1,
-          borderTopColor: Colors.lightGray,
+          borderTopColor: C.lightGray,
           height: tabBarHeight,
           paddingTop: 8,
           paddingBottom: insets.bottom + (Platform.OS === 'ios' ? 0 : 6),

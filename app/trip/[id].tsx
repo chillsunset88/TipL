@@ -1,7 +1,7 @@
 /**
  * TipL — Trip Detail Screen
  * Connected to Supabase via useTrip hook.
- * Shows hero, triper profile, capacity badges, products, and CTA to request/create.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState } from 'react';
@@ -20,15 +20,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useSettingsStore } from '@/src/store/settingsStore';
-import { Badge } from '@/src/components/ui/Badge';
 import { Skeleton } from '@/src/components/ui/Skeleton';
 import { useTrip } from '@/src/lib/hooks/useTrips';
 import { deleteTrip, deleteProduct } from '@/src/services/supabase/trips';
 import { useAuthStore } from '@/src/store/authStore';
 import { supabase } from '@/src/lib/supabase';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
+import * as Haptics from 'expo-haptics';
 
 const ACTIVE_ORDER_STATUSES = ['pending', 'accepted', 'in_escrow', 'purchased', 'shipped', 'delivered'];
 
@@ -40,7 +41,6 @@ async function getActiveOrderCountForProduct(productId: string): Promise<number>
     .in('status', ACTIVE_ORDER_STATUSES);
   return count ?? 0;
 }
-import * as Haptics from 'expo-haptics';
 
 const { width: W } = Dimensions.get('window');
 
@@ -64,6 +64,7 @@ function formatPrice(min?: number | null, max?: number | null, currency?: string
 }
 
 export default function TripDetailScreen() {
+  const C = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { trip, products, loading } = useTrip(id);
   const user = useAuthStore((s) => s.user);
@@ -96,9 +97,227 @@ export default function TripDetailScreen() {
     );
   };
 
+  const styles = React.useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.white },
+    hero: { width: W, height: W * 0.72 },
+    heroImg: { width: '100%', height: '100%' },
+    heroHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.sm,
+    },
+    heroBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroContent: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: Spacing.xl,
+      paddingBottom: Spacing.xl,
+    },
+    routeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      marginBottom: 2,
+    },
+    heroOrigin: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: 'rgba(255,255,255,0.8)',
+    },
+    heroDestination: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes['2xl'],
+      color: '#FFFFFF',
+    },
+    heroCity: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: 'rgba(255,255,255,0.85)',
+      marginBottom: 4,
+    },
+    heroDates: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: 'rgba(255,255,255,0.8)',
+    },
+    badgesRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.base,
+    },
+    badgeWeight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: C.primary + '15',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.primary,
+    },
+    badgeWeightText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.primary,
+    },
+    badgeItems: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: C.secondary + '15',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.secondary,
+    },
+    badgeItemsText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.secondary,
+    },
+    badgePrice: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: C.success + '15',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.success,
+    },
+    badgePriceText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.success,
+    },
+    card: {
+      marginHorizontal: Spacing.xl,
+      marginBottom: Spacing.xl,
+      backgroundColor: C.offWhite,
+      borderRadius: BorderRadius.xl,
+      padding: Spacing.base,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      ...Shadows.sm,
+    },
+    sectionTitle: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes.md,
+      color: C.nearBlack,
+      marginBottom: Spacing.base,
+    },
+    profileRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.base },
+    profileInfo: { flex: 1 },
+    profileName: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+    },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
+    ratingText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.charcoal,
+      marginLeft: 4,
+    },
+    profileStat: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.darkGray,
+      marginTop: 2,
+    },
+    notesText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.charcoal,
+      lineHeight: 22,
+    },
+    productRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+    },
+    productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, overflow: 'hidden' },
+    productThumbEmpty: {
+      backgroundColor: C.offWhite,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    productInfo: { flex: 1 },
+    productActions: { flexDirection: 'row', gap: Spacing.xs },
+    productActionBtn: {
+      width: 32, height: 32, borderRadius: 16,
+      backgroundColor: C.offWhite, borderWidth: 1, borderColor: C.lightGray,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    productName: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+    },
+    productCategory: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.darkGray,
+      marginTop: 2,
+      textTransform: 'capitalize',
+    },
+    productPrice: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.primary,
+      marginTop: 2,
+    },
+    cta: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.base,
+      paddingBottom: Spacing['2xl'],
+      backgroundColor: C.white,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+      ...Shadows.lg,
+    },
+    ctaBtn: { borderRadius: BorderRadius.xl, overflow: 'hidden' },
+    ctaGrad: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: Spacing.base,
+      gap: Spacing.sm,
+    },
+    ctaText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: '#FFFFFF',
+      letterSpacing: 0.3,
+    },
+  }), [C]);
+
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.white }}>
+      <View style={{ flex: 1, backgroundColor: C.white }}>
         <Skeleton width={W} height={W * 0.7} borderRadius={0} />
         <View style={{ padding: Spacing.xl }}>
           <Skeleton width={200} height={24} borderRadius={BorderRadius.sm} />
@@ -116,15 +335,15 @@ export default function TripDetailScreen() {
   if (!trip) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' }}
+        style={{ flex: 1, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }}
         edges={['top']}
       >
-        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+        <Ionicons name="alert-circle-outline" size={48} color={C.error} />
         <Text
           style={{
             fontFamily: Typography.regular.fontFamily,
             fontSize: Typography.sizes.md,
-            color: Colors.nearBlack,
+            color: C.nearBlack,
             marginTop: Spacing.md,
           }}
         >
@@ -135,7 +354,7 @@ export default function TripDetailScreen() {
             style={{
               fontFamily: Typography.medium.fontFamily,
               fontSize: Typography.sizes.base,
-              color: Colors.primary,
+              color: C.primary,
             }}
           >
             {t.back}
@@ -168,7 +387,7 @@ export default function TripDetailScreen() {
             <SafeAreaView edges={['top']}>
               <View style={styles.heroHeader}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.heroBtn}>
-                  <Ionicons name="arrow-back" size={22} color={Colors.white} />
+                  <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
                 {isSelf && (
                   <TouchableOpacity
@@ -177,7 +396,7 @@ export default function TripDetailScreen() {
                     disabled={deleting}
                   >
                     {deleting ? (
-                      <ActivityIndicator size="small" color={Colors.white} />
+                      <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Ionicons name="trash-outline" size={22} color="#F87171" />
                     )}
@@ -204,21 +423,21 @@ export default function TripDetailScreen() {
         {/* Quick info badges */}
         <View style={styles.badgesRow}>
           {trip.capacity_kg != null && (
-            <View style={styles.badge}>
-              <Ionicons name="cube-outline" size={14} color={Colors.primary} />
-              <Text style={styles.badgeText}>{trip.capacity_kg} kg</Text>
+            <View style={styles.badgeWeight}>
+              <Ionicons name="cube-outline" size={14} color={C.primary} />
+              <Text style={styles.badgeWeightText}>{trip.capacity_kg} kg</Text>
             </View>
           )}
           {trip.capacity_items != null && (
-            <View style={styles.badge}>
-              <Ionicons name="bag-outline" size={14} color={Colors.secondary} />
-              <Text style={[styles.badgeText, { color: Colors.secondary }]}>{trip.capacity_items} {t.itemsMax}</Text>
+            <View style={styles.badgeItems}>
+              <Ionicons name="bag-outline" size={14} color={C.secondary} />
+              <Text style={styles.badgeItemsText}>{trip.capacity_items} {t.itemsMax}</Text>
             </View>
           )}
           {priceStr && (
-            <View style={styles.badge}>
-              <Ionicons name="cash-outline" size={14} color={Colors.success} />
-              <Text style={[styles.badgeText, { color: Colors.success }]}>{priceStr}</Text>
+            <View style={styles.badgePrice}>
+              <Ionicons name="cash-outline" size={14} color={C.success} />
+              <Text style={styles.badgePriceText}>{priceStr}</Text>
             </View>
           )}
         </View>
@@ -246,7 +465,7 @@ export default function TripDetailScreen() {
                       key={s}
                       name={s <= Math.round(profile.rating ?? 0) ? 'star' : 'star-outline'}
                       size={14}
-                      color={Colors.warning}
+                      color={C.warning}
                     />
                   ))}
                   <Text style={styles.ratingText}>{profile.rating.toFixed(1)}</Text>
@@ -254,7 +473,7 @@ export default function TripDetailScreen() {
               )}
               <Text style={styles.profileStat}>{profile?.total_trips ?? 0} {t.tripsCompleted}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.midGray} />
+            <Ionicons name="chevron-forward" size={18} color={C.midGray} />
           </TouchableOpacity>
         </View>
 
@@ -280,7 +499,7 @@ export default function TripDetailScreen() {
                   />
                 ) : (
                   <View style={[styles.productThumb, styles.productThumbEmpty]}>
-                    <Ionicons name="image-outline" size={20} color={Colors.gray} />
+                    <Ionicons name="image-outline" size={20} color={C.gray} />
                   </View>
                 )}
                 <View style={styles.productInfo}>
@@ -313,7 +532,7 @@ export default function TripDetailScreen() {
                         },
                       })}
                     >
-                      <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
+                      <Ionicons name="pencil-outline" size={16} color={C.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.productActionBtn}
@@ -344,7 +563,7 @@ export default function TripDetailScreen() {
                         ]);
                       }}
                     >
-                      <Ionicons name="trash-outline" size={16} color={Colors.error} />
+                      <Ionicons name="trash-outline" size={16} color={C.error} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -368,12 +587,12 @@ export default function TripDetailScreen() {
             }}
           >
             <LinearGradient
-              colors={[Colors.primaryLight, Colors.primaryDark]}
+              colors={[C.primaryLight, C.primaryDark]}
               style={styles.ctaGrad}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Ionicons name="add-circle-outline" size={22} color={Colors.white} />
+              <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
               <Text style={styles.ctaText}>{t.addProductToTrip}</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -392,12 +611,12 @@ export default function TripDetailScreen() {
             }}
           >
             <LinearGradient
-              colors={[Colors.primaryLight, Colors.primaryDark]}
+              colors={[C.primaryLight, C.primaryDark]}
               style={styles.ctaGrad}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Ionicons name="bag-add-outline" size={22} color={Colors.white} />
+              <Ionicons name="bag-add-outline" size={22} color="#FFFFFF" />
               <Text style={styles.ctaText}>{t.requestItemFromTrip}</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -406,189 +625,3 @@ export default function TripDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  hero: { width: W, height: W * 0.72 },
-  heroImg: { width: '100%', height: '100%' },
-  heroHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
-  },
-  heroBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: 2,
-  },
-  heroOrigin: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  heroDestination: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes['2xl'],
-    color: Colors.white,
-  },
-  heroCity: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: 'rgba(255,255,255,0.85)',
-    marginBottom: 4,
-  },
-  heroDates: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  badgesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.base,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.primaryPale,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-  },
-  badgeText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.primary,
-  },
-  card: {
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
-    backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.base,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    ...Shadows.sm,
-  },
-  sectionTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-    marginBottom: Spacing.base,
-  },
-  profileRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.base },
-  profileInfo: { flex: 1 },
-  profileName: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-  },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
-  ratingText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.charcoal,
-    marginLeft: 4,
-  },
-  profileStat: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    marginTop: 2,
-  },
-  notesText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.charcoal,
-    lineHeight: 22,
-  },
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, overflow: 'hidden' },
-  productThumbEmpty: {
-    backgroundColor: Colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  productInfo: { flex: 1 },
-  productActions: { flexDirection: 'row', gap: Spacing.xs },
-  productActionBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Colors.offWhite, borderWidth: 1, borderColor: Colors.lightGray,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  productName: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-  },
-  productCategory: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginTop: 2,
-    textTransform: 'capitalize',
-  },
-  productPrice: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.primary,
-    marginTop: 2,
-  },
-  cta: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.base,
-    paddingBottom: Spacing['2xl'],
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-    ...Shadows.lg,
-  },
-  ctaBtn: { borderRadius: BorderRadius.xl, overflow: 'hidden' },
-  ctaGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.base,
-    gap: Spacing.sm,
-  },
-  ctaText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.white,
-    letterSpacing: 0.3,
-  },
-});

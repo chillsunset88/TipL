@@ -1,6 +1,7 @@
-﻿/**
+/**
  * TipL — Notifications Center
  * Real-time notifications from Supabase with read/unread state, mark-all-read, and deep links.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -18,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { useAuthStore } from '@/src/store/authStore';
 import { useNotificationStore } from '@/src/store/notificationStore';
@@ -28,6 +29,7 @@ import {
   markAllRead,
   subscribeToNotifications,
 } from '@/src/services/supabase/notifications';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 type Notification = {
   id: string;
@@ -61,15 +63,9 @@ function formatNotifBody(body: string | null): string {
   return body;
 }
 
-function notifIcon(type: string): { name: string; color: string } {
-  if (type === 'order') return { name: 'receipt-outline', color: Colors.primary };
-  if (type === 'chat') return { name: 'chatbubble-outline', color: Colors.secondary };
-  if (type === 'payment') return { name: 'card-outline', color: Colors.success };
-  if (type === 'system') return { name: 'information-circle-outline', color: Colors.info };
-  return { name: 'notifications-outline', color: Colors.charcoal };
-}
 
 export default function NotificationsScreen() {
+  const C = useThemeColors();
   const { t } = useSettingsStore();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
@@ -114,16 +110,27 @@ export default function NotificationsScreen() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n))
       );
-      // Sync badge ke store
       const remaining = notifications.filter((n) => n.id !== notif.id && !n.read_at).length;
       setStoreCount(remaining);
     }
-    const data = notif.data ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data) : {};
-    const orderId = data?.orderId ?? data?.order_id ?? data?.orderID;
-    const chatId = data?.chatId ?? data?.chat_id ?? data?.chatID;
-    if (notif.type === 'order' && orderId) router.push(`/order/${orderId}`);
-    else if (notif.type === 'chat' && chatId)
-      router.push({ pathname: '/chat/[id]', params: { id: chatId, receiverId: chatId } } as any);
+
+    const data: Record<string, string> = notif.data
+      ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data as Record<string, string>)
+      : {};
+
+    const orderId = data.orderId ?? data.order_id ?? data.orderID ?? data.id;
+    const chatUserId = data.chatId ?? data.chat_id ?? data.senderId ?? data.sender_id
+      ?? data.userId ?? data.user_id ?? data.receiverId;
+
+    const type = notif.type?.toLowerCase() ?? '';
+    const isOrder = type.includes('order') || type === 'payment';
+    const isChat = type.includes('chat') || type.includes('message');
+
+    if (isOrder && orderId) {
+      router.push(`/order/${orderId}` as any);
+    } else if (isChat && chatUserId) {
+      router.push({ pathname: '/chat/[id]' as any, params: { id: chatUserId, receiverId: chatUserId } });
+    }
   };
 
   const handleMarkAllRead = async () => {
@@ -136,34 +143,119 @@ export default function NotificationsScreen() {
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
+  const notifIcon = (type: string): { name: string; color: string } => {
+    const t = type?.toLowerCase() ?? '';
+    if (t.includes('order') || t.includes('payment')) return { name: 'receipt-outline', color: C.primary };
+    if (t.includes('chat') || t.includes('message')) return { name: 'chatbubble-outline', color: C.secondary };
+    if (t === 'system') return { name: 'information-circle-outline', color: C.info };
+    return { name: 'notifications-outline', color: C.charcoal };
+  };
+
+  const st = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: Spacing['2xl'],
+      backgroundColor: C.white,
+    },
+    list: { paddingBottom: Spacing.sm },
+    item: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.base,
+      gap: Spacing.md,
+      backgroundColor: C.white,
+    },
+    itemUnread: { backgroundColor: C.primary + '12' },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    itemContent: { flex: 1 },
+    itemTitle: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+      marginBottom: 2,
+    },
+    itemTitleUnread: { fontFamily: Typography.regular.fontFamily },
+    itemBody: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.darkGray,
+      lineHeight: 18,
+      marginBottom: 4,
+    },
+    itemTime: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.gray,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: C.primary,
+      marginTop: 6,
+      flexShrink: 0,
+    },
+    separator: { height: 1, backgroundColor: C.lightGray },
+    emptyContainer: {
+      alignItems: 'center',
+      paddingTop: Spacing['5xl'],
+      paddingHorizontal: Spacing['2xl'],
+    },
+    emptyTitle: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.md,
+      color: C.nearBlack,
+      marginTop: Spacing.base,
+    },
+    emptySubtext: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.darkGray,
+      textAlign: 'center',
+      marginTop: Spacing.sm,
+      lineHeight: 20,
+    },
+  }), [C]);
+
   const renderItem = ({ item }: { item: Notification }) => {
     const { name, color } = notifIcon(item.type);
     const isUnread = !item.read_at;
     return (
       <TouchableOpacity
-        style={[styles.item, isUnread && styles.itemUnread]}
+        style={[st.item, isUnread && st.itemUnread]}
         activeOpacity={0.7}
         onPress={() => handlePress(item)}
       >
-        <View style={[styles.iconWrap, { backgroundColor: `${color}18` }]}>
+        <View style={[st.iconWrap, { backgroundColor: `${color}18` }]}>
           <Ionicons name={name as any} size={22} color={color} />
         </View>
-        <View style={styles.itemContent}>
-          <Text style={[styles.itemTitle, isUnread && styles.itemTitleUnread]}>{item.title}</Text>
+        <View style={st.itemContent}>
+          <Text style={[st.itemTitle, isUnread && st.itemTitleUnread]}>{item.title}</Text>
           {item.body ? (
-  <Text style={styles.itemBody} numberOfLines={2}>
-    {formatNotifBody(item.body)}
-  </Text>
-) : null}
-          <Text style={styles.itemTime}>{formatTime(item.created_at)}</Text>
+            <Text style={st.itemBody} numberOfLines={2}>
+              {formatNotifBody(item.body)}
+            </Text>
+          ) : null}
+          <Text style={st.itemTime}>{formatTime(item.created_at)}</Text>
         </View>
-        {isUnread && <View style={styles.dot} />}
+        {isUnread && <View style={st.dot} />}
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={[]}>
+    <SafeAreaView style={st.safe} edges={[]}>
       <PageHeader
         title={t.notifications}
         onBack={() => router.back()}
@@ -172,29 +264,29 @@ export default function NotificationsScreen() {
       />
 
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+        <View style={st.centered}>
+          <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : (
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={notifications.length === 0 ? styles.centered : styles.list}
+          contentContainerStyle={notifications.length === 0 ? st.centered : st.list}
           showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => <View style={st.separator} />}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={Colors.primary}
+              tintColor={C.primary}
             />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="notifications-off-outline" size={56} color={Colors.midGray} />
-              <Text style={styles.emptyTitle}>{t.noNotifications}</Text>
-              <Text style={styles.emptySubtext}>{t.noNotificationsDesc}</Text>
+            <View style={st.emptyContainer}>
+              <Ionicons name="notifications-off-outline" size={56} color={C.midGray} />
+              <Text style={st.emptyTitle}>{t.noNotifications}</Text>
+              <Text style={st.emptySubtext}>{t.noNotificationsDesc}</Text>
             </View>
           }
         />
@@ -202,79 +294,3 @@ export default function NotificationsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing['2xl'],
-  },
-  list: { paddingBottom: Spacing.sm },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.base,
-    gap: Spacing.md,
-    backgroundColor: Colors.white,
-  },
-  itemUnread: { backgroundColor: Colors.primaryPale },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  itemContent: { flex: 1 },
-  itemTitle: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    marginBottom: 2,
-  },
-  itemTitleUnread: { fontFamily: Typography.regular.fontFamily },
-  itemBody: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  itemTime: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.gray,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-    marginTop: 6,
-    flexShrink: 0,
-  },
-  separator: { height: 1, backgroundColor: Colors.lightGray },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: Spacing['5xl'],
-    paddingHorizontal: Spacing['2xl'],
-  },
-  emptyTitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-    marginTop: Spacing.base,
-  },
-  emptySubtext: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-    lineHeight: 20,
-  },
-});

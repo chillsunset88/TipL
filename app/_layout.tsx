@@ -5,7 +5,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
+import { ThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -46,7 +46,7 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-const TipLTheme = {
+const TipLLightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
@@ -55,6 +55,19 @@ const TipLTheme = {
     card: Colors.offWhite,
     text: Colors.nearBlack,
     border: Colors.lightGray,
+    notification: Colors.primary,
+  },
+};
+
+const TipLDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: Colors.primary,
+    background: '#1A1510',
+    card: '#2C2520',
+    text: '#F9F7F2',
+    border: '#3D3328',
     notification: Colors.primary,
   },
 };
@@ -94,9 +107,12 @@ function RootLayoutNav() {
 
   const { isAuthenticated, isLoading } = useAuthStore();
   const { isEnabled, isLocked, lock, hydrated } = useBiometricStore();
+  const theme = useSettingsStore((s) => s.theme);
   const segments = useSegments();
   const [splashDone, setSplashDone] = useState(false);
   const prevAuthRef = useRef(false);
+  const isDark = theme === 'dark';
+  const navTheme = isDark ? TipLDarkTheme : TipLLightTheme;
 
   // Tampilkan splash lagi setiap kali user berhasil login
   useEffect(() => {
@@ -202,7 +218,7 @@ function RootLayoutNav() {
     const chatId = data.chatId ?? data.chat_id ?? data.chatID;
     const tripId = data.tripId ?? data.trip_id ?? data.tripID;
     const url = data.url ?? data.screenUrl ?? data.route;
-    const type = data.type ?? response.notification.request.content.data.type;
+    const type = data.type;
 
     if ((type === 'order' || type === 'payment') && orderId) {
       router.push(`/order/${orderId}`);
@@ -245,8 +261,8 @@ function RootLayoutNav() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={TipLTheme}>
-        <StatusBar style={showLock ? 'light' : 'dark'} />
+      <ThemeProvider value={navTheme}>
+        <StatusBar style={showLock ? 'light' : isDark ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />

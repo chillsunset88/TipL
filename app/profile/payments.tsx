@@ -1,13 +1,15 @@
-﻿/**
+/**
  * TipL — Payments Screen
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const HISTORY = [
   { id: 'p1', item: 'Sony WH-1000XM5', amount: 'Rp 5,200,000', date: '2026-05-10', status: 'Escrow' },
@@ -16,6 +18,23 @@ const HISTORY = [
 ];
 
 export default function PaymentsScreen() {
+  const C = useThemeColors();
+
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+    card: { margin: Spacing.xl, marginTop: 16, padding: Spacing.xl, backgroundColor: C.primary + '15', borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.primary, alignItems: 'center' },
+    cardLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray },
+    cardAmount: { fontFamily: Typography.regular.fontFamily, fontSize: 28, color: C.nearBlack, marginTop: 4 },
+    cardNote: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray, marginTop: 4 },
+    section: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: C.nearBlack, paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.base, borderBottomWidth: 1, borderBottomColor: C.lightGray, gap: Spacing.md },
+    icon: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.offWhite, alignItems: 'center', justifyContent: 'center' },
+    itemName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    date: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray, marginTop: 2 },
+    amount: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    status: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.success, marginTop: 2 },
+  }), [C]);
+
   return (
     <SafeAreaView style={s.safe} edges={[]}>
       <PageHeader title="Metode Pembayaran" onBack={() => router.back()} />
@@ -32,7 +51,7 @@ export default function PaymentsScreen() {
         renderItem={({ item }) => (
           <View style={s.row}>
             <View style={s.icon}>
-              <Ionicons name={item.status === 'Escrow' ? 'lock-closed' : 'checkmark-circle'} size={20} color={item.status === 'Escrow' ? Colors.warning : Colors.success} />
+              <Ionicons name={item.status === 'Escrow' ? 'lock-closed' : 'checkmark-circle'} size={20} color={item.status === 'Escrow' ? C.warning : C.success} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.itemName}>{item.item}</Text>
@@ -40,7 +59,7 @@ export default function PaymentsScreen() {
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={s.amount}>{item.amount}</Text>
-              <Text style={[s.status, item.status === 'Escrow' && { color: Colors.warning }]}>{item.status}</Text>
+              <Text style={[s.status, item.status === 'Escrow' && { color: C.warning }]}>{item.status}</Text>
             </View>
           </View>
         )}
@@ -48,24 +67,3 @@ export default function PaymentsScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  card: { margin: Spacing.xl, marginTop: 68, padding: Spacing.xl, backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.primaryLight, alignItems: 'center' },
-  cardLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
-  cardAmount: { fontFamily: Typography.regular.fontFamily, fontSize: 28, color: Colors.nearBlack, marginTop: 4 },
-  cardNote: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 4 },
-  section: { fontFamily: Typography.serifBold.fontFamily, fontSize: Typography.sizes.lg, color: Colors.nearBlack, paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.base, borderBottomWidth: 1, borderBottomColor: Colors.lightGray, gap: Spacing.md },
-  icon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.offWhite, alignItems: 'center', justifyContent: 'center' },
-  itemName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  date: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray, marginTop: 2 },
-  amount: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  status: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.success, marginTop: 2 },
-});
