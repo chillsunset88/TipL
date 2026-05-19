@@ -62,10 +62,10 @@ function formatNotifBody(body: string | null): string {
 }
 
 function notifIcon(type: string): { name: string; color: string } {
-  if (type === 'order') return { name: 'receipt-outline', color: Colors.primary };
-  if (type === 'chat') return { name: 'chatbubble-outline', color: Colors.secondary };
-  if (type === 'payment') return { name: 'card-outline', color: Colors.success };
-  if (type === 'system') return { name: 'information-circle-outline', color: Colors.info };
+  const t = type?.toLowerCase() ?? '';
+  if (t.includes('order') || t.includes('payment')) return { name: 'receipt-outline', color: Colors.primary };
+  if (t.includes('chat') || t.includes('message')) return { name: 'chatbubble-outline', color: Colors.secondary };
+  if (t === 'system') return { name: 'information-circle-outline', color: Colors.info };
   return { name: 'notifications-outline', color: Colors.charcoal };
 }
 
@@ -114,16 +114,27 @@ export default function NotificationsScreen() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n))
       );
-      // Sync badge ke store
       const remaining = notifications.filter((n) => n.id !== notif.id && !n.read_at).length;
       setStoreCount(remaining);
     }
-    const data = notif.data ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data) : {};
-    const orderId = data?.orderId ?? data?.order_id ?? data?.orderID;
-    const chatId = data?.chatId ?? data?.chat_id ?? data?.chatID;
-    if (notif.type === 'order' && orderId) router.push(`/order/${orderId}`);
-    else if (notif.type === 'chat' && chatId)
-      router.push({ pathname: '/chat/[id]', params: { id: chatId, receiverId: chatId } } as any);
+
+    const data: Record<string, string> = notif.data
+      ? (typeof notif.data === 'string' ? JSON.parse(notif.data) : notif.data as Record<string, string>)
+      : {};
+
+    const orderId = data.orderId ?? data.order_id ?? data.orderID ?? data.id;
+    const chatUserId = data.chatId ?? data.chat_id ?? data.senderId ?? data.sender_id
+      ?? data.userId ?? data.user_id ?? data.receiverId;
+
+    const type = notif.type?.toLowerCase() ?? '';
+    const isOrder = type.includes('order') || type === 'payment';
+    const isChat = type.includes('chat') || type.includes('message');
+
+    if (isOrder && orderId) {
+      router.push(`/order/${orderId}` as any);
+    } else if (isChat && chatUserId) {
+      router.push({ pathname: '/chat/[id]' as any, params: { id: chatUserId, receiverId: chatUserId } });
+    }
   };
 
   const handleMarkAllRead = async () => {
