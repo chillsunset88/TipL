@@ -3,8 +3,9 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -69,7 +70,7 @@ export default function LoginScreen() {
           {/* Hero */}
           <LinearGradient colors={['#F9F7F2', '#F0EBE1']} style={styles.hero}>
             <View style={styles.logoWrap}>
-              <Text style={styles.logoIcon}>✈️</Text>
+              <Image source={require('@/assets/images/tipl-icon.png')} style={styles.logoIcon} contentFit="contain" />
             </View>
             <Text style={styles.brandName}>TipL</Text>
             <Text style={styles.brandTagline}>{t.tagline}</Text>
@@ -179,13 +180,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   logoWrap: {
-    width: 80, height: 80, borderRadius: 24,
+    width: 75, height: 75, borderRadius: 4,
     backgroundColor: Colors.white,
     alignItems: 'center', justifyContent: 'center',
     ...Shadows.md,
     marginBottom: Spacing.md,
   },
-  logoIcon: { fontSize: 40 },
+  logoIcon: { width: 72, height: 72, borderRadius : 4 },
   brandName: {
     fontFamily: Typography.serifBold.fontFamily,
     fontSize: Typography.sizes['3xl'],
