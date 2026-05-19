@@ -118,32 +118,33 @@ export default function OrdersScreen() {
       <PageHeader title="Pesanan Saya" onBack={() => router.back()} />
 
       {/* Filter tabs horizontal */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={st.filterScroll}
-        contentContainerStyle={st.filterContent}
-      >
-        {FILTERS.map((f) => {
-          const active = filter === f.key;
-          const count = countFor(f.key);
-          return (
-            <TouchableOpacity
-              key={f.key}
-              style={[st.chip, active && st.chipActive]}
-              onPress={() => setFilter(f.key)}
-              activeOpacity={0.7}
-            >
-              <Text style={[st.chipTxt, active && st.chipTxtActive]}>{f.label}</Text>
-              {count > 0 && (
-                <View style={[st.chipBadge, active && st.chipBadgeActive]}>
-                  <Text style={[st.chipBadgeTxt, active && st.chipBadgeTxtActive]}>{count}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={st.filterBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={st.filterContent}
+        >
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            const count = countFor(f.key);
+            return (
+              <TouchableOpacity
+                key={f.key}
+                style={[st.chip, active && st.chipActive]}
+                onPress={() => setFilter(f.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={[st.chipTxt, active && st.chipTxtActive]}>{f.label}</Text>
+                {count > 0 && (
+                  <View style={[st.chipBadge, active && st.chipBadgeActive]}>
+                    <Text style={[st.chipBadgeTxt, active && st.chipBadgeTxtActive]}>{count}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {loading ? (
         <View style={st.centered}>
@@ -237,17 +238,15 @@ function OrderCard({ order, myId }: { order: OrderWithProfiles; myId: string }) 
 const st = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
 
-  filterScroll: {
+  filterBar: {
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
-    maxHeight: 56,
   },
   filterContent: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
     gap: Spacing.sm,
-    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
