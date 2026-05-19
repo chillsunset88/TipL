@@ -8,9 +8,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { getCitiesByCountry } from '@/src/services/supabase/trips';
 import { COUNTRIES_DATA } from '@/src/lib/countryData';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const { width: SW } = Dimensions.get('window');
 const CARD_W = (SW - Spacing.xl * 2 - Spacing.md) / 2;
@@ -115,6 +116,7 @@ const CITY_IMAGES: Record<string, string> = {
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600';
 
 export default function CitiesScreen() {
+  const C = useThemeColors();
   const { country } = useLocalSearchParams<{ country: string }>();
   const [supabaseCounts, setSupabaseCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -158,12 +160,129 @@ export default function CitiesScreen() {
     } as any);
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: C.white,
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: C.offWhite,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
+    countryFlag: { fontSize: 20 },
+    headerTitle: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.lg,
+      color: C.nearBlack,
+    },
+    headerSub: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.darkGray,
+    },
+
+    list: { padding: Spacing.xl, paddingBottom: 100 },
+    row: { justifyContent: 'space-between', marginBottom: Spacing.md },
+
+    allCard: {
+      width: '100%',
+      borderRadius: BorderRadius.xl,
+      overflow: 'hidden',
+      marginBottom: Spacing.md,
+      ...Shadows.md,
+    },
+    allGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: Spacing.base,
+      gap: Spacing.md,
+    },
+    allTitle: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: '#FFFFFF',
+    },
+    allSub: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: 'rgba(255,255,255,0.8)',
+      marginTop: 2,
+    },
+
+    citiesLabel: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 10,
+      color: C.darkGray,
+      letterSpacing: 1,
+      marginBottom: Spacing.md,
+    },
+
+    cityCard: {
+      width: CARD_W,
+      height: CARD_H,
+      borderRadius: BorderRadius.xl,
+      overflow: 'hidden',
+      ...Shadows.md,
+    },
+    cityImg: { width: '100%', height: '100%' },
+    cityInfo: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      padding: Spacing.md,
+      gap: 5,
+    },
+    cityName: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: '#FFFFFF',
+    },
+    cityPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(197,162,103,0.22)',
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.primary,
+    },
+    cityPillTxt: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 9,
+      color: C.primary,
+    },
+    cityPillEmpty: {
+      borderColor: 'rgba(255,255,255,0.3)',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    cityPillEmptyTxt: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: 9,
+      color: 'rgba(255,255,255,0.7)',
+    },
+  }), [C]);
+
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
+          <Ionicons name="arrow-back" size={22} color={C.nearBlack} />
         </TouchableOpacity>
         <View style={s.headerCenter}>
           <Text style={s.countryFlag}>{countryData?.flag ?? '🌍'}</Text>
@@ -174,7 +293,7 @@ export default function CitiesScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing['2xl'] }} />
+        <ActivityIndicator color={C.primary} style={{ marginTop: Spacing['2xl'] }} />
       ) : (
         <FlatList
           data={cities}
@@ -188,12 +307,12 @@ export default function CitiesScreen() {
               {/* Semua Kota card */}
               <TouchableOpacity style={s.allCard} activeOpacity={0.85} onPress={handleAllPress}>
                 <LinearGradient
-                  colors={[Colors.primary, '#A07820']}
+                  colors={[C.primary, '#A07820']}
                   style={s.allGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Ionicons name="globe" size={26} color={Colors.white} />
+                  <Ionicons name="globe" size={26} color="#FFFFFF" />
                   <View>
                     <Text style={s.allTitle}>Semua Kota</Text>
                     <Text style={s.allSub}>Lihat semua jastiper ke {country}</Text>
@@ -225,6 +344,55 @@ function CityCard({ city, count, imageUrl, onPress }: {
   imageUrl: string;
   onPress: () => void;
 }) {
+  const C = useThemeColors();
+  const s = React.useMemo(() => StyleSheet.create({
+    cityCard: {
+      width: CARD_W,
+      height: CARD_H,
+      borderRadius: BorderRadius.xl,
+      overflow: 'hidden',
+      ...Shadows.md,
+    },
+    cityImg: { width: '100%', height: '100%' },
+    cityInfo: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      padding: Spacing.md,
+      gap: 5,
+    },
+    cityName: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: '#FFFFFF',
+    },
+    cityPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(197,162,103,0.22)',
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      borderColor: C.primary,
+    },
+    cityPillTxt: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 9,
+      color: C.primary,
+    },
+    cityPillEmpty: {
+      borderColor: 'rgba(255,255,255,0.3)',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    cityPillEmptyTxt: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: 9,
+      color: 'rgba(255,255,255,0.7)',
+    },
+  }), [C]);
+
   return (
     <TouchableOpacity style={s.cityCard} activeOpacity={0.85} onPress={onPress}>
       <Image source={{ uri: imageUrl }} style={s.cityImg} contentFit="cover" transition={300} />
@@ -233,7 +401,7 @@ function CityCard({ city, count, imageUrl, onPress }: {
           <Text style={s.cityName} numberOfLines={1}>{city}</Text>
           {count > 0 ? (
             <View style={s.cityPill}>
-              <Ionicons name="person" size={9} color={Colors.primary} />
+              <Ionicons name="person" size={9} color={C.primary} />
               <Text style={s.cityPillTxt}>{count} jastiper</Text>
             </View>
           ) : (
@@ -248,119 +416,3 @@ function CityCard({ city, count, imageUrl, onPress }: {
   );
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
-  countryFlag: { fontSize: 20 },
-  headerTitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.lg,
-    color: Colors.nearBlack,
-  },
-  headerSub: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-  },
-
-  list: { padding: Spacing.xl, paddingBottom: 100 },
-  row: { justifyContent: 'space-between', marginBottom: Spacing.md },
-
-  allCard: {
-    width: '100%',
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    marginBottom: Spacing.md,
-    ...Shadows.md,
-  },
-  allGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.base,
-    gap: Spacing.md,
-  },
-  allTitle: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.white,
-  },
-  allSub: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-
-  citiesLabel: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 10,
-    color: Colors.darkGray,
-    letterSpacing: 1,
-    marginBottom: Spacing.md,
-  },
-
-  cityCard: {
-    width: CARD_W,
-    height: CARD_H,
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    ...Shadows.md,
-  },
-  cityImg: { width: '100%', height: '100%' },
-  cityInfo: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: Spacing.md,
-    gap: 5,
-  },
-  cityName: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.white,
-  },
-  cityPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(197,162,103,0.22)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  cityPillTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 9,
-    color: Colors.primary,
-  },
-  cityPillEmpty: {
-    borderColor: 'rgba(255,255,255,0.3)',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  cityPillEmptyTxt: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.7)',
-  },
-});

@@ -1,13 +1,15 @@
 /**
  * TipL — Badge Component
  * Color-coded status badges for order status, verification, etc.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, BorderRadius } from '@/src/lib/constants';
+import { Typography, BorderRadius } from '@/src/lib/constants';
 import { OrderStatus } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 type BadgeVariant = 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'gold';
 
@@ -19,27 +21,54 @@ interface BadgeProps {
   small?: boolean;
 }
 
-const VARIANT_COLORS: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
-  success: { bg: Colors.successLight, text: Colors.success, border: Colors.success },
-  warning: { bg: Colors.warningLight, text: Colors.warning, border: Colors.warning },
-  error: { bg: Colors.errorLight, text: Colors.error, border: Colors.error },
-  info: { bg: Colors.infoLight, text: Colors.info, border: Colors.info },
-  neutral: { bg: Colors.lightGray, text: Colors.darkGray, border: Colors.midGray },
-  gold: { bg: '#FFF8E7', text: Colors.primary, border: Colors.primary },
-};
-
 export function Badge({ label, variant = 'neutral', icon, style, small = false }: BadgeProps) {
-  const colors = VARIANT_COLORS[variant];
+  const C = useThemeColors();
+
+  const colors = React.useMemo(() => {
+    const MAP: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
+      success: { bg: C.success + '22', text: C.success, border: C.success },
+      warning: { bg: C.warning + '22', text: C.warning, border: C.warning },
+      error: { bg: C.error + '22', text: C.error, border: C.error },
+      info: { bg: C.info + '22', text: C.info, border: C.info },
+      neutral: { bg: C.lightGray, text: C.darkGray, border: C.midGray },
+      gold: { bg: C.primary + '18', text: C.primary, border: C.primary },
+    };
+    return MAP[variant];
+  }, [C, variant]);
+
+  const s = React.useMemo(() => StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1,
+      alignSelf: 'flex-start',
+    },
+    text: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      letterSpacing: 0.2,
+    },
+    small: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    smallText: {
+      fontSize: 9,
+    },
+  }), []);
 
   return (
     <View
       style={[
-        styles.container,
+        s.container,
         {
           backgroundColor: colors.bg,
           borderColor: colors.border,
         },
-        small && styles.small,
+        small && s.small,
         style,
       ]}
     >
@@ -53,9 +82,9 @@ export function Badge({ label, variant = 'neutral', icon, style, small = false }
       )}
       <Text
         style={[
-          styles.text,
+          s.text,
           { color: colors.text },
-          small && styles.smallText,
+          small && s.smallText,
         ]}
       >
         {label}
@@ -89,27 +118,3 @@ export function getOrderStatusBadge(status: OrderStatus): { label: string; varia
       return { label: status, variant: 'neutral' };
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  text: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    letterSpacing: 0.2,
-  },
-  small: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  smallText: {
-    fontSize: 9,
-  },
-});

@@ -1,17 +1,19 @@
-﻿import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { useAuthStore } from '@/src/store/authStore';
 import { getWishlist, toggleWishlist } from '@/src/services/supabase/wishlist';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const fmtIDR = (v: number | null) => v != null ? 'Rp ' + v.toLocaleString('id-ID') : null;
 
 export default function WishlistScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,12 +45,42 @@ export default function WishlistScreen() {
     }
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+    floatingBack: {
+      position: 'absolute', top: 12, left: 20, zIndex: 10,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    card: {
+      flex: 1, backgroundColor: C.white, borderRadius: BorderRadius.lg,
+      borderWidth: 1, borderColor: C.lightGray, overflow: 'hidden',
+      marginBottom: Spacing.md, ...Shadows.sm,
+    },
+    image: { width: '100%', height: 120 },
+    imageFallback: { backgroundColor: C.cream, alignItems: 'center', justifyContent: 'center' },
+    info: { padding: Spacing.sm },
+    name: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    from: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: C.darkGray, marginTop: 2 },
+    price: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.primary, marginTop: 4 },
+    heartBtn: {
+      position: 'absolute', top: 8, right: 8,
+      width: 30, height: 30, borderRadius: 15,
+      backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.lightGray,
+    },
+    empty: { alignItems: 'center', paddingTop: 80, gap: Spacing.md, paddingHorizontal: Spacing['2xl'] },
+    emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: C.charcoal },
+    emptyDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, textAlign: 'center', lineHeight: 20 },
+  }), [C]);
+
   return (
     <SafeAreaView style={s.safe} edges={[]}>
       <PageHeader title="Wishlist" onBack={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing.xl }} />
+        <ActivityIndicator color={C.primary} style={{ marginTop: Spacing.xl }} />
       ) : (
         <FlatList
           data={items}
@@ -73,7 +105,7 @@ export default function WishlistScreen() {
                   <Image source={{ uri: image }} style={s.image} contentFit="cover" transition={200} />
                 ) : (
                   <View style={[s.image, s.imageFallback]}>
-                    <Ionicons name="cube-outline" size={28} color={Colors.midGray} />
+                    <Ionicons name="cube-outline" size={28} color={C.midGray} />
                   </View>
                 )}
                 <View style={s.info}>
@@ -87,9 +119,9 @@ export default function WishlistScreen() {
                   disabled={removing === p.id}
                 >
                   {removing === p.id ? (
-                    <ActivityIndicator size="small" color={Colors.error} />
+                    <ActivityIndicator size="small" color={C.error} />
                   ) : (
-                    <Ionicons name="heart" size={18} color={Colors.error} />
+                    <Ionicons name="heart" size={18} color={C.error} />
                   )}
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -97,7 +129,7 @@ export default function WishlistScreen() {
           }}
           ListEmptyComponent={
             <View style={s.empty}>
-              <Ionicons name="heart-outline" size={56} color={Colors.midGray} />
+              <Ionicons name="heart-outline" size={56} color={C.midGray} />
               <Text style={s.emptyTitle}>Wishlist kosong</Text>
               <Text style={s.emptyDesc}>Tekan ikon hati di halaman produk untuk menyimpan item favoritmu</Text>
             </View>
@@ -107,33 +139,3 @@ export default function WishlistScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  card: {
-    flex: 1, backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
-    borderWidth: 1, borderColor: Colors.lightGray, overflow: 'hidden',
-    marginBottom: Spacing.md, ...Shadows.sm,
-  },
-  image: { width: '100%', height: 120 },
-  imageFallback: { backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
-  info: { padding: Spacing.sm },
-  name: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  from: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.darkGray, marginTop: 2 },
-  price: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary, marginTop: 4 },
-  heartBtn: {
-    position: 'absolute', top: 8, right: 8,
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.lightGray,
-  },
-  empty: { alignItems: 'center', paddingTop: 80, gap: Spacing.md, paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal },
-  emptyDesc: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, textAlign: 'center', lineHeight: 20 },
-});

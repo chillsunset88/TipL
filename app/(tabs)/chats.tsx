@@ -1,6 +1,7 @@
 /**
  * TipL — Chat List Screen
- * Conversations grouped by partner user ID (direct messages, no order_id dependency).
+ * Conversations grouped by partner user ID.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -17,13 +18,14 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useAuthStore } from '@/src/store/authStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { getConversations, getUnreadCount } from '@/src/services/supabase/messages';
 import { getProfilesByIds } from '@/src/services/supabase/profiles';
 import { supabase } from '@/src/lib/supabase';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 interface ConversationItem {
   partnerId: string;
@@ -53,6 +55,7 @@ function formatLastMessage(content: string): string {
 }
 
 export default function ChatsScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
   const insets = useSafeAreaInsets();
@@ -74,7 +77,6 @@ export default function ChatsScreen() {
       setTotalUnread(unreadCount);
 
       // Group by partner ID — keep only latest message per conversation partner
-      // Messages are already ordered DESC by created_at so first occurrence = latest
       const byPartner = new Map<string, typeof msgs[0]>();
       for (const msg of msgs) {
         const partnerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
@@ -109,10 +111,10 @@ export default function ChatsScreen() {
     }
   }, [userId]);
 
-  // Reload whenever the tab comes into focus (returning from a chat room)
+  // Reload whenever the tab comes into focus
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Real-time: reload when a new message arrives for this user
+  // Real-time
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
@@ -142,28 +144,147 @@ export default function ChatsScreen() {
     } as any);
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+    unreadBadge: {
+      backgroundColor: C.primary,
+      borderRadius: 12,
+      minWidth: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 6,
+    },
+    unreadBadgeText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 12,
+      color: '#FFFFFF',
+    },
+    searchWrap: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.md },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.offWhite,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      height: 42,
+      gap: Spacing.sm,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+    },
+    searchInput: {
+      flex: 1,
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.nearBlack,
+      paddingVertical: 0,
+    },
+    list: { paddingHorizontal: Spacing.xl },
+    chatItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: Spacing.base,
+      gap: Spacing.md,
+    },
+    chatInfo: { flex: 1 },
+    chatTopRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    chatName: {
+      flex: 1,
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+      marginRight: Spacing.sm,
+    },
+    chatNameUnread: { fontFamily: Typography.regular.fontFamily },
+    chatTime: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.darkGray,
+    },
+    chatBottomRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    chatPreview: {
+      flex: 1,
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.darkGray,
+      marginRight: Spacing.sm,
+    },
+    chatPreviewUnread: {
+      fontFamily: Typography.medium.fontFamily,
+      color: C.nearBlack,
+    },
+    unreadDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: C.primary,
+    },
+    separator: { height: 1, backgroundColor: C.lightGray },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
+    emptyContainer: {
+      alignItems: 'center',
+      paddingTop: Spacing['5xl'],
+      paddingHorizontal: Spacing['2xl'],
+    },
+    emptyTitle: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.md,
+      color: C.nearBlack,
+      marginTop: Spacing.base,
+    },
+    emptySubtext: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.darkGray,
+      textAlign: 'center',
+      marginTop: Spacing.sm,
+      lineHeight: 20,
+    },
+    signInBtn: {
+      marginTop: Spacing.lg,
+      backgroundColor: C.primary,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.md,
+      borderRadius: BorderRadius.md,
+    },
+    signInText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: '#FFFFFF',
+    },
+  }), [C]);
+
   const renderItem = ({ item }: { item: ConversationItem }) => (
     <TouchableOpacity
-      style={styles.chatItem}
+      style={s.chatItem}
       activeOpacity={0.7}
       onPress={() => openChat(item)}
     >
       <Avatar uri={item.partnerAvatar} name={item.partnerName} size="lg" />
-      <View style={styles.chatInfo}>
-        <View style={styles.chatTopRow}>
-          <Text style={[styles.chatName, item.unread && styles.chatNameUnread]} numberOfLines={1}>
+      <View style={s.chatInfo}>
+        <View style={s.chatTopRow}>
+          <Text style={[s.chatName, item.unread && s.chatNameUnread]} numberOfLines={1}>
             {item.partnerName}
           </Text>
-          <Text style={styles.chatTime}>{formatTime(item.lastMessageAt)}</Text>
+          <Text style={s.chatTime}>{formatTime(item.lastMessageAt)}</Text>
         </View>
-        <View style={styles.chatBottomRow}>
+        <View style={s.chatBottomRow}>
           <Text
-            style={[styles.chatPreview, item.unread && styles.chatPreviewUnread]}
+            style={[s.chatPreview, item.unread && s.chatPreviewUnread]}
             numberOfLines={1}
           >
             {item.lastMessage === '§IMAGE§' ? t.imageMessage : item.lastMessage}
           </Text>
-          {item.unread && <View style={styles.unreadDot} />}
+          {item.unread && <View style={s.unreadDot} />}
         </View>
       </View>
     </TouchableOpacity>
@@ -171,12 +292,12 @@ export default function ChatsScreen() {
 
   if (!userId) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.centered}>
-          <Ionicons name="chatbubbles-outline" size={48} color={Colors.midGray} />
-          <Text style={styles.emptyTitle}>{t.loginToViewMessages}</Text>
-          <TouchableOpacity style={styles.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
-            <Text style={styles.signInText}>{t.signIn}</Text>
+      <SafeAreaView style={s.safe} edges={['top']}>
+        <View style={s.centered}>
+          <Ionicons name="chatbubbles-outline" size={48} color={C.midGray} />
+          <Text style={s.emptyTitle}>{t.loginToViewMessages}</Text>
+          <TouchableOpacity style={s.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
+            <Text style={s.signInText}>{t.signIn}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -184,30 +305,30 @@ export default function ChatsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={s.safe} edges={['top']}>
 
       {/* Search */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={16} color={Colors.darkGray} />
+      <View style={s.searchWrap}>
+        <View style={s.searchBar}>
+          <Ionicons name="search-outline" size={16} color={C.darkGray} />
           <TextInput
-            style={styles.searchInput}
+            style={s.searchInput}
             value={search}
             onChangeText={setSearch}
             placeholder={t.searchConversations}
-            placeholderTextColor={Colors.darkGray}
+            placeholderTextColor={C.darkGray}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={Colors.darkGray} />
+              <Ionicons name="close-circle" size={16} color={C.darkGray} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+        <View style={s.centered}>
+          <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : (
         <FlatList
@@ -215,19 +336,19 @@ export default function ChatsScreen() {
           keyExtractor={(item) => item.partnerId}
           renderItem={renderItem}
           contentContainerStyle={[
-            filtered.length === 0 ? styles.centered : styles.list,
+            filtered.length === 0 ? s.centered : s.list,
             { paddingBottom: insets.bottom + Spacing.xl },
           ]}
           showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => <View style={s.separator} />}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="chatbubbles-outline" size={56} color={Colors.midGray} />
-              <Text style={styles.emptyTitle}>{t.noConversations}</Text>
-              <Text style={styles.emptySubtext}>{t.noConversationsDesc}</Text>
+            <View style={s.emptyContainer}>
+              <Ionicons name="chatbubbles-outline" size={56} color={C.midGray} />
+              <Text style={s.emptyTitle}>{t.noConversations}</Text>
+              <Text style={s.emptySubtext}>{t.noConversationsDesc}</Text>
             </View>
           }
         />
@@ -236,121 +357,3 @@ export default function ChatsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-  unreadBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  unreadBadgeText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 12,
-    color: Colors.white,
-  },
-  searchWrap: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.md },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.cream,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    height: 42,
-    gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-    paddingVertical: 0,
-  },
-  list: { paddingHorizontal: Spacing.xl },
-  chatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.base,
-    gap: Spacing.md,
-  },
-  chatInfo: { flex: 1 },
-  chatTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  chatName: {
-    flex: 1,
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    marginRight: Spacing.sm,
-  },
-  chatNameUnread: { fontFamily: Typography.regular.fontFamily },
-  chatTime: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-  },
-  chatBottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  chatPreview: {
-    flex: 1,
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    marginRight: Spacing.sm,
-  },
-  chatPreviewUnread: {
-    fontFamily: Typography.medium.fontFamily,
-    color: Colors.nearBlack,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-  },
-  separator: { height: 1, backgroundColor: Colors.lightGray },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: Spacing['5xl'],
-    paddingHorizontal: Spacing['2xl'],
-  },
-  emptyTitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.nearBlack,
-    marginTop: Spacing.base,
-  },
-  emptySubtext: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.darkGray,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-    lineHeight: 20,
-  },
-  signInBtn: {
-    marginTop: Spacing.lg,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-  },
-  signInText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.white,
-  },
-});

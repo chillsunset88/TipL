@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Dimensions,
@@ -8,14 +8,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useAuthStore } from '@/src/store/authStore';
 import { getFavoriteTripers, toggleFavoriteTriper } from '@/src/services/supabase/favorites';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 const { width: SW } = Dimensions.get('window');
 
 export default function FavoritesScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,12 +49,119 @@ export default function FavoritesScreen() {
     }
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+    floatingBack: {
+      position: 'absolute', top: 12, left: 20, zIndex: 10,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    list: { padding: Spacing.xl, paddingBottom: 60 },
+
+    // ── Card
+    card: {
+      flexDirection: 'row',
+      backgroundColor: C.white,
+      borderRadius: BorderRadius.xl,
+      borderWidth: 1, borderColor: C.lightGray,
+      marginBottom: Spacing.md,
+      overflow: 'hidden',
+      ...Shadows.md,
+    },
+    cardAccent: { width: 5 },
+    cardInner: { flex: 1, padding: Spacing.base },
+
+    cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+    avatarRing: {
+      borderRadius: 40, padding: 2,
+      borderWidth: 2, borderColor: C.primary,
+    },
+    triperInfo: { flex: 1, gap: 3 },
+    triperName: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base, color: C.nearBlack,
+    },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    ratingTxt: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs, color: C.charcoal,
+      marginLeft: 4,
+    },
+    tripsStat: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs, color: C.darkGray,
+    },
+
+    unfavBtn: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: C.error + '22',
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.error + '44',
+    },
+
+    cardDivider: { height: 1, backgroundColor: C.lightGray, marginVertical: Spacing.sm },
+
+    cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    tagRow: { flexDirection: 'row', gap: Spacing.sm },
+    tag: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      backgroundColor: C.primary + '15', borderRadius: BorderRadius.full,
+      paddingHorizontal: Spacing.sm, paddingVertical: 3,
+      borderWidth: 1, borderColor: C.primary,
+    },
+    tagTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: C.primary },
+
+    viewProfileBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 3,
+    },
+    viewProfileTxt: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.primary,
+    },
+
+    // ── Empty state
+    empty: {
+      alignItems: 'center', paddingTop: 80,
+      gap: Spacing.md, paddingHorizontal: Spacing['2xl'],
+    },
+    emptyIconWrap: {
+      width: 80, height: 80, borderRadius: 40,
+      backgroundColor: C.primary + '15',
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.primary,
+      marginBottom: Spacing.sm,
+    },
+    emptyTitle: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.lg, color: C.charcoal,
+    },
+    emptyDesc: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.darkGray,
+      textAlign: 'center', lineHeight: 20,
+    },
+    emptyBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      marginTop: Spacing.sm,
+      paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
+      borderRadius: BorderRadius.full,
+      borderWidth: 1.5, borderColor: C.primary,
+      backgroundColor: C.primary + '15',
+    },
+    emptyBtnTxt: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.primary,
+    },
+  }), [C]);
+
   return (
     <SafeAreaView style={s.safe} edges={[]}>
       <PageHeader title="Tripper Favorit" onBack={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: Spacing.xl }} />
+        <ActivityIndicator color={C.primary} style={{ marginTop: Spacing.xl }} />
       ) : (
         <FlatList
           data={items}
@@ -62,7 +171,7 @@ export default function FavoritesScreen() {
           ListEmptyComponent={
             <View style={s.empty}>
               <View style={s.emptyIconWrap}>
-                <Ionicons name="heart-outline" size={40} color={Colors.primary} />
+                <Ionicons name="heart-outline" size={40} color={C.primary} />
               </View>
               <Text style={s.emptyTitle}>Belum ada tripper favorit</Text>
               <Text style={s.emptyDesc}>
@@ -70,7 +179,7 @@ export default function FavoritesScreen() {
               </Text>
               <TouchableOpacity style={s.emptyBtn} onPress={() => router.push('/(tabs)/trips' as any)}>
                 <Text style={s.emptyBtnTxt}>Jelajahi Tripper</Text>
-                <Ionicons name="arrow-forward" size={14} color={Colors.primary} />
+                <Ionicons name="arrow-forward" size={14} color={C.primary} />
               </TouchableOpacity>
             </View>
           }
@@ -89,7 +198,7 @@ export default function FavoritesScreen() {
               >
                 {/* Gold left accent */}
                 <LinearGradient
-                  colors={[Colors.primary, Colors.primaryDark]}
+                  colors={[C.primary, C.primary]}
                   style={s.cardAccent}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
@@ -112,7 +221,7 @@ export default function FavoritesScreen() {
                             key={i}
                             name={i <= Math.round(rating) ? 'star' : 'star-outline'}
                             size={13}
-                            color={Colors.primary}
+                            color={C.primary}
                           />
                         ))}
                         <Text style={s.ratingTxt}>
@@ -133,9 +242,9 @@ export default function FavoritesScreen() {
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                       {isRemoving ? (
-                        <ActivityIndicator size="small" color={Colors.error} />
+                        <ActivityIndicator size="small" color={C.error} />
                       ) : (
-                        <Ionicons name="heart-dislike-outline" size={18} color={Colors.error} />
+                        <Ionicons name="heart-dislike-outline" size={18} color={C.error} />
                       )}
                     </TouchableOpacity>
                   </View>
@@ -147,13 +256,13 @@ export default function FavoritesScreen() {
                   <View style={s.cardBottom}>
                     <View style={s.tagRow}>
                       <View style={s.tag}>
-                        <Ionicons name="airplane-outline" size={11} color={Colors.primary} />
+                        <Ionicons name="airplane-outline" size={11} color={C.primary} />
                         <Text style={s.tagTxt}>Aktif berjastip</Text>
                       </View>
                     </View>
                     <View style={s.viewProfileBtn}>
                       <Text style={s.viewProfileTxt}>Lihat Profil</Text>
-                      <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
+                      <Ionicons name="chevron-forward" size={13} color={C.primary} />
                     </View>
                   </View>
                 </View>
@@ -165,110 +274,3 @@ export default function FavoritesScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  list: { padding: Spacing.xl, paddingBottom: 60 },
-
-  // ── Card
-  card: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1, borderColor: Colors.lightGray,
-    marginBottom: Spacing.md,
-    overflow: 'hidden',
-    ...Shadows.md,
-  },
-  cardAccent: { width: 5 },
-  cardInner: { flex: 1, padding: Spacing.base },
-
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  avatarRing: {
-    borderRadius: 40, padding: 2,
-    borderWidth: 2, borderColor: Colors.primaryLight,
-  },
-  triperInfo: { flex: 1, gap: 3 },
-  triperName: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base, color: Colors.nearBlack,
-  },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  ratingTxt: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.charcoal,
-    marginLeft: 4,
-  },
-  tripsStat: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs, color: Colors.darkGray,
-  },
-
-  unfavBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.errorLight,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#F5C6C6',
-  },
-
-  cardDivider: { height: 1, backgroundColor: Colors.lightGray, marginVertical: Spacing.sm },
-
-  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tagRow: { flexDirection: 'row', gap: Spacing.sm },
-  tag: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm, paddingVertical: 3,
-    borderWidth: 1, borderColor: Colors.primaryLight,
-  },
-  tagTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary },
-
-  viewProfileBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-  },
-  viewProfileTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.primary,
-  },
-
-  // ── Empty state
-  empty: {
-    alignItems: 'center', paddingTop: 80,
-    gap: Spacing.md, paddingHorizontal: Spacing['2xl'],
-  },
-  emptyIconWrap: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: Colors.primaryPale,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.primaryLight,
-    marginBottom: Spacing.sm,
-  },
-  emptyTitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.lg, color: Colors.charcoal,
-  },
-  emptyDesc: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.darkGray,
-    textAlign: 'center', lineHeight: 20,
-  },
-  emptyBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5, borderColor: Colors.primary,
-    backgroundColor: Colors.primaryPale,
-  },
-  emptyBtnTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.primary,
-  },
-});

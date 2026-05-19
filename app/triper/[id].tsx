@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, CATEGORY_MAP } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows, CATEGORY_MAP } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { useAuthStore } from '@/src/store/authStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
@@ -18,6 +18,7 @@ import { getMyTrips, getProductsByTriper } from '@/src/services/supabase/trips';
 import { isFavoriteTriper, toggleFavoriteTriper } from '@/src/services/supabase/favorites';
 import { getReviewsForUser, type ReviewWithProfile } from '@/src/services/supabase/reviews';
 import type { Database } from '@/src/lib/database.types';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Trip = Database['public']['Tables']['trips']['Row'];
@@ -42,6 +43,7 @@ function fmtDateRange(dep: string | null | undefined, ret: string | null | undef
 }
 
 export default function TriperProfileScreen() {
+  const C = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const currentUser = useAuthStore((s) => s.user);
   const isOwnProfile = currentUser?.id === id;
@@ -87,10 +89,160 @@ export default function TriperProfileScreen() {
     }
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+    loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.offWhite },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
+    centerTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.darkGray },
+    centerLink: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.primary },
+
+    // ── Hero
+    hero: { paddingBottom: Spacing['3xl'] },
+    backBtn: {
+      margin: Spacing.base,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: 'rgba(0,0,0,0.22)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    heroBody: { alignItems: 'center', paddingHorizontal: Spacing.xl, gap: Spacing.md },
+    avatarRing: {
+      borderRadius: 50, borderWidth: 3,
+      borderColor: 'rgba(255,255,255,0.35)',
+      padding: 3,
+    },
+    heroName: {
+      fontFamily: Typography.serifBold.fontFamily,
+      fontSize: Typography.sizes['2xl'],
+      color: '#FFFFFF',
+      letterSpacing: 0.3,
+    },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    ratingTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.9)', marginLeft: 5 },
+    noRatingTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: 'rgba(255,255,255,0.55)' },
+
+    statsCard: {
+      flexDirection: 'row',
+      backgroundColor: 'rgba(255,255,255,0.13)',
+      borderRadius: BorderRadius.xl,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing['2xl'],
+      gap: Spacing['2xl'],
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.15)',
+    },
+    statItem: { alignItems: 'center', minWidth: 44 },
+    statNum: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xl, color: '#FFFFFF' },
+    statLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+    statSep: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.18)' },
+
+    followBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+      backgroundColor: C.primary,
+      paddingHorizontal: Spacing['2xl'], paddingVertical: 11,
+      borderRadius: BorderRadius.full, minWidth: 160, justifyContent: 'center',
+    },
+    followBtnDone: {
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderWidth: 1.5,
+      borderColor: 'rgba(248,113,113,0.6)',
+    },
+    followTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#FFFFFF' },
+    followTxtDone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#F87171' },
+
+    // ── Sections
+    section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl },
+    sectionHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
+    sectionLabel: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 11, letterSpacing: 1.2,
+      color: C.darkGray,
+    },
+    pill: {
+      backgroundColor: C.primary + '15', borderRadius: BorderRadius.full,
+      paddingHorizontal: 8, paddingVertical: 2,
+      borderWidth: 1, borderColor: C.primary,
+    },
+    pillTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: C.primary },
+
+    // ── Trip cards
+    tripCard: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: C.white, borderRadius: BorderRadius.xl,
+      borderWidth: 1, borderColor: C.lightGray,
+      padding: Spacing.base, marginBottom: Spacing.sm,
+      gap: Spacing.md, ...Shadows.sm,
+    },
+    tripIconCol: { alignItems: 'center' },
+    tripPlaneCircle: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: C.primary + '15',
+      borderWidth: 1, borderColor: C.primary,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    tripInfo: { flex: 1, gap: 5 },
+    tripRouteRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexWrap: 'wrap' },
+    tripOrigin: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray },
+    tripDest: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack },
+    tripDate: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray },
+    tripRight: { alignItems: 'flex-end', gap: 6 },
+    tripCapBadge: {
+      backgroundColor: C.primary + '15', borderRadius: BorderRadius.full,
+      paddingHorizontal: Spacing.sm, paddingVertical: 3,
+      borderWidth: 1, borderColor: C.primary,
+    },
+    tripCapTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: C.primary },
+
+    // ── Product grid
+    prodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+    prodCard: {
+      width: PROD_W, backgroundColor: C.white,
+      borderRadius: BorderRadius.lg, overflow: 'hidden',
+      borderWidth: 1, borderColor: C.lightGray,
+      ...Shadows.sm,
+    },
+    prodImg: { width: '100%', height: 130 },
+    prodImgEmpty: { alignItems: 'center', justifyContent: 'center' },
+    catBadge: {
+      position: 'absolute', top: Spacing.sm, left: Spacing.sm,
+      paddingHorizontal: 6, paddingVertical: 2, borderRadius: BorderRadius.full,
+    },
+    catBadgeTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: '#FFFFFF', letterSpacing: 0.3 },
+    prodBody: { padding: Spacing.sm },
+    prodName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.charcoal, lineHeight: 18, marginBottom: 4 },
+    prodPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    prodPriceMuted: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.gray, fontStyle: 'italic' },
+
+    emptyProd: { alignItems: 'center', paddingVertical: Spacing['2xl'], gap: Spacing.sm },
+    emptyProdTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray },
+
+    reviewList: { gap: Spacing.md },
+    reviewCard: {
+      backgroundColor: C.white, borderRadius: BorderRadius.lg,
+      padding: Spacing.base, borderWidth: 1, borderColor: C.lightGray, ...Shadows.sm,
+    },
+    reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+    reviewAvatar: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: C.primary + '15', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    reviewAvatarImg: { width: 36, height: 36 },
+    reviewAvatarTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: C.primary },
+    reviewerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    reviewDate: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: C.gray, marginTop: 1 },
+    reviewStars: { flexDirection: 'row', gap: 2 },
+    reviewComment: {
+      fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+      color: C.charcoal, lineHeight: 20,
+      paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: C.lightGray,
+    },
+  }), [C]);
+
   if (loading) {
     return (
       <View style={s.loadWrap}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={C.primary} />
       </View>
     );
   }
@@ -99,7 +251,7 @@ export default function TriperProfileScreen() {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.center}>
-          <Ionicons name="person-outline" size={48} color={Colors.midGray} />
+          <Ionicons name="person-outline" size={48} color={C.midGray} />
           <Text style={s.centerTxt}>{t.profileNotFound}</Text>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={s.centerLink}>{t.back}</Text>
@@ -118,14 +270,14 @@ export default function TriperProfileScreen() {
         {/* ── Hero ── */}
         <View style={s.hero}>
           <LinearGradient
-            colors={['#8B6914', Colors.charcoal]}
+            colors={['#8B6914', '#1A1A1A']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           />
           <SafeAreaView edges={['top']}>
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={20} color={Colors.white} />
+              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </SafeAreaView>
 
@@ -145,7 +297,7 @@ export default function TriperProfileScreen() {
                     key={i}
                     name={i <= Math.round(profile.rating ?? 0) ? 'star' : 'star-outline'}
                     size={15}
-                    color={Colors.primary}
+                    color={C.primary}
                   />
                 ))}
                 <Text style={s.ratingTxt}>{profile.rating!.toFixed(1)}</Text>
@@ -181,15 +333,15 @@ export default function TriperProfileScreen() {
                 activeOpacity={0.85}
               >
                 {followLoading ? (
-                  <ActivityIndicator size="small" color={followed ? Colors.error : Colors.white} />
+                  <ActivityIndicator size="small" color={followed ? C.error : '#FFFFFF'} />
                 ) : followed ? (
                   <>
-                    <Ionicons name="heart" size={16} color={Colors.error} />
+                    <Ionicons name="heart" size={16} color={C.error} />
                     <Text style={s.followTxtDone}>{t.following}</Text>
                   </>
                 ) : (
                   <>
-                    <Ionicons name="heart-outline" size={16} color={Colors.white} />
+                    <Ionicons name="heart-outline" size={16} color="#FFFFFF" />
                     <Text style={s.followTxt}>{t.followTriper}</Text>
                   </>
                 )}
@@ -221,7 +373,7 @@ export default function TriperProfileScreen() {
                   {/* Plane icon strip */}
                   <View style={s.tripIconCol}>
                     <View style={s.tripPlaneCircle}>
-                      <Ionicons name="airplane" size={16} color={Colors.primary} />
+                      <Ionicons name="airplane" size={16} color={C.primary} />
                     </View>
                   </View>
 
@@ -229,7 +381,7 @@ export default function TriperProfileScreen() {
                   <View style={s.tripInfo}>
                     <View style={s.tripRouteRow}>
                       <Text style={s.tripOrigin}>{trip.origin_country}</Text>
-                      <Ionicons name="arrow-forward" size={13} color={Colors.primary} />
+                      <Ionicons name="arrow-forward" size={13} color={C.primary} />
                       <Text style={s.tripDest}>{dest}</Text>
                     </View>
                     {dateRange && (
@@ -244,7 +396,7 @@ export default function TriperProfileScreen() {
                         <Text style={s.tripCapTxt}>{trip.capacity_kg} kg</Text>
                       </View>
                     )}
-                    <Ionicons name="chevron-forward" size={16} color={Colors.midGray} />
+                    <Ionicons name="chevron-forward" size={16} color={C.midGray} />
                   </View>
                 </TouchableOpacity>
               );
@@ -265,7 +417,7 @@ export default function TriperProfileScreen() {
 
           {visibleProducts.length === 0 ? (
             <View style={s.emptyProd}>
-              <Ionicons name="cube-outline" size={36} color={Colors.midGray} />
+              <Ionicons name="cube-outline" size={36} color={C.midGray} />
               <Text style={s.emptyProdTxt}>{t.triperNoProducts}</Text>
             </View>
           ) : (
@@ -286,7 +438,7 @@ export default function TriperProfileScreen() {
                       <Image source={{ uri: img }} style={s.prodImg} contentFit="cover" transition={200} />
                     ) : (
                       <View style={[s.prodImg, s.prodImgEmpty, catInfo ? { backgroundColor: catInfo.color + '1A' } : undefined]}>
-                        <Ionicons name={(catInfo?.icon ?? 'cube-outline') as any} size={34} color={catInfo?.color ?? Colors.midGray} />
+                        <Ionicons name={(catInfo?.icon ?? 'cube-outline') as any} size={34} color={catInfo?.color ?? C.midGray} />
                       </View>
                     )}
                     {catInfo && (
@@ -321,7 +473,7 @@ export default function TriperProfileScreen() {
 
           {reviews.length === 0 ? (
             <View style={s.emptyProd}>
-              <Ionicons name="star-outline" size={36} color={Colors.midGray} />
+              <Ionicons name="star-outline" size={36} color={C.midGray} />
               <Text style={s.emptyProdTxt}>Belum ada ulasan</Text>
             </View>
           ) : (
@@ -353,7 +505,7 @@ export default function TriperProfileScreen() {
                             key={i}
                             name={i <= r.rating ? 'star' : 'star-outline'}
                             size={13}
-                            color={Colors.primary}
+                            color={C.primary}
                           />
                         ))}
                       </View>
@@ -372,153 +524,3 @@ export default function TriperProfileScreen() {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-  loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.offWhite },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
-  centerTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray },
-  centerLink: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-
-  // ── Hero
-  hero: { paddingBottom: Spacing['3xl'] },
-  backBtn: {
-    margin: Spacing.base,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.22)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heroBody: { alignItems: 'center', paddingHorizontal: Spacing.xl, gap: Spacing.md },
-  avatarRing: {
-    borderRadius: 50, borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.35)',
-    padding: 3,
-  },
-  heroName: {
-    fontFamily: Typography.serifBold.fontFamily,
-    fontSize: Typography.sizes['2xl'],
-    color: Colors.white,
-    letterSpacing: 0.3,
-  },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  ratingTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.9)', marginLeft: 5 },
-  noRatingTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: 'rgba(255,255,255,0.55)' },
-
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.13)',
-    borderRadius: BorderRadius.xl,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing['2xl'],
-    gap: Spacing['2xl'],
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  statItem: { alignItems: 'center', minWidth: 44 },
-  statNum: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xl, color: Colors.white },
-  statLbl: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-  statSep: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.18)' },
-
-  followBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing['2xl'], paddingVertical: 11,
-    borderRadius: BorderRadius.full, minWidth: 160, justifyContent: 'center',
-  },
-  followBtnDone: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(248,113,113,0.6)',
-  },
-  followTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.white },
-  followTxtDone: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: '#F87171' },
-
-  // ── Sections
-  section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
-  sectionLabel: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 11, letterSpacing: 1.2,
-    color: Colors.darkGray,
-  },
-  pill: {
-    backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.full,
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderWidth: 1, borderColor: Colors.primaryLight,
-  },
-  pillTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 11, color: Colors.primary },
-
-  // ── Trip cards
-  tripCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white, borderRadius: BorderRadius.xl,
-    borderWidth: 1, borderColor: Colors.lightGray,
-    padding: Spacing.base, marginBottom: Spacing.sm,
-    gap: Spacing.md, ...Shadows.sm,
-  },
-  tripIconCol: { alignItems: 'center' },
-  tripPlaneCircle: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.primaryPale,
-    borderWidth: 1, borderColor: Colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  tripInfo: { flex: 1, gap: 5 },
-  tripRouteRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexWrap: 'wrap' },
-  tripOrigin: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
-  tripDest: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack },
-  tripDate: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
-  tripRight: { alignItems: 'flex-end', gap: 6 },
-  tripCapBadge: {
-    backgroundColor: Colors.primaryPale, borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm, paddingVertical: 3,
-    borderWidth: 1, borderColor: Colors.primaryLight,
-  },
-  tripCapTxt: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.primary },
-
-  // ── Product grid
-  prodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
-  prodCard: {
-    width: PROD_W, backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.lightGray,
-    ...Shadows.sm,
-  },
-  prodImg: { width: '100%', height: 130 },
-  prodImgEmpty: { alignItems: 'center', justifyContent: 'center' },
-  catBadge: {
-    position: 'absolute', top: Spacing.sm, left: Spacing.sm,
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: BorderRadius.full,
-  },
-  catBadgeTxt: { fontFamily: Typography.medium.fontFamily, fontSize: 9, color: Colors.white, letterSpacing: 0.3 },
-  prodBody: { padding: Spacing.sm },
-  prodName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, lineHeight: 18, marginBottom: 4 },
-  prodPrice: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  prodPriceMuted: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, fontStyle: 'italic' },
-
-  emptyProd: { alignItems: 'center', paddingVertical: Spacing['2xl'], gap: Spacing.sm },
-  emptyProdTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
-
-  reviewList: { gap: Spacing.md },
-  reviewCard: {
-    backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
-    padding: Spacing.base, borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm,
-  },
-  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
-  reviewAvatar: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.primaryPale, alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  reviewAvatarImg: { width: 36, height: 36 },
-  reviewAvatarTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
-  reviewerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  reviewDate: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.gray, marginTop: 1 },
-  reviewStars: { flexDirection: 'row', gap: 2 },
-  reviewComment: {
-    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
-    color: Colors.charcoal, lineHeight: 20,
-    paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray,
-  },
-});

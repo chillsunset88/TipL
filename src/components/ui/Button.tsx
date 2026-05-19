@@ -1,7 +1,7 @@
 /**
  * TipL — Button Component
  * Primary (gold gradient), Secondary (outlined), Ghost variants.
- * Includes haptic feedback and press animation.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React from 'react';
@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, BorderRadius, Shadows } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -43,6 +44,7 @@ export function Button({
   style,
   fullWidth = false,
 }: ButtonProps) {
+  const C = useThemeColors();
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -50,6 +52,51 @@ export function Button({
 
   const sizeStyles = SIZE_MAP[size];
   const isDisabled = disabled || loading;
+
+  const s = React.useMemo(() => StyleSheet.create({
+    base: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    primaryText: {
+      color: '#FFFFFF',
+      fontFamily: Typography.semiBold.fontFamily,
+      letterSpacing: 0.3,
+    },
+    text: {
+      fontFamily: Typography.semiBold.fontFamily,
+      letterSpacing: 0.3,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    disabledPrimary: {
+      opacity: 0.6,
+    },
+  }), []);
+
+  const variantStyle = React.useMemo(() => {
+    const MAP: Record<Exclude<ButtonVariant, 'primary'>, { container: ViewStyle; textColor: string }> = {
+      secondary: {
+        container: {
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderColor: C.primary,
+        },
+        textColor: C.primary,
+      },
+      ghost: {
+        container: { backgroundColor: 'transparent' },
+        textColor: C.nearBlack,
+      },
+      danger: {
+        container: { backgroundColor: C.error + '22', borderWidth: 1, borderColor: C.error },
+        textColor: C.error,
+      },
+    };
+    return MAP[variant === 'primary' ? 'secondary' : variant];
+  }, [C, variant]);
 
   if (variant === 'primary') {
     return (
@@ -62,24 +109,24 @@ export function Button({
         <LinearGradient
           colors={
             isDisabled
-              ? [Colors.midGray, Colors.gray]
-              : [Colors.primaryGradientStart, Colors.primaryGradientEnd]
+              ? [C.midGray, C.gray]
+              : ['#C5A267', '#A37E43']
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
-            styles.base,
+            s.base,
             sizeStyles.container,
             Shadows.glow,
-            isDisabled && styles.disabledPrimary,
+            isDisabled && s.disabledPrimary,
           ]}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.white} size="small" />
+            <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
             <>
               {icon && <>{icon}</>}
-              <Text style={[styles.primaryText, sizeStyles.text, icon ? { marginLeft: 8 } : undefined]}>
+              <Text style={[s.primaryText, sizeStyles.text, icon ? { marginLeft: 8 } : undefined]}>
                 {title}
               </Text>
             </>
@@ -89,18 +136,16 @@ export function Button({
     );
   }
 
-  const variantStyle = VARIANT_MAP[variant];
-
   return (
     <TouchableOpacity
       onPress={handlePress}
       disabled={isDisabled}
       activeOpacity={0.7}
       style={[
-        styles.base,
+        s.base,
         sizeStyles.container,
         variantStyle.container,
-        isDisabled && styles.disabled,
+        isDisabled && s.disabled,
         fullWidth && { width: '100%' },
         style,
       ]}
@@ -112,7 +157,7 @@ export function Button({
           {icon && <>{icon}</>}
           <Text
             style={[
-              styles.text,
+              s.text,
               sizeStyles.text,
               { color: variantStyle.textColor },
               icon ? { marginLeft: 8 } : undefined,
@@ -140,45 +185,3 @@ const SIZE_MAP: Record<ButtonSize, { container: ViewStyle; text: TextStyle }> = 
     text: { fontSize: Typography.sizes.md },
   },
 };
-
-const VARIANT_MAP: Record<Exclude<ButtonVariant, 'primary'>, { container: ViewStyle; textColor: string }> = {
-  secondary: {
-    container: {
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderColor: Colors.primary,
-    },
-    textColor: Colors.primary,
-  },
-  ghost: {
-    container: { backgroundColor: 'transparent' },
-    textColor: Colors.nearBlack,
-  },
-  danger: {
-    container: { backgroundColor: Colors.errorLight, borderWidth: 1, borderColor: Colors.error },
-    textColor: Colors.error,
-  },
-};
-
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryText: {
-    color: Colors.white,
-    fontFamily: Typography.semiBold.fontFamily,
-    letterSpacing: 0.3,
-  },
-  text: {
-    fontFamily: Typography.semiBold.fontFamily,
-    letterSpacing: 0.3,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  disabledPrimary: {
-    opacity: 0.6,
-  },
-});

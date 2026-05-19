@@ -1,6 +1,7 @@
 /**
  * TipL — Chat Room Screen
  * Real-time messaging with image send, read receipts, and Supabase integration.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -35,6 +36,7 @@ import { useChatStore } from '@/src/store/chatStore';
 import { getProfile } from '@/src/services/supabase/profiles';
 import { getOrderById, OrderWithProfiles } from '@/src/services/supabase/orders';
 import type { Database } from '@/src/lib/database.types';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 type Message = Database['public']['Tables']['messages']['Row'];
 
@@ -53,6 +55,7 @@ function parseProductCard(content: string | null) {
 }
 
 function OrderReceiptPreview({ orderId }: { orderId: string }) {
+  const C = useThemeColors();
   const [order, setOrder] = useState<OrderWithProfiles | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(true);
   const { t } = useSettingsStore();
@@ -67,9 +70,78 @@ function OrderReceiptPreview({ orderId }: { orderId: string }) {
     return () => { mounted = false; };
   }, [orderId]);
 
+  const s = React.useMemo(() => StyleSheet.create({
+    receiptCard: {
+      backgroundColor: C.white,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.sm,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      marginBottom: Spacing.sm,
+      ...Shadows.sm,
+    },
+    receiptImage: {
+      width: '100%',
+      height: 140,
+      borderRadius: BorderRadius.md,
+      marginBottom: Spacing.sm,
+      backgroundColor: C.lightGray,
+    },
+    receiptImagePlaceholder: {
+      width: '100%',
+      height: 140,
+      borderRadius: BorderRadius.md,
+      backgroundColor: C.lightGray,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Spacing.sm,
+    },
+    receiptContent: {
+      flex: 1,
+    },
+    receiptLabel: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.darkGray,
+      marginBottom: Spacing.xs,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    receiptTitle: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.nearBlack,
+      marginBottom: Spacing.xs,
+    },
+    receiptSubtitle: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.darkGray,
+      marginBottom: Spacing.sm,
+    },
+    receiptPrice: {
+      fontFamily: Typography.semiBold.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.primary,
+    },
+    receiptBtn: {
+      marginTop: Spacing.sm,
+      backgroundColor: C.primary,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      borderRadius: BorderRadius.full,
+      alignSelf: 'flex-start',
+    },
+    receiptBtnText: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: '#FFFFFF',
+    },
+  }), [C]);
+
   if (loadingOrder) return (
-    <View style={styles.receiptCard}>
-      <ActivityIndicator size="small" color={Colors.primary} />
+    <View style={s.receiptCard}>
+      <ActivityIndicator size="small" color={C.primary} />
     </View>
   );
   if (!order) return null;
@@ -80,20 +152,20 @@ function OrderReceiptPreview({ orderId }: { orderId: string }) {
   const imageUrl = order.item_url;
 
   return (
-    <TouchableOpacity style={styles.receiptCard} activeOpacity={0.85} onPress={() => router.push(`/order/${order.id}`)}>
+    <TouchableOpacity style={s.receiptCard} activeOpacity={0.85} onPress={() => router.push(`/order/${order.id}`)}>
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.receiptImage} contentFit="cover" transition={200} />
+        <Image source={{ uri: imageUrl }} style={s.receiptImage} contentFit="cover" transition={200} />
       ) : (
-        <View style={styles.receiptImagePlaceholder}>
-          <Ionicons name="receipt-outline" size={28} color={Colors.gray} />
+        <View style={s.receiptImagePlaceholder}>
+          <Ionicons name="receipt-outline" size={28} color={C.gray} />
         </View>
       )}
-      <View style={styles.receiptContent}>
-        <Text style={styles.receiptLabel}>{t.orderReceiptPreview || 'Receipt'}</Text>
-        <Text style={styles.receiptTitle} numberOfLines={2}>{order.item_name}</Text>
-        <Text style={styles.receiptPrice}>{price?.toLocaleString ? price.toLocaleString('id-ID', { style: 'currency', currency }) : `${currency} ${price}`}</Text>
-        <View style={styles.receiptBtn}>
-          <Text style={styles.receiptBtnText}>{t.viewReceipt || 'View Receipt'}</Text>
+      <View style={s.receiptContent}>
+        <Text style={s.receiptLabel}>{t.orderReceiptPreview || 'Receipt'}</Text>
+        <Text style={s.receiptTitle} numberOfLines={2}>{order.item_name}</Text>
+        <Text style={s.receiptPrice}>{price?.toLocaleString ? price.toLocaleString('id-ID', { style: 'currency', currency }) : `${currency} ${price}`}</Text>
+        <View style={s.receiptBtn}>
+          <Text style={s.receiptBtnText}>{t.viewReceipt || 'View Receipt'}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -101,6 +173,7 @@ function OrderReceiptPreview({ orderId }: { orderId: string }) {
 }
 
 export default function ChatRoomScreen() {
+  const C = useThemeColors();
   const { id, receiverId, orderId, productId, productName, productPrice, productImage } =
     useLocalSearchParams<{
       id?: string;
@@ -253,18 +326,313 @@ export default function ChatRoomScreen() {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: C.offWhite,
+    },
+    flex: { flex: 1 },
+
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.md,
+      backgroundColor: C.white,
+      borderBottomWidth: 1,
+      borderBottomColor: C.lightGray,
+      gap: Spacing.sm,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerInfo: {
+      flex: 1,
+      marginLeft: Spacing.xs,
+    },
+    headerName: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+    },
+    headerStatus: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.success,
+    },
+    headerAction: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    messageList: {
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.md,
+    },
+    messageRow: {
+      flexDirection: 'row',
+      marginBottom: Spacing.md,
+      alignItems: 'flex-end',
+      gap: Spacing.sm,
+    },
+    messageRowMe: {
+      flexDirection: 'row-reverse',
+    },
+    messageBubble: {
+      maxWidth: SCREEN_WIDTH * 0.72,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+    },
+    bubbleMe: {
+      backgroundColor: C.primary,
+      borderBottomRightRadius: 4,
+    },
+    bubbleOther: {
+      backgroundColor: C.white,
+      borderBottomLeftRadius: 4,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+    },
+    messageText: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.charcoal,
+      lineHeight: 21,
+    },
+    messageTextMe: {
+      color: '#FFFFFF',
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: Spacing.xs,
+    },
+    metaRowMe: {
+      justifyContent: 'flex-end',
+      gap: 3,
+    },
+    timestamp: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 10,
+      color: C.gray,
+    },
+    timestampMe: {
+      color: 'rgba(255,255,255,0.7)',
+    },
+    readReceipt: {
+      marginLeft: 2,
+    },
+
+    chatImage: {
+      width: SCREEN_WIDTH * 0.55,
+      height: SCREEN_WIDTH * 0.4,
+      borderRadius: BorderRadius.md,
+      marginBottom: Spacing.xs,
+    },
+
+    inputBar: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: Spacing.md,
+      paddingTop: Spacing.md,
+      paddingBottom: Spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+      backgroundColor: C.white,
+      gap: Spacing.sm,
+    },
+    attachButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    attachGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    inputContainer: {
+      flex: 1,
+      backgroundColor: C.offWhite,
+      borderRadius: BorderRadius.xl,
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Platform.OS === 'ios' ? Spacing.sm : 0,
+      maxHeight: 100,
+    },
+    textInput: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+      minHeight: 36,
+    },
+    sendButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: C.offWhite,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendButtonActive: {
+      backgroundColor: C.primary,
+    },
+
+    imageViewerBg: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.95)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    imageViewerClose: {
+      position: 'absolute',
+      top: 48,
+      right: 20,
+      zIndex: 10,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    imageViewerImg: {
+      width: SCREEN_WIDTH,
+      height: SCREEN_WIDTH * 1.2,
+    },
+    headerProfile: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: Spacing.sm,
+    },
+    headerInfo: {
+      flex: 1,
+      marginLeft: Spacing.xs,
+    },
+    headerName: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.base,
+      color: C.nearBlack,
+    },
+    headerStatus: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.success,
+    },
+    productPreview: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: Spacing.sm,
+      backgroundColor: C.white,
+      borderTopWidth: 1,
+      borderTopColor: C.lightGray,
+      gap: Spacing.sm,
+    },
+    productPreviewImg: {
+      width: 40,
+      height: 40,
+      borderRadius: BorderRadius.sm,
+    },
+    productPreviewInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    productPreviewName: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.sm,
+      color: C.nearBlack,
+    },
+    productPreviewPrice: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.primary,
+    },
+    productPreviewSend: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: C.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    productPreviewDismiss: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: C.offWhite,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    productCard: {
+      flexDirection: 'row',
+      backgroundColor: C.offWhite,
+      borderRadius: BorderRadius.md,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: C.lightGray,
+      width: SCREEN_WIDTH * 0.6,
+    },
+    productCardMe: {
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
+    productCardImg: {
+      width: 70,
+      height: 80,
+    },
+    productCardInfo: {
+      flex: 1,
+      padding: Spacing.sm,
+      justifyContent: 'center',
+      gap: 3,
+    },
+    productCardName: {
+      fontFamily: Typography.medium.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.nearBlack,
+      lineHeight: 16,
+    },
+    productCardPrice: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.xs,
+      color: C.primary,
+    },
+    productCardLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      marginTop: 2,
+    },
+    productCardLinkTxt: {
+      fontFamily: Typography.regular.fontFamily,
+      fontSize: 10,
+      color: C.primary,
+    },
+  }), [C]);
+
   // ─── Message renderer ────────────────────────────────────────────────────
   const renderMessage = useCallback(({ item }: { item: Message }) => {
     const isMe = item.sender_id === currentUserId;
     const productCard = parseProductCard(item.content);
 
     return (
-      <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
+      <View style={[s.messageRow, isMe && s.messageRowMe]}>
         {!isMe && (
           <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
         )}
 
-        <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
+        <View style={[s.messageBubble, isMe ? s.bubbleMe : s.bubbleOther]}>
           {/* Order receipt preview */}
           {item.order_id ? <OrderReceiptPreview orderId={item.order_id} /> : null}
           {/* Image message */}
@@ -272,7 +640,7 @@ export default function ChatRoomScreen() {
             <TouchableOpacity activeOpacity={0.85} onPress={() => setViewingImage(item.image_url!)}>
               <Image
                 source={{ uri: item.image_url }}
-                style={styles.chatImage}
+                style={s.chatImage}
                 contentFit="cover"
                 transition={200}
               />
@@ -282,79 +650,79 @@ export default function ChatRoomScreen() {
           {/* Product card */}
           {productCard ? (
             <TouchableOpacity
-              style={[styles.productCard, isMe && styles.productCardMe]}
+              style={[s.productCard, isMe && s.productCardMe]}
               activeOpacity={0.8}
               onPress={() => router.push(`/product/${productCard.id}` as any)}
             >
-              <Image source={{ uri: productCard.imageUrl }} style={styles.productCardImg} contentFit="cover" />
-              <View style={styles.productCardInfo}>
-                <Text style={[styles.productCardName, isMe && { color: Colors.white }]} numberOfLines={2}>
+              <Image source={{ uri: productCard.imageUrl }} style={s.productCardImg} contentFit="cover" />
+              <View style={s.productCardInfo}>
+                <Text style={[s.productCardName, isMe && { color: '#FFFFFF' }]} numberOfLines={2}>
                   {productCard.name}
                 </Text>
-                <Text style={[styles.productCardPrice, isMe && { color: 'rgba(255,255,255,0.85)' }]}>
+                <Text style={[s.productCardPrice, isMe && { color: 'rgba(255,255,255,0.85)' }]}>
                   {'Rp ' + Number(productCard.price).toLocaleString('id-ID')}
                 </Text>
-                <View style={styles.productCardLink}>
-                  <Ionicons name="arrow-forward-circle" size={13} color={isMe ? 'rgba(255,255,255,0.7)' : Colors.primary} />
-                  <Text style={[styles.productCardLinkTxt, isMe && { color: 'rgba(255,255,255,0.7)' }]}>
+                <View style={s.productCardLink}>
+                  <Ionicons name="arrow-forward-circle" size={13} color={isMe ? 'rgba(255,255,255,0.7)' : C.primary} />
+                  <Text style={[s.productCardLinkTxt, isMe && { color: 'rgba(255,255,255,0.7)' }]}>
                     Lihat produk
                   </Text>
                 </View>
               </View>
             </TouchableOpacity>
           ) : item.content ? (
-            <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
+            <Text style={[s.messageText, isMe && s.messageTextMe]}>
               {item.content}
             </Text>
           ) : null}
 
           {/* Timestamp + read receipt */}
-          <View style={[styles.metaRow, isMe && styles.metaRowMe]}>
-            <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
+          <View style={[s.metaRow, isMe && s.metaRowMe]}>
+            <Text style={[s.timestamp, isMe && s.timestampMe]}>
               {formatTime(item.created_at)}
             </Text>
-            {isMe && <ReadReceipt read={item.read_at !== null} />}
+            {isMe && <ReadReceipt read={item.read_at !== null} C={C} />}
           </View>
         </View>
       </View>
     );
-  }, [currentUserId, otherUserName, otherUserAvatar]);
+  }, [currentUserId, otherUserName, otherUserAvatar, s, C]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={s.safe} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
+          <Ionicons name="arrow-back" size={22} color={C.nearBlack} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.headerProfile}
+          style={s.headerProfile}
           activeOpacity={0.7}
           onPress={() => router.push(`/triper/${otherUserId}` as any)}
         >
           <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerName}>{otherUserName}</Text>
-            <Text style={styles.headerStatus}>{t.online}</Text>
+          <View style={s.headerInfo}>
+            <Text style={s.headerName}>{otherUserName}</Text>
+            <Text style={s.headerStatus}>{t.online}</Text>
           </View>
         </TouchableOpacity>
         {orderId && (
           <TouchableOpacity
-            style={styles.headerAction}
+            style={s.headerAction}
             onPress={() => router.push(`/order/${orderId}`)}
           >
-            <Ionicons name="receipt-outline" size={20} color={Colors.primary} />
+            <Ionicons name="receipt-outline" size={20} color={C.primary} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.headerAction}>
-          <Ionicons name="ellipsis-vertical" size={20} color={Colors.darkGray} />
+        <TouchableOpacity style={s.headerAction}>
+          <Ionicons name="ellipsis-vertical" size={20} color={C.darkGray} />
         </TouchableOpacity>
       </View>
 
       {/* Messages */}
       <KeyboardAvoidingView
         behavior="padding"
-        style={styles.flex}
+        style={s.flex}
         keyboardVerticalOffset={0}
       >
         <FlatList
@@ -363,7 +731,7 @@ export default function ChatRoomScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           inverted
-          contentContainerStyle={styles.messageList}
+          contentContainerStyle={s.messageList}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             orderId ? (
@@ -374,56 +742,56 @@ export default function ChatRoomScreen() {
           }
           ListFooterComponent={
             loading
-              ? <ActivityIndicator color={Colors.primary} style={{ margin: Spacing.base }} />
+              ? <ActivityIndicator color={C.primary} style={{ margin: Spacing.base }} />
               : null
           }
         />
 
         {/* Product attachment preview */}
         {pendingProduct && (
-          <View style={styles.productPreview}>
-            <Image source={{ uri: pendingProduct.imageUrl }} style={styles.productPreviewImg} contentFit="cover" />
-            <View style={styles.productPreviewInfo}>
-              <Text style={styles.productPreviewName} numberOfLines={1}>{pendingProduct.name}</Text>
-              <Text style={styles.productPreviewPrice}>
+          <View style={s.productPreview}>
+            <Image source={{ uri: pendingProduct.imageUrl }} style={s.productPreviewImg} contentFit="cover" />
+            <View style={s.productPreviewInfo}>
+              <Text style={s.productPreviewName} numberOfLines={1}>{pendingProduct.name}</Text>
+              <Text style={s.productPreviewPrice}>
                 {'Rp ' + Number(pendingProduct.price).toLocaleString('id-ID')}
               </Text>
             </View>
-            <TouchableOpacity onPress={handleSendProduct} style={styles.productPreviewSend}>
-              <Ionicons name="send" size={18} color={Colors.white} />
+            <TouchableOpacity onPress={handleSendProduct} style={s.productPreviewSend}>
+              <Ionicons name="send" size={18} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setPendingProduct(null)} style={styles.productPreviewDismiss}>
-              <Ionicons name="close" size={16} color={Colors.darkGray} />
+            <TouchableOpacity onPress={() => setPendingProduct(null)} style={s.productPreviewDismiss}>
+              <Ionicons name="close" size={16} color={C.darkGray} />
             </TouchableOpacity>
           </View>
         )}
 
         {/* Input bar */}
-        <View style={[styles.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
-          <View style={styles.attachGroup}>
+        <View style={[s.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
+          <View style={s.attachGroup}>
             <TouchableOpacity
-              style={styles.attachButton}
+              style={s.attachButton}
               onPress={handlePickImage}
               disabled={uploadingImage}
             >
               {uploadingImage
-                ? <ActivityIndicator size="small" color={Colors.primary} />
-                : <Ionicons name="image-outline" size={24} color={Colors.darkGray} />
+                ? <ActivityIndicator size="small" color={C.primary} />
+                : <Ionicons name="image-outline" size={24} color={C.darkGray} />
               }
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.attachButton}
+              style={s.attachButton}
               onPress={handleTakePhoto}
               disabled={uploadingImage}
             >
-              <Ionicons name="camera-outline" size={24} color={Colors.darkGray} />
+              <Ionicons name="camera-outline" size={24} color={C.darkGray} />
             </TouchableOpacity>
           </View>
-          <View style={styles.inputContainer}>
+          <View style={s.inputContainer}>
             <TextInput
-              style={styles.textInput}
+              style={s.textInput}
               placeholder={t.typeMessage}
-              placeholderTextColor={Colors.darkTextSecondary}
+              placeholderTextColor={C.darkGray}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -433,13 +801,13 @@ export default function ChatRoomScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.sendButton, inputText.trim() && styles.sendButtonActive]}
+            style={[s.sendButton, inputText.trim() && s.sendButtonActive]}
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
           >
             {sending
-              ? <ActivityIndicator size="small" color={Colors.white} />
-              : <Ionicons name="send" size={20} color={inputText.trim() ? Colors.white : Colors.darkGray} />
+              ? <ActivityIndicator size="small" color="#FFFFFF" />
+              : <Ionicons name="send" size={20} color={inputText.trim() ? '#FFFFFF' : C.darkGray} />
             }
           </TouchableOpacity>
         </View>
@@ -448,14 +816,14 @@ export default function ChatRoomScreen() {
       {/* Full-screen image viewer */}
       <Modal visible={!!viewingImage} transparent animationType="fade" onRequestClose={() => setViewingImage(null)}>
         <StatusBar hidden />
-        <View style={styles.imageViewerBg}>
-          <TouchableOpacity style={styles.imageViewerClose} onPress={() => setViewingImage(null)}>
-            <Ionicons name="close" size={28} color={Colors.white} />
+        <View style={s.imageViewerBg}>
+          <TouchableOpacity style={s.imageViewerClose} onPress={() => setViewingImage(null)}>
+            <Ionicons name="close" size={28} color="#FFFFFF" />
           </TouchableOpacity>
           {viewingImage && (
             <Image
               source={{ uri: viewingImage }}
-              style={styles.imageViewerImg}
+              style={s.imageViewerImg}
               contentFit="contain"
               transition={200}
             />
@@ -467,365 +835,16 @@ export default function ChatRoomScreen() {
 }
 
 // ─── Read receipt indicator ───────────────────────────────────────────────────
-function ReadReceipt({ read }: { read: boolean }) {
+function ReadReceipt({ read, C }: { read: boolean; C: ReturnType<typeof useThemeColors> }) {
   return (
-    <View style={styles.readReceipt}>
+    <View style={{ marginLeft: 2 }}>
       <Ionicons
         name="checkmark-done"
         size={13}
-        color={read ? Colors.primary : 'rgba(255,255,255,0.5)'}
+        color={read ? C.primary : 'rgba(255,255,255,0.5)'}
       />
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.offWhite,
-  },
-  flex: { flex: 1 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGray,
-    gap: Spacing.sm,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerProfile: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  headerInfo: {
-    marginLeft: Spacing.xs,
-  },
-  headerName: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-  },
-  headerStatus: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.success,
-  },
-  headerAction: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  messageList: {
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    marginBottom: Spacing.md,
-    alignItems: 'flex-end',
-    gap: Spacing.sm,
-  },
-  messageRowMe: {
-    flexDirection: 'row-reverse',
-  },
-  messageBubble: {
-    maxWidth: SCREEN_WIDTH * 0.72,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-  },
-  bubbleMe: {
-    backgroundColor: Colors.primary,
-    borderBottomRightRadius: 4,
-  },
-  bubbleOther: {
-    backgroundColor: Colors.white,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-  },
-  messageText: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.charcoal,
-    lineHeight: 21,
-  },
-  messageTextMe: {
-    color: Colors.white,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xs,
-  },
-  metaRowMe: {
-    justifyContent: 'flex-end',
-    gap: 3,
-  },
-  timestamp: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 10,
-    color: Colors.gray,
-  },
-  timestampMe: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-  readReceipt: {
-    marginLeft: 2,
-  },
-
-  chatImage: {
-    width: SCREEN_WIDTH * 0.55,
-    height: SCREEN_WIDTH * 0.4,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.xs,
-  },
-
-  // ─── Product preview (attachment bar) ──────────────────────────────────
-  productPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  productPreviewImg: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.lightGray,
-  },
-  productPreviewInfo: { flex: 1 },
-  productPreviewName: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-  },
-  productPreviewPrice: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.primary,
-    marginTop: 2,
-  },
-  productPreviewSend: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  productPreviewDismiss: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.offWhite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // ─── Product card (message bubble) ─────────────────────────────────────
-  productCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.offWhite,
-    borderRadius: BorderRadius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    width: SCREEN_WIDTH * 0.6,
-  },
-  productCardMe: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  productCardImg: {
-    width: 70,
-    height: 80,
-  },
-  productCardInfo: {
-    flex: 1,
-    padding: Spacing.sm,
-    justifyContent: 'center',
-    gap: 3,
-  },
-  productCardName: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.nearBlack,
-    lineHeight: 16,
-  },
-  productCardPrice: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.primary,
-  },
-  productCardLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 2,
-  },
-  productCardLinkTxt: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: 10,
-    color: Colors.primary,
-  },
-
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
-    backgroundColor: Colors.white,
-    gap: Spacing.sm,
-  },
-  attachButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  attachGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  inputContainer: {
-    flex: 1,
-    backgroundColor: Colors.cream,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Platform.OS === 'ios' ? Spacing.sm : 0,
-    maxHeight: 100,
-  },
-  textInput: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.nearBlack,
-    minHeight: 36,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonActive: {
-    backgroundColor: Colors.primary,
-  },
-
-  imageViewerBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageViewerClose: {
-    position: 'absolute',
-    top: 48,
-    right: 20,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageViewerImg: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 1.2,
-  },
-  receiptCard: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    marginBottom: Spacing.sm,
-    ...Shadows.sm,
-  },
-  receiptImage: {
-    width: '100%',
-    height: 140,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.lightGray,
-  },
-  receiptImagePlaceholder: {
-    width: '100%',
-    height: 140,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.lightGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.sm,
-  },
-  receiptContent: {
-    flex: 1,
-  },
-  receiptLabel: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginBottom: Spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  receiptTitle: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.nearBlack,
-    marginBottom: Spacing.xs,
-  },
-  receiptSubtitle: {
-    fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.darkGray,
-    marginBottom: Spacing.sm,
-  },
-  receiptPrice: {
-    fontFamily: Typography.semiBold.fontFamily,
-    fontSize: Typography.sizes.base,
-    color: Colors.primary,
-  },
-  receiptBtn: {
-    marginTop: Spacing.sm,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    alignSelf: 'flex-start',
-  },
-  receiptBtnText: {
-    fontFamily: Typography.medium.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.white,
-  },
-});

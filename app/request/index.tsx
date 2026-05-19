@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Alert, RefreshControl, TextInput,
@@ -15,7 +15,8 @@ import {
   getRequestsForTriper,
   CustomRequestWithProfile,
 } from '@/src/services/supabase/requests';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius, Shadows } from '@/src/lib/constants';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 interface CustomRequest {
   id: string;
@@ -72,19 +73,69 @@ function DetailModal({ item, onClose }: {
   item: CustomRequest | null;
   onClose: () => void;
 }) {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   if (!item) return null;
 
   const isOwn = item.buyerId === user?.id;
 
-  const statusColor = item.status === 'open' ? Colors.success : item.status === 'matched' ? Colors.primary : Colors.gray;
+  const statusColor = item.status === 'open' ? C.success : item.status === 'matched' ? C.primary : C.gray;
   const statusLabel = item.status === 'open' ? 'Terbuka' : item.status === 'matched' ? 'Diambil' : 'Ditutup';
+
+  const d = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+    floatingClose: {
+      position: 'absolute', top: 12, left: 16, zIndex: 10,
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.offWhite, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full },
+    statusDot: { width: 7, height: 7, borderRadius: 4 },
+    statusLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs },
+    scroll: { flex: 1 },
+    content: { paddingBottom: 48 },
+    heroImage: { width: '100%', height: 260 },
+    heroPlaceholder: { width: '100%', height: 180, backgroundColor: C.lightGray, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
+    noImageText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.gray },
+    productName: { fontFamily: Typography.serifBold.fontFamily, fontSize: 22, color: C.nearBlack, paddingHorizontal: Spacing.base, paddingTop: Spacing.base, marginBottom: Spacing.sm },
+    buyerCard: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+      marginHorizontal: Spacing.base, padding: Spacing.md,
+      backgroundColor: C.offWhite, borderRadius: BorderRadius.lg,
+      marginBottom: Spacing.base,
+    },
+    buyerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.primary + '25', alignItems: 'center', justifyContent: 'center' },
+    buyerInitial: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.primary },
+    buyerInfo: { flex: 1 },
+    buyerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.gray },
+    buyerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    timeAgo: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.gray },
+    section: { paddingHorizontal: Spacing.base, marginBottom: Spacing.base },
+    sectionTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.charcoal, marginBottom: Spacing.sm },
+    descText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.darkGray, lineHeight: 22 },
+    detailGrid: { marginHorizontal: Spacing.base, gap: Spacing.sm, marginBottom: Spacing.base },
+    detailItem: {
+      flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
+      backgroundColor: C.offWhite, borderRadius: BorderRadius.md,
+      padding: Spacing.md, borderWidth: 1, borderColor: C.lightGray,
+    },
+    detailLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.gray, width: 90 },
+    detailValue: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.nearBlack },
+    ownBanner: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+      marginHorizontal: Spacing.base, padding: Spacing.md,
+      backgroundColor: C.primary + '12', borderRadius: BorderRadius.md,
+      borderWidth: 1, borderColor: C.primary + '30', marginBottom: Spacing.base,
+    },
+    ownBannerText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: C.primary },
+  }), [C]);
 
   return (
     <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={d.safe} edges={[]}>
         <TouchableOpacity onPress={onClose} style={d.floatingClose}>
-          <Ionicons name="close" size={22} color={Colors.nearBlack} />
+          <Ionicons name="close" size={22} color={C.nearBlack} />
         </TouchableOpacity>
 
         <ScrollView style={d.scroll} contentContainerStyle={d.content} showsVerticalScrollIndicator={false}>
@@ -93,7 +144,7 @@ function DetailModal({ item, onClose }: {
             <Image source={{ uri: item.imageUrl }} style={d.heroImage} contentFit="cover" transition={300} />
           ) : (
             <View style={d.heroPlaceholder}>
-              <Ionicons name="cube-outline" size={56} color={Colors.midGray} />
+              <Ionicons name="cube-outline" size={56} color={C.midGray} />
               <Text style={d.noImageText}>Tidak ada foto referensi</Text>
             </View>
           )}
@@ -124,20 +175,20 @@ function DetailModal({ item, onClose }: {
           {/* Details Grid */}
           <View style={d.detailGrid}>
             <View style={d.detailItem}>
-              <Ionicons name="wallet-outline" size={18} color={Colors.primary} />
+              <Ionicons name="wallet-outline" size={18} color={C.primary} />
               <Text style={d.detailLabel}>Budget Maks</Text>
               <Text style={d.detailValue}>{fmtCurrency(item.maxBudget, item.currency)}</Text>
             </View>
 
             <View style={d.detailItem}>
-              <Ionicons name="grid-outline" size={18} color={Colors.primary} />
+              <Ionicons name="grid-outline" size={18} color={C.primary} />
               <Text style={d.detailLabel}>Kategori</Text>
               <Text style={d.detailValue} numberOfLines={1}>{item.category}</Text>
             </View>
 
             {item.targetCountries.length > 0 && (
               <View style={d.detailItem}>
-                <Ionicons name="location-outline" size={18} color={Colors.primary} />
+                <Ionicons name="location-outline" size={18} color={C.primary} />
                 <Text style={d.detailLabel}>Negara Tujuan</Text>
                 <Text style={d.detailValue}>{item.targetCountries.join(', ')}</Text>
               </View>
@@ -145,7 +196,7 @@ function DetailModal({ item, onClose }: {
 
             {item.referenceUrl && (
               <View style={d.detailItem}>
-                <Ionicons name="link-outline" size={18} color={Colors.primary} />
+                <Ionicons name="link-outline" size={18} color={C.primary} />
                 <Text style={d.detailLabel}>Link Referensi</Text>
                 <Text style={d.detailValue} numberOfLines={2}>{item.referenceUrl}</Text>
               </View>
@@ -155,7 +206,7 @@ function DetailModal({ item, onClose }: {
           {/* Badge milik sendiri */}
           {isOwn && (
             <View style={d.ownBanner}>
-              <Ionicons name="person-circle-outline" size={18} color={Colors.primary} />
+              <Ionicons name="person-circle-outline" size={18} color={C.primary} />
               <Text style={d.ownBannerText}>Ini adalah permintaanmu sendiri</Text>
             </View>
           )}
@@ -166,58 +217,10 @@ function DetailModal({ item, onClose }: {
   );
 }
 
-const d = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-  floatingClose: {
-    position: 'absolute', top: 12, left: 16, zIndex: 10,
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.offWhite, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  statusLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs },
-  scroll: { flex: 1 },
-  content: { paddingBottom: 48 },
-  heroImage: { width: '100%', height: 260 },
-  heroPlaceholder: { width: '100%', height: 180, backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-  noImageText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray },
-  productName: { fontFamily: Typography.serifBold.fontFamily, fontSize: 22, color: Colors.nearBlack, paddingHorizontal: Spacing.base, paddingTop: Spacing.base, marginBottom: Spacing.sm },
-  buyerCard: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    marginHorizontal: Spacing.base, padding: Spacing.md,
-    backgroundColor: Colors.offWhite, borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.base,
-  },
-  buyerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center' },
-  buyerInitial: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
-  buyerInfo: { flex: 1 },
-  buyerLabel: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
-  buyerName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  timeAgo: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray },
-  section: { paddingHorizontal: Spacing.base, marginBottom: Spacing.base },
-  sectionTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.charcoal, marginBottom: Spacing.sm },
-  descText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.darkGray, lineHeight: 22 },
-  detailGrid: { marginHorizontal: Spacing.base, gap: Spacing.sm, marginBottom: Spacing.base },
-  detailItem: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
-    backgroundColor: Colors.offWhite, borderRadius: BorderRadius.md,
-    padding: Spacing.md, borderWidth: 1, borderColor: Colors.lightGray,
-  },
-  detailLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, width: 90 },
-  detailValue: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
-  ownBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    marginHorizontal: Spacing.base, padding: Spacing.md,
-    backgroundColor: Colors.primary + '12', borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: Colors.primary + '30', marginBottom: Spacing.base,
-  },
-  ownBannerText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-});
-
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function CustomRequestsScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const [requests, setRequests]               = useState<CustomRequest[]>([]);
   const [loading, setLoading]                 = useState(true);
@@ -267,7 +270,7 @@ export default function CustomRequestsScreen() {
               <Image source={{ uri: item.imageUrl }} style={styles.productThumb} contentFit="cover" transition={200} />
             ) : (
               <View style={[styles.productThumb, styles.thumbPlaceholder]}>
-                <Ionicons name="cube-outline" size={22} color={Colors.gray} />
+                <Ionicons name="cube-outline" size={22} color={C.gray} />
               </View>
             )}
 
@@ -292,14 +295,14 @@ export default function CustomRequestsScreen() {
 
           {item.targetCountries.length > 0 && (
             <View style={styles.countriesRow}>
-              <Ionicons name="location-outline" size={13} color={Colors.gray} />
+              <Ionicons name="location-outline" size={13} color={C.gray} />
               <Text style={styles.countriesText} numberOfLines={1}>{item.targetCountries.join(' · ')}</Text>
             </View>
           )}
 
           <View style={styles.cardFooter}>
             <View style={styles.buyerRow}>
-              <Ionicons name="person-circle-outline" size={16} color={Colors.gray} />
+              <Ionicons name="person-circle-outline" size={16} color={C.gray} />
               <Text style={styles.buyerName}>{item.buyerName}</Text>
             </View>
 
@@ -307,27 +310,27 @@ export default function CustomRequestsScreen() {
 
             {isOwn && (
               <View style={styles.ownBadge}>
-                <Ionicons name="person" size={12} color={Colors.primary} />
+                <Ionicons name="person" size={12} color={C.primary} />
                 <Text style={styles.ownText}>Milikmu</Text>
               </View>
             )}
 
             <View style={styles.forMeBadge}>
-              <Ionicons name="airplane" size={12} color={Colors.primary} />
+              <Ionicons name="airplane" size={12} color={C.primary} />
               <Text style={styles.forMeText}>Untuk saya</Text>
             </View>
 
-            <Ionicons name="chevron-forward" size={16} color={Colors.midGray} />
+            <Ionicons name="chevron-forward" size={16} color={C.midGray} />
           </View>
         </TouchableOpacity>
       );
     },
-    [user],
+    [user, C],
   );
 
   const ListEmpty = () => (
     <View style={styles.empty}>
-      <Ionicons name="bag-outline" size={64} color={Colors.midGray} />
+      <Ionicons name="bag-outline" size={64} color={C.midGray} />
       <Text style={styles.emptyTitle}>Belum ada permintaan untukmu</Text>
       <Text style={styles.emptySubtitle}>
         Permintaan yang dikirim khusus ke kamu akan muncul di sini.
@@ -335,24 +338,108 @@ export default function CustomRequestsScreen() {
     </View>
   );
 
+  const styles = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.offWhite },
+
+    floatingBack: {
+      position: 'absolute', top: 12, left: 20, zIndex: 10,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    searchBar: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: C.white,
+      marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
+      marginTop: Spacing.sm,
+      borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md,
+      gap: Spacing.sm, borderWidth: 1, borderColor: C.midGray, ...Shadows.sm,
+    },
+    searchInput: {
+      flex: 1, fontFamily: Typography.regular.fontFamily,
+      fontSize: Typography.sizes.sm, color: C.nearBlack, paddingVertical: Spacing.md,
+    },
+
+    filterList: { maxHeight: 44 },
+    filterContent: { paddingHorizontal: Spacing.base, gap: Spacing.sm, paddingBottom: Spacing.sm },
+    filterChip: {
+      paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full,
+      backgroundColor: C.white, borderWidth: 1, borderColor: C.midGray,
+    },
+    filterChipActive: { backgroundColor: C.primary, borderColor: C.primary },
+    filterChipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray },
+    filterChipTextActive: { color: '#FFFFFF' },
+
+    listContent: { padding: Spacing.base, paddingTop: Spacing.sm, paddingBottom: 40 },
+
+    card: {
+      backgroundColor: C.white, borderRadius: BorderRadius.lg,
+      padding: Spacing.base, marginBottom: Spacing.md,
+      ...Shadows.md, borderWidth: 1, borderColor: C.lightGray,
+    },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, marginBottom: Spacing.sm },
+    productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, flexShrink: 0 },
+    thumbPlaceholder: { backgroundColor: C.lightGray, alignItems: 'center', justifyContent: 'center' },
+    cardHeaderInfo: { flex: 1 },
+    productName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: C.nearBlack, marginBottom: 4 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    categoryChip: { backgroundColor: C.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full },
+    categoryText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: C.primary, textTransform: 'capitalize' },
+    timeText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: C.gray },
+    statusBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, backgroundColor: C.success + '15' },
+    statusMatched: { backgroundColor: C.primary + '15' },
+    statusText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: C.success },
+    statusTextMatched: { color: C.primary },
+
+    description: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.darkGray, lineHeight: 20, marginBottom: Spacing.sm },
+    countriesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: Spacing.sm },
+    countriesText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: C.gray, flex: 1 },
+
+    cardFooter: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: C.lightGray },
+    buyerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+    buyerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: C.darkGray },
+    budget: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.primary },
+
+    forMeBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: Spacing.sm, paddingVertical: 4,
+      borderRadius: BorderRadius.full, backgroundColor: C.primary + '15',
+      borderWidth: 1, borderColor: C.primary,
+    },
+    forMeText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: C.primary },
+
+    ownBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: Spacing.sm, paddingVertical: 4,
+      borderRadius: BorderRadius.full, backgroundColor: C.primary + '15',
+    },
+    ownText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: C.primary },
+
+    loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+    empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: Spacing.xl },
+    emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: C.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm },
+    emptySubtitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: C.gray, textAlign: 'center', lineHeight: 20 },
+  }), [C]);
+
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
       <PageHeader title="Permintaan" onBack={() => router.back()} />
 
       {/* Search */}
       <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={16} color={Colors.gray} />
+        <Ionicons name="search-outline" size={16} color={C.gray} />
         <TextInput
           style={styles.searchInput}
           placeholder="Cari permintaan..."
-          placeholderTextColor={Colors.gray}
+          placeholderTextColor={C.gray}
           value={search}
           onChangeText={setSearch}
           returnKeyType="search"
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={Colors.gray} />
+            <Ionicons name="close-circle" size={16} color={C.gray} />
           </TouchableOpacity>
         )}
       </View>
@@ -392,7 +479,7 @@ export default function CustomRequestsScreen() {
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : (
         <FlatList
@@ -406,7 +493,7 @@ export default function CustomRequestsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); load(); }}
-              tintColor={Colors.primary}
+              tintColor={C.primary}
             />
           }
         />
@@ -420,87 +507,3 @@ export default function CustomRequestsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
-
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
-    marginHorizontal: Spacing.base, marginBottom: Spacing.sm,
-    marginTop: Spacing.sm,
-    borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md,
-    gap: Spacing.sm, borderWidth: 1, borderColor: Colors.midGray, ...Shadows.sm,
-  },
-  searchInput: {
-    flex: 1, fontFamily: Typography.regular.fontFamily,
-    fontSize: Typography.sizes.sm, color: Colors.nearBlack, paddingVertical: Spacing.md,
-  },
-
-  filterList: { maxHeight: 44 },
-  filterContent: { paddingHorizontal: Spacing.base, gap: Spacing.sm, paddingBottom: Spacing.sm },
-  filterChip: {
-    paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full,
-    backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.midGray,
-  },
-  filterChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  filterChipText: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
-  filterChipTextActive: { color: Colors.white },
-
-  listContent: { padding: Spacing.base, paddingTop: Spacing.sm, paddingBottom: 40 },
-
-  card: {
-    backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
-    padding: Spacing.base, marginBottom: Spacing.md,
-    ...Shadows.md, borderWidth: 1, borderColor: Colors.lightGray,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, marginBottom: Spacing.sm },
-  productThumb: { width: 56, height: 56, borderRadius: BorderRadius.md, flexShrink: 0 },
-  thumbPlaceholder: { backgroundColor: Colors.lightGray, alignItems: 'center', justifyContent: 'center' },
-  cardHeaderInfo: { flex: 1 },
-  productName: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.base, color: Colors.nearBlack, marginBottom: 4 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  categoryChip: { backgroundColor: Colors.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full },
-  categoryText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primaryDark, textTransform: 'capitalize' },
-  timeText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.gray },
-  statusBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, backgroundColor: Colors.successLight },
-  statusMatched: { backgroundColor: Colors.primaryPale },
-  statusText: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.success },
-  statusTextMatched: { color: Colors.primary },
-
-  description: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray, lineHeight: 20, marginBottom: Spacing.sm },
-  countriesRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: Spacing.sm },
-  countriesText: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.gray, flex: 1 },
-
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray },
-  buyerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  buyerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.darkGray },
-  budget: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.primary },
-
-  forMeBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: Spacing.sm, paddingVertical: 4,
-    borderRadius: BorderRadius.full, backgroundColor: Colors.primaryPale,
-    borderWidth: 1, borderColor: Colors.primaryLight,
-  },
-  forMeText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary },
-
-  ownBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: Spacing.sm, paddingVertical: 4,
-    borderRadius: BorderRadius.full, backgroundColor: Colors.primary + '15',
-  },
-  ownText: { fontFamily: Typography.medium.fontFamily, fontSize: 10, color: Colors.primary },
-
-  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-
-  empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: Spacing.xl },
-  emptyTitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.lg, color: Colors.charcoal, marginTop: Spacing.base, marginBottom: Spacing.sm },
-  emptySubtitle: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.gray, textAlign: 'center', lineHeight: 20 },
-});

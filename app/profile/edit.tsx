@@ -1,6 +1,7 @@
-﻿/**
+/**
  * TipL — Edit Profile Screen
  * Change avatar, display name, and email.
+ * Theme-aware: supports Dark Mode & Light Mode.
  */
 
 import React, { useState } from 'react';
@@ -17,14 +18,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '@/src/components/ui/PageHeader';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Typography, Spacing, BorderRadius } from '@/src/lib/constants';
+import { Typography, Spacing, BorderRadius } from '@/src/lib/constants';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
 import { useAuthStore } from '@/src/store/authStore';
 import { updateProfile as updateSupabaseProfile, uploadAvatar } from '@/src/services/supabase/profiles';
+import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 
 export default function EditProfileScreen() {
+  const C = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
@@ -83,20 +86,45 @@ export default function EditProfileScreen() {
     }
   };
 
+  const s = React.useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: C.white },
+    floatingBack: {
+      position: 'absolute', top: 12, left: 20, zIndex: 10,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    container: { flex: 1, paddingHorizontal: Spacing.xl },
+    avatarSection: {
+      alignItems: 'center', paddingVertical: Spacing['2xl'],
+    },
+    cameraBadge: {
+      position: 'absolute', bottom: 0, right: 0,
+      width: 30, height: 30, borderRadius: 15,
+      backgroundColor: C.primary,
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 2, borderColor: C.white,
+    },
+    changePhotoText: {
+      fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+      color: C.primary, marginTop: Spacing.sm,
+    },
+  }), [C]);
+
   return (
-    <SafeAreaView style={styles.safe} edges={[]}>
+    <SafeAreaView style={s.safe} edges={[]}>
       <PageHeader title="Edit Profil" onBack={() => router.back()} />
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={s.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Avatar */}
-        <View style={styles.avatarSection}>
+        <View style={s.avatarSection}>
           <TouchableOpacity onPress={pickAvatar}>
             <Avatar uri={avatarUri} name={displayName} size="xl" />
-            <View style={styles.cameraBadge}>
-              <Ionicons name="camera" size={16} color={Colors.white} />
+            <View style={s.cameraBadge}>
+              <Ionicons name="camera" size={16} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
-          <Text style={styles.changePhotoText}>Tap to change photo</Text>
+          <Text style={s.changePhotoText}>Tap to change photo</Text>
         </View>
 
         {/* Form */}
@@ -117,28 +145,3 @@ export default function EditProfileScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
-  floatingBack: {
-    position: 'absolute', top: 12, left: 20, zIndex: 10,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  container: { flex: 1, paddingHorizontal: Spacing.xl },
-  avatarSection: {
-    alignItems: 'center', paddingVertical: Spacing['2xl'],
-  },
-  cameraBadge: {
-    position: 'absolute', bottom: 0, right: 0,
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.white,
-  },
-  changePhotoText: {
-    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
-    color: Colors.primary, marginTop: Spacing.sm,
-  },
-});
