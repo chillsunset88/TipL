@@ -231,6 +231,7 @@ function RootLayoutNav() {
           <Stack.Screen name="order/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="profile/orders" options={{ presentation: 'card' }} />
+          <Stack.Screen name="profile/incoming-orders" options={{ presentation: 'card' }} />
           <Stack.Screen name="profile/settings" options={{ presentation: 'card' }} />
           <Stack.Screen name="profile/edit" options={{ presentation: 'card' }} />
           <Stack.Screen name="profile/trips" options={{ presentation: 'card' }} />

@@ -33,6 +33,7 @@ export default function ProfileScreen() {
     signedOutDesc: 'Masuk untuk melihat profil dan pesanan kamu',
     signInSignUp: 'Masuk / Daftar',
     jastipTitle: 'Jastip',
+    incomingOrdersLabel: 'Pesanan Masuk',
     orderGridLabel: 'Pesanan Saya',
     wishlistGridLabel: 'Wishlist',
     favoritesGridLabel: 'Tripper Favorit',
@@ -61,10 +62,12 @@ export default function ProfileScreen() {
     manageVerification: 'Kelola Verifikasi',
     manageOrders: 'Kelola Paket (Demo)',
   } : {
+
     signedOutTitle: 'Not signed in',
     signedOutDesc: 'Sign in to view your profile and orders',
     signInSignUp: 'Sign In / Sign Up',
     jastipTitle: 'Jastip',
+    incomingOrdersLabel: 'Incoming Orders',
     orderGridLabel: t.myOrders,
     wishlistGridLabel: t.myWishlist,
     favoritesGridLabel: t.myFavorites,
@@ -193,7 +196,7 @@ export default function ProfileScreen() {
             <View style={s.gridRow}>
               <GridItem icon="airplane-outline" label={t.myTrips} color={Colors.info} onPress={() => router.push('/profile/trips')} />
               <GridItem icon="add-circle-outline" label={t.createTrip} color={Colors.primary} onPress={() => router.push('/trip/create')} />
-              <GridItem icon="bag-handle-outline" label={t.requestItem} color={Colors.warning} onPress={() => router.push('/request' as any)} />
+              <GridItem icon="cube-outline" label={copy.incomingOrdersLabel} color={Colors.success} onPress={() => router.push('/profile/incoming-orders' as any)} />
             </View>
           </View>
         ) : user.verificationStatus === 'pending' ? (
@@ -427,6 +430,7 @@ const s = StyleSheet.create({
   actionDivider: { height: 1, backgroundColor: Colors.lightGray },
 
   gridRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  gridDivider: { height: 1, backgroundColor: Colors.lightGray, marginVertical: Spacing.sm },
   gridItem: { alignItems: 'center', flex: 1, paddingVertical: Spacing.xs },
   gridIcon: { width: 54, height: 54, borderRadius: BorderRadius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
   gridLabel: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.xs, color: Colors.charcoal, textAlign: 'center' },

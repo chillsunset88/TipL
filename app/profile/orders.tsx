@@ -99,7 +99,9 @@ export default function OrdersScreen() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const filtered = orders.filter((o) => matchFilter(o.status ?? 'pending', filter));
+  // Hanya tampilkan order di mana user adalah PEMBELI (tiper)
+  const myPurchases = orders.filter((o) => o.tiper_id === user?.id);
+  const filtered = myPurchases.filter((o) => matchFilter(o.status ?? 'pending', filter));
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -109,7 +111,7 @@ export default function OrdersScreen() {
 
   // Hitung badge per filter
   const countFor = (key: FilterKey) =>
-    key === 'all' ? 0 : orders.filter((o) => matchFilter(o.status ?? 'pending', key)).length;
+    key === 'all' ? 0 : myPurchases.filter((o) => matchFilter(o.status ?? 'pending', key)).length;
 
   return (
     <SafeAreaView style={st.safe} edges={[]}>
@@ -162,8 +164,8 @@ export default function OrdersScreen() {
               <Text style={st.emptyTitle}>Tidak ada pesanan</Text>
               <Text style={st.emptySub}>
                 {filter === 'all'
-                  ? 'Belum ada order yang dibuat'
-                  : `Tidak ada order dengan status "${FILTERS.find(f => f.key === filter)?.label}"`}
+                  ? 'Kamu belum pernah memesan produk apapun.'
+                  : `Tidak ada pesanan dengan status "${FILTERS.find(f => f.key === filter)?.label}"`}
               </Text>
             </View>
           }

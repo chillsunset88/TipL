@@ -39,3 +39,25 @@ export async function hasReviewed(orderId: string, reviewerId: string): Promise<
     .eq('reviewer_id', reviewerId);
   return (count ?? 0) > 0;
 }
+
+/** Hitung ulang rating & total_reviews di profiles setelah review baru masuk */
+export async function recalculateProfileRating(revieweeId: string): Promise<void> {
+  const { data } = await supabase
+    .from('reviews')
+    .select('rating')
+    .eq('reviewee_id', revieweeId);
+
+  if (!data || data.length === 0) return;
+
+  const total = data.length;
+  const avg = data.reduce((sum, r) => sum + r.rating, 0) / total;
+
+  await (supabase as any)
+    .from('profiles')
+    .update({
+      rating: Math.round(avg * 10) / 10,
+      total_reviews: total,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', revieweeId);
+}

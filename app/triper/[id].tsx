@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/src/store/settingsStore';
 import { getProfile } from '@/src/services/supabase/profiles';
 import { getMyTrips, getProductsByTriper } from '@/src/services/supabase/trips';
 import { isFavoriteTriper, toggleFavoriteTriper } from '@/src/services/supabase/favorites';
+import { getReviewsForUser, type ReviewWithProfile } from '@/src/services/supabase/reviews';
 import type { Database } from '@/src/lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -49,6 +50,7 @@ export default function TriperProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<ReviewWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [followed, setFollowed] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -59,10 +61,12 @@ export default function TriperProfileScreen() {
       getProfile(id),
       getMyTrips(id),
       getProductsByTriper(id),
-    ]).then(([prof, trps, prods]) => {
+      getReviewsForUser(id),
+    ]).then(([prof, trps, prods, revs]) => {
       setProfile(prof);
       setTrips(trps.filter((t) => t.status === 'open'));
       setProducts(prods);
+      setReviews(revs);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [id]);
 
@@ -304,6 +308,66 @@ export default function TriperProfileScreen() {
           )}
         </View>
 
+        {/* ── Ulasan ── */}
+        <View style={s.section}>
+          <View style={s.sectionHead}>
+            <Text style={s.sectionLabel}>ULASAN PEMBELI</Text>
+            {reviews.length > 0 && (
+              <View style={s.pill}>
+                <Text style={s.pillTxt}>{reviews.length}</Text>
+              </View>
+            )}
+          </View>
+
+          {reviews.length === 0 ? (
+            <View style={s.emptyProd}>
+              <Ionicons name="star-outline" size={36} color={Colors.midGray} />
+              <Text style={s.emptyProdTxt}>Belum ada ulasan</Text>
+            </View>
+          ) : (
+            <View style={s.reviewList}>
+              {reviews.map((r) => {
+                const reviewer = r.reviewer as any;
+                const name = reviewer?.full_name ?? 'Pengguna';
+                const avatar = reviewer?.avatar_url ?? null;
+                const date = r.created_at
+                  ? new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : '';
+                return (
+                  <View key={r.id} style={s.reviewCard}>
+                    <View style={s.reviewHeader}>
+                      <View style={s.reviewAvatar}>
+                        {avatar ? (
+                          <Image source={{ uri: avatar }} style={s.reviewAvatarImg} contentFit="cover" />
+                        ) : (
+                          <Text style={s.reviewAvatarTxt}>{name[0]?.toUpperCase()}</Text>
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.reviewerName}>{name}</Text>
+                        <Text style={s.reviewDate}>{date}</Text>
+                      </View>
+                      <View style={s.reviewStars}>
+                        {[1,2,3,4,5].map((i) => (
+                          <Ionicons
+                            key={i}
+                            name={i <= r.rating ? 'star' : 'star-outline'}
+                            size={13}
+                            color={Colors.primary}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                    {r.comment ? (
+                      <Text style={s.reviewComment}>{r.comment}</Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
       </ScrollView>
     </View>
   );
@@ -435,4 +499,26 @@ const s = StyleSheet.create({
 
   emptyProd: { alignItems: 'center', paddingVertical: Spacing['2xl'], gap: Spacing.sm },
   emptyProdTxt: { fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm, color: Colors.darkGray },
+
+  reviewList: { gap: Spacing.md },
+  reviewCard: {
+    backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
+    padding: Spacing.base, borderWidth: 1, borderColor: Colors.lightGray, ...Shadows.sm,
+  },
+  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  reviewAvatar: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.primaryPale, alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  reviewAvatarImg: { width: 36, height: 36 },
+  reviewAvatarTxt: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.base, color: Colors.primary },
+  reviewerName: { fontFamily: Typography.medium.fontFamily, fontSize: Typography.sizes.sm, color: Colors.nearBlack },
+  reviewDate: { fontFamily: Typography.regular.fontFamily, fontSize: 10, color: Colors.gray, marginTop: 1 },
+  reviewStars: { flexDirection: 'row', gap: 2 },
+  reviewComment: {
+    fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.sm,
+    color: Colors.charcoal, lineHeight: 20,
+    paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.lightGray,
+  },
 });

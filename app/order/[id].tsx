@@ -27,7 +27,7 @@ import { useOrder, updateOrderStatus } from '@/src/lib/hooks/useOrders';
 import { useAuthStore } from '@/src/store/authStore';
 import { createXenditInvoice } from '@/src/lib/xendit';
 import { createEscrowPayment, releaseEscrow, disputeEscrow } from '@/src/services/supabase/escrow';
-import { hasReviewed, submitReview } from '@/src/services/supabase/reviews';
+import { hasReviewed, submitReview, recalculateProfileRating } from '@/src/services/supabase/reviews';
 import { addDeliveryReminderEvent } from '@/src/services/calendar';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
@@ -207,6 +207,8 @@ export default function OrderDetailScreen() {
       rating,
       comment: comment || null,
     });
+    // Update rating & total_reviews di profil jastiper secara langsung
+    await recalculateProfileRating(order.triper_id).catch(() => {});
     setAlreadyReviewed(true);
   };
 
@@ -256,7 +258,7 @@ export default function OrderDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Status Card */}
         <LinearGradient
           colors={statusCfg.gradient}
@@ -316,25 +318,25 @@ export default function OrderDetailScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
 
-      {/* Action buttons (fixed bottom) */}
-      <ActionBar
-        order={order}
-        status={status}
-        isTiper={isTiper}
-        isTriper={isTriper}
-        isAdmin={isAdmin}
-        loading={actionLoading}
-        alreadyReviewed={alreadyReviewed}
-        onPayNow={handlePayNow}
-        onAccept={handleAccept}
-        onMarkShipped={handleMarkShipped}
-        onConfirmReceipt={handleConfirmReceipt}
-        onDispute={handleDispute}
-        onAdminSetStatus={(s) => withLoading(() => updateOrderStatus(order.id, s))}
-        onLeaveReview={() => setReviewVisible(true)}
-      />
+        {/* Action section — di dalam scroll agar tidak menutupi konten */}
+        <ActionBar
+          order={order}
+          status={status}
+          isTiper={isTiper}
+          isTriper={isTriper}
+          isAdmin={isAdmin}
+          loading={actionLoading}
+          alreadyReviewed={alreadyReviewed}
+          onPayNow={handlePayNow}
+          onAccept={handleAccept}
+          onMarkShipped={handleMarkShipped}
+          onConfirmReceipt={handleConfirmReceipt}
+          onDispute={handleDispute}
+          onAdminSetStatus={(s) => withLoading(() => updateOrderStatus(order.id, s))}
+          onLeaveReview={() => setReviewVisible(true)}
+        />
+      </ScrollView>
 
       <ReviewModal
         visible={reviewVisible}
@@ -425,6 +427,26 @@ function ActionBar({ status, isTiper, isTriper, isAdmin, loading, alreadyReviewe
             );
           })}
         </View>
+
+        {/* Review section tetap muncul meski admin, kalau user juga tiper di order ini */}
+        {status === 'completed' && isTiper && (
+          <View style={styles.adminReviewDivider}>
+            {alreadyReviewed ? (
+              <View style={styles.reviewedBadge}>
+                <Ionicons name="star" size={14} color={Colors.primary} />
+                <Text style={styles.reviewedBadgeText}>{t.alreadyReviewed}</Text>
+              </View>
+            ) : (
+              <Button
+                title={t.leaveReview}
+                onPress={onLeaveReview}
+                fullWidth
+                size="lg"
+                icon={<Ionicons name="star-outline" size={18} color={Colors.white} />}
+              />
+            )}
+          </View>
+        )}
       </View>
     );
   }
@@ -658,15 +680,13 @@ const styles = StyleSheet.create({
   },
 
   actionBar: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
     backgroundColor: Colors.white,
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.base,
-    paddingBottom: Spacing.xl,
+    paddingVertical: Spacing.xl,
+    marginTop: Spacing.xl,
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
-    ...Shadows.lg,
+    borderRadius: 0,
   },
 
   adminHeader: {
@@ -703,6 +723,12 @@ const styles = StyleSheet.create({
   terminalText: {
     fontFamily: Typography.medium.fontFamily,
     fontSize: Typography.sizes.sm, color: Colors.darkGray,
+  },
+  adminReviewDivider: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGray,
   },
   reviewedBadge: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

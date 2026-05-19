@@ -10,6 +10,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -53,8 +54,9 @@ export function ReviewModal({ visible, travelerName, onClose, onSubmit }: Props)
       await onSubmit(rating, comment.trim());
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setDone(true);
-    } catch {
+    } catch (e: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Gagal Mengirim Ulasan', e?.message ?? 'Terjadi kesalahan. Coba lagi.');
     } finally {
       setLoading(false);
     }
