@@ -1,3 +1,4 @@
+//app/product/[id].tsx
 /**
  * TipL — Product Detail Page
  * Gold luxury theme. Supports both mock (p1, p2…) and Supabase UUID products.
@@ -152,19 +153,26 @@ export default function ProductDetailScreen() {
   const isOwnProduct = !!currentUserId && currentUserId === product.travelerId;
 
   const handleChat = () => {
-    if (!product || !product.tripId || !product.travelerId) {
-      Alert.alert('Chat', 'Info triper tidak tersedia.');
-      return;
-    }
-    if (isOwnProduct) {
-      Alert.alert('Chat', 'Ini adalah item milikmu sendiri.');
-      return;
-    }
-    router.push({
-      pathname: '/chat/[id]',
-      params: { id: product.tripId, receiverId: product.travelerId },
-    } as any);
-  };
+  if (!product?.travelerId) {
+    Alert.alert('Chat', 'Info triper tidak tersedia.');
+    return;
+  }
+  if (isOwnProduct) {
+    Alert.alert('Chat', 'Ini adalah item milikmu sendiri.');
+    return;
+  }
+  router.push({
+    pathname: '/chat/[id]',
+    params: {
+      id: product.travelerId,
+      receiverId: product.travelerId,
+      productId: product.id,
+      productName: product.name,
+      productPrice: String(product.priceMin),
+      productImage: product.imageUrl,
+    },
+  } as any);
+};
 
   const handleAddToCart = () => {
     if (isOwnProduct) {

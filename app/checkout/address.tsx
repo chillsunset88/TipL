@@ -160,14 +160,16 @@ export default function CheckoutAddressScreen() {
           contentContainerStyle={st.list}
           showsVerticalScrollIndicator={false}
           ListFooterComponent={
-            <TouchableOpacity
-              style={st.addNewBtn}
-              onPress={() => router.push('/profile/addresses')}
-            >
-              <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-              <Text style={st.addNewTxt}>{t.addNewAddress}</Text>
-            </TouchableOpacity>
-          }
+  addresses.length > 0 ? (
+    <TouchableOpacity
+      style={st.addNewBtn}
+      onPress={() => router.push('/profile/addresses')}
+    >
+      <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
+      <Text style={st.addNewTxt}>{t.addNewAddress}</Text>
+    </TouchableOpacity>
+  ) : null
+}
           ListEmptyComponent={
             <View style={st.emptyWrap}>
               <Ionicons name="location-outline" size={56} color={Colors.midGray} />

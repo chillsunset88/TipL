@@ -100,7 +100,7 @@ export default function SettingsScreen() {
             label={t.myAddresses}
             onPress={() => router.push('/profile/addresses')}
           />
-          <RowItem
+          {/* <RowItem
             icon="card-outline"
             label={t.paymentMethods}
             onPress={() => router.push('/profile/payments')}
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
               if (verificationStatus !== 'approved') router.push('/verification');
             }}
             last
-          />
+          /> */}
         </View>
 
         {/* ── Pengaturan ── */}

@@ -1,3 +1,4 @@
+//src/lib/types.ts
 /**
  * TipL — Domain Type Definitions
  * Core interfaces for the Jastip escrow platform.

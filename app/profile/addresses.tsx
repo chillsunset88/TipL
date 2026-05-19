@@ -123,7 +123,7 @@ export default function AddressesScreen() {
   };
 
   const handleSetDefault = async (addr: UserAddress) => {
-    await setDefaultAddress(userId, addr.id).catch(() => {});
+    await setDefaultAddress(addr.id, userId).catch(() => {});
     load();
   };
 

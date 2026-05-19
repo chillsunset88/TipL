@@ -1,3 +1,4 @@
+//src/lib/hooks/useChat.ts
 import { useEffect, useState, useCallback } from 'react';
 import {
   getDirectMessages,
@@ -53,6 +54,17 @@ export function useChat(currentUserId: string, otherUserId: string) {
     });
   }, [currentUserId, otherUserId]);
 
+  const sendProductCard = useCallback(async (product: {
+  id: string;
+  name: string;
+  price: string;
+  imageUrl: string;
+}): Promise<void> => {
+  const content = JSON.stringify({ _type: 'product', ...product });
+  await sendMessage(content);
+}, [sendMessage]);
+
+
   const markMessagesRead = useCallback(async (): Promise<void> => {
     if (!currentUserId || !otherUserId) return;
     await markDirectMessagesRead(currentUserId, otherUserId);
@@ -63,5 +75,5 @@ export function useChat(currentUserId: string, otherUserId: string) {
     return uploadImageService(roomId, localUri);
   }, [currentUserId, otherUserId]);
 
-  return { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage };
+  return { messages, loading, sendMessage, sendImage, sendProductCard, markMessagesRead, uploadChatImage };
 }

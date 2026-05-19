@@ -39,12 +39,29 @@ type Message = Database['public']['Tables']['messages']['Row'];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// ─── Helper: parse product card from message content ─────────────────────────
+function parseProductCard(content: string | null) {
+  if (!content) return null;
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed._type === 'product') return parsed as {
+      _type: 'product'; id: string; name: string; price: string; imageUrl: string;
+    };
+  } catch {}
+  return null;
+}
+
 export default function ChatRoomScreen() {
-  const { id, receiverId, orderId } = useLocalSearchParams<{
-    id?: string;
-    receiverId?: string;
-    orderId?: string;
-  }>();
+  const { id, receiverId, orderId, productId, productName, productPrice, productImage } =
+    useLocalSearchParams<{
+      id?: string;
+      receiverId?: string;
+      orderId?: string;
+      productId?: string;
+      productName?: string;
+      productPrice?: string;
+      productImage?: string;
+    }>();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id ?? '';
@@ -52,7 +69,7 @@ export default function ChatRoomScreen() {
   const otherUserId = receiverId ?? id ?? '';
 
   const { t } = useSettingsStore();
-  const { messages, loading, sendMessage, sendImage, markMessagesRead, uploadChatImage } = useChat(currentUserId, otherUserId);
+  const { messages, loading, sendMessage, sendImage, sendProductCard, markMessagesRead, uploadChatImage } = useChat(currentUserId, otherUserId);
   const setActiveChatId = useChatStore((s) => s.setActiveChatId);
 
   const [inputText, setInputText] = useState('');
@@ -62,6 +79,15 @@ export default function ChatRoomScreen() {
   const [otherUserName, setOtherUserName] = useState('Chat');
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  // ─── Pending product state (from product page navigation) ─────────────────
+  const [pendingProduct, setPendingProduct] = useState<{
+    id: string; name: string; price: string; imageUrl: string;
+  } | null>(
+    productId && productName && productPrice && productImage
+      ? { id: productId, name: productName, price: productPrice, imageUrl: productImage }
+      : null
+  );
 
   // Fetch the other user's profile
   useEffect(() => {
@@ -132,6 +158,18 @@ export default function ChatRoomScreen() {
     }
   }, [uploadChatImage, sendImage, currentUserId, otherUserId]);
 
+  // ─── Send product card ───────────────────────────────────────────────────
+  const handleSendProduct = useCallback(async () => {
+    if (!pendingProduct) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await sendProductCard(pendingProduct);
+      setPendingProduct(null);
+    } catch (e: any) {
+      Alert.alert('Gagal', e?.message ?? 'Tidak bisa mengirim produk.');
+    }
+  }, [pendingProduct, sendProductCard]);
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const formatTime = (iso: string | null) => {
     if (!iso) return '';
@@ -141,6 +179,7 @@ export default function ChatRoomScreen() {
   // ─── Message renderer ────────────────────────────────────────────────────
   const renderMessage = useCallback(({ item }: { item: Message }) => {
     const isMe = item.sender_id === currentUserId;
+    const productCard = parseProductCard(item.content);
 
     return (
       <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
@@ -161,8 +200,30 @@ export default function ChatRoomScreen() {
             </TouchableOpacity>
           ) : null}
 
-          {/* Text */}
-          {item.content ? (
+          {/* Product card */}
+          {productCard ? (
+            <TouchableOpacity
+              style={[styles.productCard, isMe && styles.productCardMe]}
+              activeOpacity={0.8}
+              onPress={() => router.push(`/product/${productCard.id}` as any)}
+            >
+              <Image source={{ uri: productCard.imageUrl }} style={styles.productCardImg} contentFit="cover" />
+              <View style={styles.productCardInfo}>
+                <Text style={[styles.productCardName, isMe && { color: Colors.white }]} numberOfLines={2}>
+                  {productCard.name}
+                </Text>
+                <Text style={[styles.productCardPrice, isMe && { color: 'rgba(255,255,255,0.85)' }]}>
+                  {'Rp ' + Number(productCard.price).toLocaleString('id-ID')}
+                </Text>
+                <View style={styles.productCardLink}>
+                  <Ionicons name="arrow-forward-circle" size={13} color={isMe ? 'rgba(255,255,255,0.7)' : Colors.primary} />
+                  <Text style={[styles.productCardLinkTxt, isMe && { color: 'rgba(255,255,255,0.7)' }]}>
+                    Lihat produk
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ) : item.content ? (
             <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
               {item.content}
             </Text>
@@ -187,11 +248,17 @@ export default function ChatRoomScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color={Colors.nearBlack} />
         </TouchableOpacity>
-        <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerName}>{otherUserName}</Text>
-          <Text style={styles.headerStatus}>{t.online}</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.headerProfile}
+          activeOpacity={0.7}
+          onPress={() => router.push(`/triper/${otherUserId}` as any)}
+        >
+          <Avatar uri={otherUserAvatar} name={otherUserName} size="sm" />
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerName}>{otherUserName}</Text>
+            <Text style={styles.headerStatus}>{t.online}</Text>
+          </View>
+        </TouchableOpacity>
         {orderId && (
           <TouchableOpacity
             style={styles.headerAction}
@@ -225,6 +292,25 @@ export default function ChatRoomScreen() {
               : null
           }
         />
+
+        {/* Product attachment preview */}
+        {pendingProduct && (
+          <View style={styles.productPreview}>
+            <Image source={{ uri: pendingProduct.imageUrl }} style={styles.productPreviewImg} contentFit="cover" />
+            <View style={styles.productPreviewInfo}>
+              <Text style={styles.productPreviewName} numberOfLines={1}>{pendingProduct.name}</Text>
+              <Text style={styles.productPreviewPrice}>
+                {'Rp ' + Number(pendingProduct.price).toLocaleString('id-ID')}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleSendProduct} style={styles.productPreviewSend}>
+              <Ionicons name="send" size={18} color={Colors.white} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setPendingProduct(null)} style={styles.productPreviewDismiss}>
+              <Ionicons name="close" size={16} color={Colors.darkGray} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Input bar */}
         <View style={[styles.inputBar, { paddingBottom: insets.bottom + Spacing.md }]}>
@@ -324,8 +410,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerInfo: {
+  headerProfile: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerInfo: {
     marginLeft: Spacing.xs,
   },
   headerName: {
@@ -409,6 +500,99 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH * 0.4,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.xs,
+  },
+
+  // ─── Product preview (attachment bar) ──────────────────────────────────
+  productPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGray,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  productPreviewImg: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.lightGray,
+  },
+  productPreviewInfo: { flex: 1 },
+  productPreviewName: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.nearBlack,
+  },
+  productPreviewPrice: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  productPreviewSend: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productPreviewDismiss: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.offWhite,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ─── Product card (message bubble) ─────────────────────────────────────
+  productCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.offWhite,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.lightGray,
+    width: SCREEN_WIDTH * 0.6,
+  },
+  productCardMe: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  productCardImg: {
+    width: 70,
+    height: 80,
+  },
+  productCardInfo: {
+    flex: 1,
+    padding: Spacing.sm,
+    justifyContent: 'center',
+    gap: 3,
+  },
+  productCardName: {
+    fontFamily: Typography.medium.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.nearBlack,
+    lineHeight: 16,
+  },
+  productCardPrice: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.primary,
+  },
+  productCardLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
+  productCardLinkTxt: {
+    fontFamily: Typography.regular.fontFamily,
+    fontSize: 10,
+    color: Colors.primary,
   },
 
   inputBar: {
