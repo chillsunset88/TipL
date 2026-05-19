@@ -8,6 +8,7 @@ import { Avatar } from '@/src/components/ui/Avatar';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
 import { signOut } from '@/src/services/supabase/auth';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
@@ -25,12 +26,83 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { t, locale } = useSettingsStore();
+
+  const copy = locale === 'id' ? {
+    signedOutTitle: 'Belum Masuk',
+    signedOutDesc: 'Masuk untuk melihat profil dan pesanan kamu',
+    signInSignUp: 'Masuk / Daftar',
+    jastipTitle: 'Jastip',
+    orderGridLabel: 'Pesanan Saya',
+    wishlistGridLabel: 'Wishlist',
+    favoritesGridLabel: 'Tripper Favorit',
+    verificationTitle: 'Jadilah Jastiper',
+    verificationDesc: 'Verifikasi identitasmu untuk mulai berjastip dan terima pesanan.',
+    verificationRejectedDesc: 'Verifikasi kamu ditolak. Coba ajukan kembali.',
+    verificationRejectedBadge: 'Ditolak — ajukan ulang',
+    verificationBenefits: [
+      'Buat & kelola trip sendiri',
+      'Terima pesanan dari tiper',
+      'Dapatkan penghasilan tambahan',
+    ],
+    verificationReapplyText: 'Ajukan Ulang',
+    verificationStartText: 'Mulai Verifikasi',
+    pendingTitle: 'Menunggu Verifikasi',
+    pendingDesc: 'Dokumenmu sedang ditinjau tim TipL. Proses membutuhkan 1–2 hari kerja.',
+    pendingStatus: 'Sedang ditinjau...',
+    helpTitle: 'Bantuan',
+    helpCenterLabel: 'Pusat Bantuan',
+    contactUsLabel: 'Hubungi Kami',
+    termsLabel: 'Syarat & Ketentuan',
+    termsSub: 'Kebijakan privasi',
+    aboutAppLabel: 'Tentang TipL',
+    versionLabel: 'Versi 1.0.0',
+    adminPanelLabel: 'Admin',
+    manageVerification: 'Kelola Verifikasi',
+    manageOrders: 'Kelola Paket (Demo)',
+  } : {
+    signedOutTitle: 'Not signed in',
+    signedOutDesc: 'Sign in to view your profile and orders',
+    signInSignUp: 'Sign In / Sign Up',
+    jastipTitle: 'Jastip',
+    orderGridLabel: t.myOrders,
+    wishlistGridLabel: t.myWishlist,
+    favoritesGridLabel: t.myFavorites,
+    verificationTitle: 'Become a Tripper',
+    verificationDesc: 'Verify your identity to start accepting requests and earning.',
+    verificationRejectedDesc: 'Your verification was rejected. Please reapply.',
+    verificationRejectedBadge: 'Rejected — reapply now',
+    verificationBenefits: [
+      'Create & manage trips',
+      'Accept orders from buyers',
+      'Earn extra income',
+    ],
+    verificationReapplyText: 'Reapply',
+    verificationStartText: 'Start Verification',
+    pendingTitle: 'Waiting for Review',
+    pendingDesc: 'Your documents are under review. This usually takes 1–2 business days.',
+    pendingStatus: 'Under review...',
+    helpTitle: 'Help',
+    helpCenterLabel: 'Help Center',
+    contactUsLabel: 'Contact Us',
+    termsLabel: 'Terms & Privacy',
+    termsSub: 'Privacy policy',
+    aboutAppLabel: 'About TipL',
+    versionLabel: 'Version 1.0.0',
+    adminPanelLabel: 'Admin',
+    manageVerification: 'Manage Verification',
+    manageOrders: 'Manage Orders (Demo)',
+  };
+
+  const verifyButtonLabel = user?.verificationStatus === 'rejected'
+    ? copy.verificationReapplyText
+    : copy.verificationStartText;
 
   const handleSignOut = () => {
-    Alert.alert('Keluar Akun', 'Apakah kamu yakin ingin keluar?', [
-      { text: 'Batal', style: 'cancel' },
+    Alert.alert(t.signOut, t.signOutConfirm, [
+      { text: t.cancel, style: 'cancel' },
       {
-        text: 'Keluar',
+        text: t.signOut,
         style: 'destructive',
         onPress: async () => {
           try { await signOut(); } catch {}
@@ -46,10 +118,10 @@ export default function ProfileScreen() {
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.authRequired}>
           <Ionicons name="person-circle-outline" size={64} color={Colors.midGray} />
-          <Text style={s.authTitle}>Belum Masuk</Text>
-          <Text style={s.authSub}>Masuk untuk melihat profil dan pesanan kamu</Text>
+          <Text style={s.authTitle}>{copy.signedOutTitle}</Text>
+          <Text style={s.authSub}>{copy.signedOutDesc}</Text>
           <TouchableOpacity style={s.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
-            <Text style={s.signInTxt}>Masuk / Daftar</Text>
+            <Text style={s.signInTxt}>{copy.signInSignUp}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -74,7 +146,7 @@ export default function ProfileScreen() {
               onPress={() => router.push('/profile/edit')}
             >
               <Ionicons name="pencil-outline" size={11} color={Colors.primary} />
-              <Text style={s.editBadgeTxt}>Ubah Profil</Text>
+              <Text style={s.editBadgeTxt}>{t.editProfile}</Text>
             </TouchableOpacity>
           </View>
           <View style={s.topActions}>
@@ -95,19 +167,19 @@ export default function ProfileScreen() {
           <View style={s.gridRow}>
             <GridItem
               icon="receipt-outline"
-              label="Pesanan Saya"
+              label={copy.orderGridLabel}
               color={Colors.primary}
               onPress={() => router.push('/profile/orders')}
             />
             <GridItem
               icon="heart-outline"
-              label="Wishlist"
+              label={copy.wishlistGridLabel}
               color={Colors.error}
               onPress={() => router.push('/profile/wishlist')}
             />
             <GridItem
               icon="star-outline"
-              label="Tripper Favorit"
+              label={copy.favoritesGridLabel}
               color={Colors.warning}
               onPress={() => router.push('/profile/favorites' as any)}
             />
@@ -117,32 +189,32 @@ export default function ProfileScreen() {
         {/* ── Jastip card (hanya jika sudah terverifikasi) ── */}
         {(user.verificationStatus === 'approved' || user.role === 'admin') ? (
           <View style={s.card}>
-            <Text style={s.cardTitle}>Jastip</Text>
+            <Text style={s.cardTitle}>{copy.jastipTitle}</Text>
             <View style={s.gridRow}>
-              <GridItem icon="airplane-outline"   label="Trip Saya"  color={Colors.info}    onPress={() => router.push('/profile/trips')} />
-              <GridItem icon="add-circle-outline" label="Buat Trip"  color={Colors.primary} onPress={() => router.push('/trip/create')} />
-              <GridItem icon="bag-handle-outline" label="Permintaan" color={Colors.warning} onPress={() => router.push('/request' as any)} />
+              <GridItem icon="airplane-outline" label={t.myTrips} color={Colors.info} onPress={() => router.push('/profile/trips')} />
+              <GridItem icon="add-circle-outline" label={t.createTrip} color={Colors.primary} onPress={() => router.push('/trip/create')} />
+              <GridItem icon="bag-handle-outline" label={t.requestItem} color={Colors.warning} onPress={() => router.push('/request' as any)} />
             </View>
           </View>
         ) : user.verificationStatus === 'pending' ? (
-          <VerificationPendingCard />
+          <VerificationPendingCard copy={copy} />
         ) : (
-          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} />
+          <VerificationPromoCard rejected={user.verificationStatus === 'rejected'} copy={copy} verifyButtonLabel={verifyButtonLabel} />
         )}
 
         {/* ── Admin panel (hanya untuk role admin) ── */}
         {user.role === 'admin' && (
           <View style={s.card}>
-            <Text style={s.cardTitle}>Admin</Text>
+            <Text style={s.cardTitle}>{copy.adminPanelLabel}</Text>
             <ActionRow
               icon="shield-checkmark-outline"
-              label="Kelola Verifikasi"
+              label={copy.manageVerification}
               color={Colors.info}
               onPress={() => router.push('/admin/verifications' as any)}
             />
             <ActionRow
               icon="cube-outline"
-              label="Kelola Paket (Demo)"
+              label={copy.manageOrders}
               color={Colors.warning}
               onPress={() => router.push('/admin/orders' as any)}
             />
@@ -151,20 +223,20 @@ export default function ProfileScreen() {
 
         {/* ── Help & Support ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>Bantuan</Text>
-          <SettingRow icon="help-circle-outline"         label="Pusat Bantuan"      sub="FAQ & panduan penggunaan"  onPress={() => router.push('/help')} />
-          <SettingRow icon="chatbubble-ellipses-outline" label="Hubungi Kami"        sub="Chat dengan tim TipL"      onPress={() => {}} />
-          <SettingRow icon="document-text-outline"       label="Syarat & Ketentuan"  sub="Kebijakan privasi"         onPress={() => {}} />
-          <SettingRow icon="information-circle-outline"  label="Tentang TipL"        sub="Versi 1.0.0"               onPress={() => {}} last />
+          <Text style={s.cardTitle}>{copy.helpTitle}</Text>
+          <SettingRow icon="help-circle-outline" label={copy.helpCenterLabel} sub={locale === 'id' ? 'FAQ & panduan penggunaan' : 'FAQ & usage guide'} onPress={() => router.push('/help')} />
+          <SettingRow icon="chatbubble-ellipses-outline" label={copy.contactUsLabel} sub={locale === 'id' ? 'Chat dengan tim TipL' : 'Chat with TipL support'} onPress={() => {}} />
+          <SettingRow icon="document-text-outline" label={copy.termsLabel} sub={copy.termsSub} onPress={() => {}} />
+          <SettingRow icon="information-circle-outline" label={copy.aboutAppLabel} sub={copy.versionLabel} onPress={() => {}} last />
         </View>
 
         {/* ── Sign out ── */}
         <View style={s.signOutWrap}>
           <TouchableOpacity style={s.signOutRow} activeOpacity={0.7} onPress={handleSignOut}>
             <Ionicons name="log-out-outline" size={20} color={Colors.error} />
-            <Text style={s.signOutTxt}>Keluar Akun</Text>
+            <Text style={s.signOutTxt}>{t.signOut}</Text>
           </TouchableOpacity>
-          <Text style={s.versionTxt}>TipL v1.0.0</Text>
+          <Text style={s.versionTxt}>{copy.versionLabel}</Text>
         </View>
 
         <View style={{ height: 100 }} />
@@ -175,7 +247,7 @@ export default function ProfileScreen() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function VerificationPromoCard({ rejected }: { rejected: boolean }) {
+function VerificationPromoCard({ rejected, copy, verifyButtonLabel }: { rejected: boolean; copy: any; verifyButtonLabel: string }) {
   return (
     <View style={s.verifyCard}>
       <View style={s.verifyTop}>
@@ -183,22 +255,20 @@ function VerificationPromoCard({ rejected }: { rejected: boolean }) {
           <Ionicons name="shield-checkmark-outline" size={28} color={Colors.primary} />
         </View>
         <View style={s.verifyTextWrap}>
-          <Text style={s.verifyTitle}>Jadilah Jastiper</Text>
+          <Text style={s.verifyTitle}>{copy.verificationTitle}</Text>
           <Text style={s.verifySub}>
-            {rejected
-              ? 'Verifikasi kamu ditolak. Coba ajukan kembali.'
-              : 'Verifikasi identitasmu untuk mulai berjastip dan terima pesanan.'}
+            {rejected ? copy.verificationRejectedDesc : copy.verificationDesc}
           </Text>
         </View>
       </View>
       {rejected && (
         <View style={s.rejectedPill}>
           <Ionicons name="close-circle" size={13} color={Colors.error} />
-          <Text style={s.rejectedTxt}>Ditolak — ajukan ulang</Text>
+          <Text style={s.rejectedTxt}>{copy.verificationRejectedBadge}</Text>
         </View>
       )}
       <View style={s.verifyBenefits}>
-        {['Buat & kelola trip sendiri', 'Terima pesanan dari tiper', 'Dapatkan penghasilan tambahan'].map((b) => (
+        {copy.verificationBenefits.map((b) => (
           <View key={b} style={s.benefitRow}>
             <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
             <Text style={s.benefitTxt}>{b}</Text>
@@ -207,13 +277,13 @@ function VerificationPromoCard({ rejected }: { rejected: boolean }) {
       </View>
       <TouchableOpacity style={s.verifyBtn} onPress={() => router.push('/verification' as any)}>
         <Ionicons name="shield-checkmark" size={16} color={Colors.white} />
-        <Text style={s.verifyBtnTxt}>{rejected ? 'Ajukan Ulang' : 'Mulai Verifikasi'}</Text>
+        <Text style={s.verifyBtnTxt}>{verifyButtonLabel}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function VerificationPendingCard() {
+function VerificationPendingCard({ copy }: { copy: any }) {
   return (
     <View style={[s.verifyCard, s.pendingCard]}>
       <View style={s.verifyTop}>
@@ -221,15 +291,13 @@ function VerificationPendingCard() {
           <Ionicons name="time-outline" size={28} color={Colors.warning} />
         </View>
         <View style={s.verifyTextWrap}>
-          <Text style={s.verifyTitle}>Menunggu Verifikasi</Text>
-          <Text style={s.verifySub}>
-            Dokumenmu sedang ditinjau tim TipL. Proses membutuhkan 1–2 hari kerja.
-          </Text>
+          <Text style={s.verifyTitle}>{copy.pendingTitle}</Text>
+          <Text style={s.verifySub}>{copy.pendingDesc}</Text>
         </View>
       </View>
       <View style={s.pendingPill}>
         <ActivityIndicator size="small" color={Colors.warning} style={{ transform: [{ scale: 0.7 }] }} />
-        <Text style={s.pendingPillTxt}>Sedang ditinjau...</Text>
+        <Text style={s.pendingPillTxt}>{copy.pendingStatus}</Text>
       </View>
     </View>
   );

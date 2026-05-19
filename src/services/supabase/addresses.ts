@@ -56,7 +56,9 @@ export async function getAddressById(id: string): Promise<UserAddress | null> {
   return data as UserAddress | null;
 }
 
-// ─── INSERT ──────────────────────────────────────────────────────────────────
+export const getAddresses = getMyAddresses;
+
+// ─── UPSERT / INSERT ─────────────────────────────────────────────────────────
 
 export async function createAddress(payload: UserAddressInsert): Promise<UserAddress> {
   // Clear existing default first if this one is marked default
@@ -101,6 +103,18 @@ export async function updateAddress(
     .update(patch)
     .eq('id', id);
   if (error) throw error;
+}
+
+export async function upsertAddress(payload: Partial<UserAddress>): Promise<UserAddress> {
+  if (payload.id) {
+    const { id, ...rest } = payload;
+    await updateAddress(id, rest as UserAddressUpdate);
+    const updated = await getAddressById(id);
+    if (!updated) throw new Error('Address not found after update');
+    return updated;
+  }
+
+  return createAddress(payload as UserAddressInsert);
 }
 
 export async function setDefaultAddress(
