@@ -84,6 +84,13 @@ export default function CreateRequestScreen() {
   const [notes, setNotes] = useState('');
   const [targetCountry, setTargetCountry] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCountryModal, setShowCountryModal] = useState(false);
+
+  const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? currency;
+
+  const handleRupiahInput = (value: string, setter: (v: string) => void) => {
+    setter(fmtNum(value));
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,7 +130,8 @@ export default function CreateRequestScreen() {
   const handleSubmit = async () => {
     if (!itemName.trim()) { Alert.alert('Info Kurang', 'Masukkan nama item.'); return; }
     if (!category) { Alert.alert('Info Kurang', 'Pilih kategori.'); return; }
-    if (!maxBudget || isNaN(Number(maxBudget)) || Number(maxBudget) <= 0) {
+    const rawBudget = Number(parseNum(maxBudget));
+    if (!maxBudget || isNaN(rawBudget) || rawBudget <= 0) {
       Alert.alert('Info Kurang', 'Masukkan budget maksimal yang valid.'); return;
     }
     if (!targetCountry) { Alert.alert('Info Kurang', 'Pilih negara tujuan.'); return; }
@@ -137,8 +145,8 @@ export default function CreateRequestScreen() {
         tiper_id: user.id,
         item_name: itemName.trim(),
         description: fullDesc || undefined,
-        budget_max: Number(maxBudget),
-        currency: 'IDR',
+        budget_max: rawBudget,
+        currency,
         target_country: targetCountry,
         item_url: undefined,
       });
@@ -430,17 +438,34 @@ export default function CreateRequestScreen() {
           {/* Section 3: Pricing */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Pricing Estimate</Text>
+
+            {/* Currency selector */}
+            <Text style={styles.fieldLabel}>Currency</Text>
+            <View style={styles.chipGrid}>
+              {CURRENCIES.map((cur) => (
+                <TouchableOpacity
+                  key={cur.code}
+                  style={[styles.chip, currency === cur.code && styles.chipActive]}
+                  onPress={() => { setCurrency(cur.code); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Text style={[styles.chipText, currency === cur.code && styles.chipTextActive]}>
+                    {cur.symbol} {cur.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <Input
-              label="Estimated Item Price (IDR)"
-              placeholder="Rp 1.500.000"
+              label={`Estimated Item Price (${currency})`}
+              placeholder={`${currencySymbol} 1.500.000`}
               value={estimatedPrice}
               onChangeText={(value) => handleRupiahInput(value, setEstimatedPrice)}
               keyboardType="numeric"
               icon="pricetag-outline"
             />
             <Input
-              label="Maximum Budget (IDR)"
-              placeholder="Rp 1.500.000"
+              label={`Maximum Budget (${currency})`}
+              placeholder={`${currencySymbol} 1.500.000`}
               value={maxBudget}
               onChangeText={(value) => handleRupiahInput(value, setMaxBudget)}
               keyboardType="numeric"
