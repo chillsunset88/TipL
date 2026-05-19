@@ -112,6 +112,32 @@ CREATE POLICY "Insert own profile"
   WITH CHECK (id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────
+-- orders
+-- ────────────────────────────────────────────────────────────
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Buyer and traveler can both read orders they are part of
+DROP POLICY IF EXISTS "Read own orders" ON orders;
+CREATE POLICY "Read own orders"
+  ON orders FOR SELECT
+  TO authenticated
+  USING (tiper_id = auth.uid() OR triper_id = auth.uid());
+
+-- Only buyer can create an order
+DROP POLICY IF EXISTS "Insert own order" ON orders;
+CREATE POLICY "Insert own order"
+  ON orders FOR INSERT
+  TO authenticated
+  WITH CHECK (tiper_id = auth.uid());
+
+-- Both buyer and traveler can update the order (status transitions)
+DROP POLICY IF EXISTS "Update order participant" ON orders;
+CREATE POLICY "Update order participant"
+  ON orders FOR UPDATE
+  TO authenticated
+  USING (tiper_id = auth.uid() OR triper_id = auth.uid());
+
+-- ────────────────────────────────────────────────────────────
 -- escrow_payments
 -- ────────────────────────────────────────────────────────────
 ALTER TABLE escrow_payments ENABLE ROW LEVEL SECURITY;
