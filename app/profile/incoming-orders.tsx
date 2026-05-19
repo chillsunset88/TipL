@@ -125,10 +125,10 @@ export default function IncomingOrdersScreen() {
       )}
 
       {/* Filter tabs */}
+      <View style={st.filterBar}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={st.filterScroll}
         contentContainerStyle={st.filterContent}
       >
         {FILTERS.map((f) => {
@@ -151,6 +151,7 @@ export default function IncomingOrdersScreen() {
           );
         })}
       </ScrollView>
+      </View>
 
       {loading ? (
         <View style={st.centered}>
@@ -256,17 +257,15 @@ const st = StyleSheet.create({
   alertDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.warning },
   alertTxt: { flex: 1, fontFamily: Typography.regular.fontFamily, fontSize: Typography.sizes.xs, color: Colors.warning },
 
-  filterScroll: {
+  filterBar: {
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
-    maxHeight: 56,
   },
   filterContent: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
     gap: Spacing.sm,
-    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
