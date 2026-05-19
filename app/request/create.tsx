@@ -3,23 +3,6 @@
  * Opened from trip detail page with tripId + triperId params.
  * Theme-aware: supports Dark Mode & Light Mode.
  */
-<<<<<<< HEAD
-
-import { Button } from '@/src/components/ui/Button';
-import { Input } from '@/src/components/ui/Input';
-import { PageHeader } from '@/src/components/ui/PageHeader';
-import { BorderRadius, ITEM_CATEGORIES, Spacing, Typography } from '@/src/lib/constants';
-import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
-import { acceptRequest, createRequest, updateRequestImageUrls, uploadRequestImage } from '@/src/services/supabase/requests';
-import { useAuthStore } from '@/src/store/authStore';
-import { useSettingsStore } from '@/src/store/settingsStore';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { router, useLocalSearchParams } from 'expo-router';
-=======
->>>>>>> 9c72e3b2eb2a056c75199d51fcaa755fd7def8cd
 import React, { useState } from 'react';
 import {
   Alert,
@@ -43,6 +26,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Typography, Spacing, BorderRadius, Shadows, ITEM_CATEGORIES } from '@/src/lib/constants';
 import { useThemeColors } from '@/src/lib/hooks/useThemeColors';
 import { useAuthStore } from '@/src/store/authStore';
+import { useSettingsStore } from '@/src/store/settingsStore';
 import { createRequest, uploadRequestImage, updateRequestImageUrls, acceptRequest } from '@/src/services/supabase/requests';
 
 
@@ -135,10 +119,6 @@ export default function CreateRequestScreen() {
     if (!maxBudget || isNaN(rawBudget) || rawBudget <= 0) {
       Alert.alert(t.incompleteForm, t.budgetInvalidMsg); return;
     }
-<<<<<<< HEAD
-    if (!targetCountry) { Alert.alert(t.incompleteForm, t.countryRequiredMsg); return; }
-=======
->>>>>>> 9c72e3b2eb2a056c75199d51fcaa755fd7def8cd
     if (!user) return;
 
     setLoading(true);
@@ -418,25 +398,6 @@ export default function CreateRequestScreen() {
             />
           </View>
 
-<<<<<<< HEAD
-          {/* Section 4: Target Country */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t.targetCountrySection}</Text>
-            <Text style={styles.fieldLabel}>{t.whereToShop}</Text>
-            <TouchableOpacity
-              style={styles.countryDropdown}
-              onPress={() => setShowCountryModal(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.countryDropdownText}>
-                {targetCountry || t.selectCountry}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={C.primary} />
-            </TouchableOpacity>
-          </View>
-
-=======
->>>>>>> 9c72e3b2eb2a056c75199d51fcaa755fd7def8cd
           {/* Info Banner */}
           <View style={styles.infoBanner}>
             <Ionicons name="shield-checkmark" size={20} color={C.primary} />

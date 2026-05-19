@@ -39,13 +39,13 @@ export function useChat(currentUserId: string, otherUserId: string) {
   const sendMessage = useCallback(async (text: string): Promise<void> => {
     if (!currentUserId || !otherUserId) throw new Error('User IDs missing');
     const msg = await sendDirectMessage(currentUserId, otherUserId, text);
-    supabase.from('notifications').insert({
+    void (supabase.from('notifications') as any).insert({
       user_id: otherUserId,
       type: 'chat',
       title: 'Pesan Baru',
       body: text.length > 100 ? text.slice(0, 97) + '...' : text,
       data: { type: 'chat', sender_id: currentUserId },
-    }).then(() => {}).catch(() => {});
+    });
     // Add optimistically — real-time won't fire for sender's own messages via receiver filter
     setMessages((prev) => {
       if (prev.some((m) => m.id === msg.id)) return prev;
@@ -56,13 +56,13 @@ export function useChat(currentUserId: string, otherUserId: string) {
   const sendImage = useCallback(async (imageUrl: string): Promise<void> => {
     if (!currentUserId || !otherUserId) throw new Error('User IDs missing');
     const msg = await sendDirectImage(currentUserId, otherUserId, imageUrl);
-    supabase.from('notifications').insert({
+    void (supabase.from('notifications') as any).insert({
       user_id: otherUserId,
       type: 'chat',
       title: 'Pesan Baru',
       body: '📷 Foto',
       data: { type: 'chat', sender_id: currentUserId },
-    }).then(() => {}).catch(() => {});
+    });
     setMessages((prev) => {
       if (prev.some((m) => m.id === msg.id)) return prev;
       return [msg, ...prev];

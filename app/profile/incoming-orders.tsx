@@ -425,8 +425,8 @@ function RequestCard({ request }: { request: CustomRequestWithProfile }) {
           </View>
         </View>
         <View style={st.priceWrap}>
-          {request.budget ? (
-            <Text style={st.price}>{fmtAmount(request.budget)}</Text>
+          {request.budget_max ? (
+            <Text style={st.price}>{fmtAmount(request.budget_max)}</Text>
           ) : (
             <Text style={[st.price, { color: Colors.gray }]}>{t.priceNegotiable}</Text>
           )}
