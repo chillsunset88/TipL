@@ -173,9 +173,6 @@ export default function LoginScreen() {
             >
               <Ionicons name="logo-google" size={22} color={Colors.nearBlack} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton} disabled>
-              <Ionicons name="logo-apple" size={22} color={Colors.nearBlack} />
-            </TouchableOpacity>
           </View>
 
           {/* Register Link */}
