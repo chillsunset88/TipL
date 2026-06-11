@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView, Platform, ScrollView,
+  KeyboardAvoidingView, Linking, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/src/components/ui/Button';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/src/lib/constants';
 import { useSettingsStore } from '@/src/store/settingsStore';
-import { signIn } from '@/src/services/supabase/auth';
+import { signIn, signInWithGoogle } from '@/src/services/supabase/auth';
 
 export default function LoginScreen() {
   const { t } = useSettingsStore();
@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
@@ -59,6 +60,23 @@ export default function LoginScreen() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setSocialLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const { url } = await signInWithGoogle();
+      if (!url) {
+        throw new Error('Tidak dapat memulai login Google.');
+      }
+      await Linking.openURL(url);
+    } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(t.error, err?.message ?? t.loginFailed);
+    } finally {
+      setSocialLoading(false);
     }
   };
 
@@ -147,10 +165,15 @@ export default function LoginScreen() {
 
           {/* Social Buttons */}
           <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton}>
+            <TouchableOpacity
+              style={styles.socialButton}
+              onPress={handleGoogleLogin}
+              disabled={loading || socialLoading}
+              accessibilityLabel="Sign in with Google"
+            >
               <Ionicons name="logo-google" size={22} color={Colors.nearBlack} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
+            <TouchableOpacity style={styles.socialButton} disabled>
               <Ionicons name="logo-apple" size={22} color={Colors.nearBlack} />
             </TouchableOpacity>
           </View>

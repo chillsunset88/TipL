@@ -6,6 +6,21 @@ export async function signIn(email: string, password: string) {
   return data;
 }
 
+export async function signInWithGoogle() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'tiplapp://',
+      scopes: 'openid email profile',
+    },
+  });
+  if (error) throw error;
+  if (!data?.url) {
+    throw new Error('Google login URL tidak tersedia.');
+  }
+  return data;
+}
+
 export async function signUp(email: string, password: string, fullName: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
